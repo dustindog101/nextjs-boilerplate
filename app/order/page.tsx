@@ -113,7 +113,7 @@ export default function OrderGalleryPage() {
                     <div className="mt-auto">
                         <a href={`/order/${state.slug}`} className="block">
                             <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                                Order Now!
+                                Order
                             </button>
                         </a>
                     </div>
