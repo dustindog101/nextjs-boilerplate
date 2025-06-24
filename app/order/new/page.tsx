@@ -28,6 +28,37 @@ interface IdFormData {
   signature?: File;
 }
 
+// --- Prop Type Definitions for Components ---
+interface FormInputProps {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+}
+
+interface FormSelectProps {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: string[];
+}
+
+interface FileInputProps {
+  label: string;
+  name: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  fileName?: string;
+}
+
+interface IdFormProps {
+  formData: IdFormData;
+  onChange: (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, isFile?: boolean) => void;
+  onRemove: (id: number) => void;
+}
+
+
 // --- Data for Dropdowns ---
 const stateOptions = ['Pennsylvania', 'New Jersey', 'Old Maine', 'Washington', 'Oregon', 'South Carolina', 'Missouri', 'Illinois', 'Connecticut', 'Arizona', 'Florida', 'Texas'];
 const eyeColorOptions = ['Brown', 'Blue', 'Green', 'Hazel', 'Gray', 'Black'];
@@ -51,14 +82,14 @@ const UploadIcon = () => (
 
 
 // --- Reusable Form Components ---
-const FormInput = ({ label, name, value, onChange, placeholder = '' }) => (
+const FormInput: React.FC<FormInputProps> = ({ label, name, value, onChange, placeholder = '' }) => (
     <div>
         <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
         <input type="text" id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500" />
     </div>
 );
 
-const FormSelect = ({ label, name, value, onChange, options }) => (
+const FormSelect: React.FC<FormSelectProps> = ({ label, name, value, onChange, options }) => (
     <div>
         <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
         <select id={name} name={name} value={value} onChange={onChange} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500">
@@ -67,7 +98,7 @@ const FormSelect = ({ label, name, value, onChange, options }) => (
     </div>
 );
 
-const FileInput = ({ label, name, onChange, fileName }) => (
+const FileInput: React.FC<FileInputProps> = ({ label, name, onChange, fileName }) => (
      <div>
         <label className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
         <div className="flex items-center justify-center w-full">
@@ -89,9 +120,9 @@ const FileInput = ({ label, name, onChange, fileName }) => (
 
 
 // --- ID Form Component ---
-const IdForm = ({ formData, onChange, onRemove }) => {
-    const handleInputChange = (e) => onChange(formData.id, e);
-    const handleFileChange = (e) => onChange(formData.id, e, true);
+const IdForm: React.FC<IdFormProps> = ({ formData, onChange, onRemove }) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => onChange(formData.id, e);
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => onChange(formData.id, e, true);
 
     return (
         <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 relative">
