@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ID Pirate",
-  description: "Your one stop shop for ids",
+  description: "Fast, Private, Crypto-Powered Novelty ID Platform,
 };
 
 export default function RootLayout({
