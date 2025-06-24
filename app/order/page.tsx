@@ -6,31 +6,26 @@ interface StateId {
   name: string;
   slug: string;
   imageUrl: string;
+  price: number;
+  features: string[];
+  duplicateInfo: string;
 }
 
 // --- Data for the ID Gallery ---
-// In a real application, this data might come from an API.
+// Added price and features based on the provided screenshot.
 const states: StateId[] = [
-    { name: 'Pennsylvania', slug: 'pennsylvania', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Pennsylvania' },
-    { name: 'New Jersey', slug: 'new-jersey', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=New+Jersey' },
-    { name: 'Old Maine', slug: 'old-maine', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Old+Maine' },
-    { name: 'Washington', slug: 'washington', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Washington' },
-    { name: 'Oregon', slug: 'oregon', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Oregon' },
-    { name: 'South Carolina', slug: 'south-carolina', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=South+Carolina' },
-    { name: 'Missouri', slug: 'missouri', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Missouri' },
-    { name: 'Illinois', slug: 'illinois', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Illinois' },
-    { name: 'Connecticut', slug: 'connecticut', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Connecticut' },
-    { name: 'Arizona', slug: 'arizona', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Arizona' },
-    { name: 'Florida', slug: 'florida', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Florida' },
-    { name: 'Texas', slug: 'texas', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Texas' },
-    { name: 'California', slug: 'california', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=California' },
-    { name: 'New York', slug: 'new-york', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=New+York' },
-    { name: 'Ohio', slug: 'ohio', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Ohio' },
-    { name: 'Georgia', slug: 'georgia', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Georgia' },
-    { name: 'Colorado', slug: 'colorado', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Colorado' },
-    { name: 'Nevada', slug: 'nevada', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Nevada' },
-    { name: 'Michigan', slug: 'michigan', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Michigan' },
-    { name: 'Virginia', slug: 'virginia', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Virginia' },
+    { name: 'Pennsylvania', slug: 'pennsylvania', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Pennsylvania', price: 90, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'New Jersey', slug: 'new-jersey', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=New+Jersey', price: 100, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'Old Maine', slug: 'old-maine', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Old+Maine', price: 85, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'Washington', slug: 'washington', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Washington', price: 85, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'Oregon', slug: 'oregon', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Oregon', price: 85, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'South Carolina', slug: 'south-carolina', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=South+Carolina', price: 85, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'Missouri', slug: 'missouri', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Missouri', price: 85, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'Illinois', slug: 'illinois', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Illinois', price: 90, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'Connecticut', slug: 'connecticut', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Connecticut', price: 90, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'Arizona', slug: 'arizona', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Arizona', price: 90, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'Florida', slug: 'florida', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Florida', price: 100, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
+    { name: 'Texas', slug: 'texas', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Texas', price: 100, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
 ];
 
 
@@ -42,11 +37,17 @@ const BackArrowIcon = () => (
     </svg>
 );
 
+const CheckmarkIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-green-400 mr-2 flex-shrink-0">
+        <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+);
+
 
 // --- Main Page Component ---
 export default function OrderGalleryPage() {
   return (
-    <div className="bg-gray-900 min-h-screen text-gray-200 p-4 sm:p-8">
+    <div className="bg-gray-900 min-h-screen text-gray-200">
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
@@ -55,46 +56,74 @@ export default function OrderGalleryPage() {
           }
         `}
       </style>
-
-      {/* Back Button */}
-      <div className="absolute top-4 left-4 z-10">
-        <a href="/">
-          <button className="flex items-center justify-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md">
-            <BackArrowIcon />
-            Back to Home
-          </button>
-        </a>
-      </div>
+        
+      <div className="container mx-auto p-4 sm:p-8">
+          {/* Back Button */}
+          <div className="mb-8">
+            <a href="/">
+              <button className="flex items-center justify-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md">
+                <BackArrowIcon />
+                Back to Home
+              </button>
+            </a>
+          </div>
       
-      <main className="container mx-auto pt-16">
-        <header className="text-center mb-12">
-          <h1 className="font-pirate-special text-6xl md:text-7xl font-bold text-white tracking-wider">
-            Select Your State
-          </h1>
-          <p className="mt-2 text-lg text-gray-400">Choose an ID from the gallery to begin your order.</p>
-        </header>
+          <header className="text-center mb-12">
+            <h1 className="font-pirate-special text-6xl md:text-7xl font-bold text-white tracking-wider">
+              Select Your State
+            </h1>
+            <p className="mt-2 text-lg text-gray-400">Choose an ID from the gallery to begin your order.</p>
+          </header>
 
-        {/* Gallery Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
-          {states.map((state) => (
-            <a key={state.slug} href={`/order/${state.slug}`} className="group block">
-              <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg border border-gray-700/50 transform transition-transform duration-300 group-hover:scale-105 group-hover:shadow-blue-500/20">
-                <img 
-                  src={state.imageUrl} 
-                  alt={`${state.name} ID`} 
-                  className="w-full h-auto aspect-[3/2] object-cover"
-                  onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400/1F2937/ff0000?text=Image+Error'; }}
-                />
-                <div className="p-4">
-                  <h3 className="text-lg font-bold text-white text-center truncate">{state.name}</h3>
+          {/* Gallery Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {states.map((state) => (
+              <div key={state.slug} className="bg-gray-800 rounded-lg overflow-hidden shadow-lg border border-gray-700/50 flex flex-col">
+                {/* Top Bar with Name and Price */}
+                <div className="bg-gray-900 p-4 text-center">
+                    <h2 className="text-xl font-bold text-white truncate">[New] {state.name}</h2>
+                    <p className="text-4xl font-bold text-green-400 mt-1">${state.price}</p>
+                </div>
+
+                {/* Image */}
+                <div className="p-2 bg-gray-700/20">
+                    <img 
+                      src={state.imageUrl} 
+                      alt={`${state.name} ID`} 
+                      className="w-full h-auto aspect-[3/2] object-cover rounded"
+                      onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400/1F2937/ff0000?text=Image+Error'; }}
+                    />
+                </div>
+
+                {/* Features and Order Button */}
+                <div className="p-6 flex flex-col flex-grow">
+                    <ul className="space-y-3 text-gray-300 mb-6">
+                        {state.features.map(feature => (
+                            <li key={feature} className="flex items-center">
+                                <CheckmarkIcon />
+                                <span>{feature}</span>
+                            </li>
+                        ))}
+                         <li className="flex items-center">
+                            <CheckmarkIcon />
+                            <span>{state.duplicateInfo}</span>
+                        </li>
+                    </ul>
+
+                    <div className="mt-auto">
+                        <a href={`/order/${state.slug}`} className="block">
+                            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                                Order Now!
+                            </button>
+                        </a>
+                    </div>
                 </div>
               </div>
-            </a>
-          ))}
-        </div>
-      </main>
+            ))}
+          </div>
+      </div>
 
-       <footer className="text-center mt-16 text-gray-500 text-sm">
+       <footer className="text-center py-8 text-gray-500 text-sm">
         &copy; {new Date().getFullYear()} ID Pirate. All rights reserved.
       </footer>
     </div>
