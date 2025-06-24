@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect, useRef } from 'react';
 
 // You can add these font imports to your global CSS file in your Next.js project.
