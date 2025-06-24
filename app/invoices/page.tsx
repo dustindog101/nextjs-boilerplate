@@ -1,6 +1,20 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 
+// --- Type Definitions for TypeScript ---
+interface InvoiceData {
+  orderNumber: string;
+  date: string;
+  customer: string;
+  idType: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  handlingFee: number;
+  total: number;
+  paymentMethod: string;
+}
+
 // You can add these font imports to your global CSS file in your Next.js project.
 // For this example, I'm including them in a style tag for self-containment.
 const GlobalStyles = () => (
@@ -51,7 +65,7 @@ const paymentMethods = [
 ];
 
 // Main Invoice Component
-const Invoice = ({ data }) => {
+const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
     if (!data) return null;
 
     const handlePrint = () => {
@@ -148,8 +162,8 @@ export default function App() {
     });
 
     // State for the generated invoice data
-    const [invoiceData, setInvoiceData] = useState(null);
-    const invoiceRef = useRef(null);
+    const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+    const invoiceRef = useRef<HTMLDivElement>(null);
 
     // Effect to scroll to the invoice when it's generated
     useEffect(() => {
@@ -159,13 +173,13 @@ export default function App() {
     }, [invoiceData]);
 
     // Handle standard input changes
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     // Handle changes to the ID type dropdown to also update the price
-    const handleIdTypeChange = (e) => {
+    const handleIdTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedName = e.target.value;
         const selectedOption = idOptions.find(opt => opt.name === selectedName);
         setFormData(prev => ({
@@ -178,9 +192,9 @@ export default function App() {
     // Generate the invoice
     const handleGenerateInvoice = () => {
         // --- 1. Calculations ---
-        const quantity = parseFloat(formData.quantity) || 0;
-        const unitPrice = parseFloat(formData.unitPrice) || 0;
-        const handlingFee = parseFloat(formData.handlingFee) || 0;
+        const quantity = parseFloat(String(formData.quantity)) || 0;
+        const unitPrice = parseFloat(String(formData.unitPrice)) || 0;
+        const handlingFee = parseFloat(String(formData.handlingFee)) || 0;
         const subtotal = quantity * unitPrice;
         const total = subtotal + handlingFee;
 
@@ -194,19 +208,19 @@ export default function App() {
 
         // --- 3. Set invoice data to state ---
         setInvoiceData({
-            ...formData,
-            orderNumber,
-            date: formattedDate,
-            subtotal,
-            total,
-            unitPrice,
-            quantity,
-            handlingFee
+          ...formData,
+          orderNumber,
+          date: formattedDate,
+          subtotal,
+          total,
+          unitPrice,
+          quantity,
+          handlingFee,
         });
     };
 
     return (
-        <div className="bg-gray-900 text-gray-200 p-4 sm:p-8">
+        <div className="bg-gray-900 text-gray-200 p-4 sm:p-8 min-h-screen">
             <GlobalStyles />
             <div className="max-w-4xl mx-auto">
                 {/* MANAGER SECTION */}
