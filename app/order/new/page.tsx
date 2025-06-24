@@ -38,7 +38,7 @@ interface FormInputProps {
 }
 
 interface FormSelectProps {
-  label: string;
+  label?: string; // Made label optional
   name: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -71,10 +71,10 @@ const yearOptions = Array.from({ length: 100 }, (_, i) => String(new Date().getF
 
 // --- SVG Icons ---
 const PlusIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
 );
 const TrashIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
 );
 const UploadIcon = () => (
     <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
@@ -91,8 +91,15 @@ const FormInput: React.FC<FormInputProps> = ({ label, name, value, onChange, pla
 
 const FormSelect: React.FC<FormSelectProps> = ({ label, name, value, onChange, options }) => (
     <div>
-        <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
-        <select id={name} name={name} value={value} onChange={onChange} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500">
+        {label && <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>}
+        <select
+            id={name}
+            name={name}
+            value={value}
+            onChange={onChange}
+            aria-label={label || name}
+            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500"
+        >
             {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>
     </div>
@@ -114,7 +121,7 @@ const FileInput: React.FC<FileInputProps> = ({ label, name, onChange, fileName }
                 </div>
                 <input id={name} name={name} type="file" className="hidden" onChange={onChange} />
             </label>
-        </div> 
+        </div>
     </div>
 );
 
@@ -142,7 +149,7 @@ const IdForm: React.FC<IdFormProps> = ({ formData, onChange, onRemove }) => {
                 <div className="md:col-span-3">
                     <FormInput label="Street Address" name="streetAddress" value={formData.streetAddress} onChange={handleInputChange} />
                 </div>
-                
+
                 <FormInput label="City" name="city" value={formData.city} onChange={handleInputChange} />
                 <FormInput label="ZIP Code" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="5 digits" />
                 <FormInput label="ZIP+4" name="zipPlus4" value={formData.zipPlus4} onChange={handleInputChange} placeholder="Optional 4 digits" />
@@ -178,7 +185,7 @@ const IdForm: React.FC<IdFormProps> = ({ formData, onChange, onRemove }) => {
                 <FormInput label="Weight (lbs)" name="weight" value={formData.weight} onChange={handleInputChange} />
                 <FormSelect label="Eye Color" name="eyeColor" value={formData.eyeColor} onChange={handleInputChange} options={eyeColorOptions} />
                 <FormSelect label="Hair Color" name="hairColor" value={formData.hairColor} onChange={handleInputChange} options={hairColorOptions} />
-                
+
                 <div className="md:col-span-3 grid md:grid-cols-2 gap-4">
                      <FileInput label="Photo Upload" name="photo" onChange={handleFileChange} fileName={formData.photo?.name} />
                      <FileInput label="Signature Upload" name="signature" onChange={handleFileChange} fileName={formData.signature?.name} />
@@ -234,7 +241,7 @@ export default function OrderFormPage() {
               @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
               .font-pirate-special { font-family: 'Uncial Antiqua', cursive; }
             `}</style>
-            
+
             <div className="container mx-auto p-4 sm:p-8">
                 <header className="text-center mb-12">
                     <h1 className="font-pirate-special text-6xl md:text-7xl font-bold text-white tracking-wider">
