@@ -39,13 +39,18 @@ export default function App() {
           Admin Login
         </button>
       </div>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
+          .font-pirate-special {
+            font-family: 'Uncial Antiqua', cursive;
+          }
+        `}
+      </style>
 
       <main className="flex flex-col items-center">
         {/* Main Heading */}
-        <h1 
-          className="text-7xl md:text-9xl font-bold text-white tracking-wider" 
-          style={{ fontFamily: "'Pirata One', cursive" }}
-        >
+        <h1 className="font-pirate-special text-7xl md:text-8xl font-bold text-white tracking-wider mb-4">
           ID Pirate
         </h1>
 
@@ -63,7 +68,7 @@ export default function App() {
             <DocumentIcon />
             Invoices
           </button>
-          <button className="flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+          <a href="/track" className="flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 w-full">
             <BoxIcon />
             Order
           </button>
