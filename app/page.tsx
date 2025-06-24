@@ -1,16 +1,16 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 // --- SVG Icons ---
 const LockIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
     <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
   </svg>
 );
 
 const DocumentIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-5 w-5">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-5 w-5">
         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
         <polyline points="14 2 14 8 20 8"></polyline>
     </svg>
@@ -24,7 +24,25 @@ const BoxIcon = () => (
     </svg>
 );
 
-const CloseIcon = ({ onClick }) => (
+// --- Type Definitions for Component Props ---
+interface CloseIconProps {
+  onClick: () => void;
+}
+
+interface NotificationProps {
+  message: string;
+  show: boolean;
+}
+
+interface LoginModalProps {
+  show: boolean;
+  onClose: () => void;
+  onLogin: () => void;
+}
+
+
+// --- Components ---
+const CloseIcon: React.FC<CloseIconProps> = ({ onClick }) => (
     <button onClick={onClick} className="absolute top-4 right-4 text-gray-400 hover:text-white transition">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -33,11 +51,7 @@ const CloseIcon = ({ onClick }) => (
     </button>
 );
 
-
-// --- Components ---
-
-// Notification Toast Component
-const Notification = ({ message, show }) => {
+const Notification: React.FC<NotificationProps> = ({ message, show }) => {
     if (!show) return null;
     return (
         <div className="fixed bottom-5 left-1/2 -translate-x-1/2 bg-red-500 text-white py-2 px-5 rounded-lg shadow-lg animate-fade-in-out">
@@ -46,11 +60,10 @@ const Notification = ({ message, show }) => {
     );
 };
 
-// Login Modal Component
-const LoginModal = ({ show, onClose, onLogin }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ show, onClose, onLogin }) => {
     if (!show) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onLogin(); // This will trigger the "Authentication Failed" message
     };
@@ -83,7 +96,7 @@ export default function App() {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [notification, setNotification] = useState({ show: false, message: '' });
 
-    const showNotification = (message) => {
+    const showNotification = (message: string) => {
         setNotification({ show: true, message });
         setTimeout(() => {
             setNotification({ show: false, message: '' });
