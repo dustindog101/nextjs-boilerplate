@@ -1,6 +1,9 @@
 "use client";
 import React, { useState } from 'react';
 
+// --- Type definition for the possible order statuses ---
+type OrderStatus = 'in_progress' | 'shipped' | 'not_found' | null;
+
 // In a real Next.js app, you would add the Google Fonts link to your layout.js or _document.js file's <head> tag:
 // <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 
@@ -26,7 +29,8 @@ const ShippingIcon = () => (
 // --- Main App Component ---
 export default function App() {
   const [orderNumber, setOrderNumber] = useState('');
-  const [status, setStatus] = useState(null); // 'not_found', 'in_progress', 'shipped'
+  // Correctly type the useState hook to allow string values or null
+  const [status, setStatus] = useState<OrderStatus>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleTrackOrder = () => {
