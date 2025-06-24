@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 
 // In a real Next.js app, you would add the Google Fonts link to your layout.js or _document.js file's <head> tag:
