@@ -1,4 +1,4 @@
- "use client";
+"use client";
 import React from 'react';
 
 // --- Type Definitions ---
@@ -11,26 +11,26 @@ interface StateId {
 // --- Data for the ID Gallery ---
 // In a real application, this data might come from an API.
 const states: StateId[] = [
-    { name: 'Pennsylvania', slug: 'pennsylvania', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Pennsylvania' },
-    { name: 'New Jersey', slug: 'new-jersey', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=New+Jersey' },
-    { name: 'Old Maine', slug: 'old-maine', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Old+Maine' },
-    { name: 'Washington', slug: 'washington', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Washington' },
-    { name: 'Oregon', slug: 'oregon', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Oregon' },
-    { name: 'South Carolina', slug: 'south-carolina', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=South+Carolina' },
-    { name: 'Missouri', slug: 'missouri', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Missouri' },
-    { name: 'Illinois', slug: 'illinois', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Illinois' },
-    { name: 'Connecticut', slug: 'connecticut', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Connecticut' },
-    { name: 'Arizona', slug: 'arizona', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Arizona' },
-    { name: 'Florida', slug: 'florida', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Florida' },
-    { name: 'Texas', slug: 'texas', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Texas' },
-    { name: 'California', slug: 'california', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=California' },
-    { name: 'New York', slug: 'new-york', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=New+York' },
-    { name: 'Ohio', slug: 'ohio', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Ohio' },
-    { name: 'Georgia', slug: 'georgia', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Georgia' },
-    { name: 'Colorado', slug: 'colorado', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Colorado' },
-    { name: 'Nevada', slug: 'nevada', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Nevada' },
-    { name: 'Michigan', slug: 'michigan', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Michigan' },
-    { name: 'Virginia', slug: 'virginia', imageUrl: 'https://placehold.co/600x400/1a202c/9ca3af?text=Virginia' },
+    { name: 'Pennsylvania', slug: 'pennsylvania', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Pennsylvania' },
+    { name: 'New Jersey', slug: 'new-jersey', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=New+Jersey' },
+    { name: 'Old Maine', slug: 'old-maine', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Old+Maine' },
+    { name: 'Washington', slug: 'washington', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Washington' },
+    { name: 'Oregon', slug: 'oregon', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Oregon' },
+    { name: 'South Carolina', slug: 'south-carolina', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=South+Carolina' },
+    { name: 'Missouri', slug: 'missouri', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Missouri' },
+    { name: 'Illinois', slug: 'illinois', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Illinois' },
+    { name: 'Connecticut', slug: 'connecticut', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Connecticut' },
+    { name: 'Arizona', slug: 'arizona', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Arizona' },
+    { name: 'Florida', slug: 'florida', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Florida' },
+    { name: 'Texas', slug: 'texas', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Texas' },
+    { name: 'California', slug: 'california', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=California' },
+    { name: 'New York', slug: 'new-york', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=New+York' },
+    { name: 'Ohio', slug: 'ohio', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Ohio' },
+    { name: 'Georgia', slug: 'georgia', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Georgia' },
+    { name: 'Colorado', slug: 'colorado', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Colorado' },
+    { name: 'Nevada', slug: 'nevada', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Nevada' },
+    { name: 'Michigan', slug: 'michigan', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Michigan' },
+    { name: 'Virginia', slug: 'virginia', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Virginia' },
 ];
 
 
@@ -69,9 +69,9 @@ export default function OrderGalleryPage() {
       <main className="container mx-auto pt-16">
         <header className="text-center mb-12">
           <h1 className="font-pirate-special text-6xl md:text-7xl font-bold text-white tracking-wider">
-            Choose Your Colors
+            Select Your State
           </h1>
-          <p className="mt-2 text-lg text-gray-400">Select an ID from the gallery below to begin your order.</p>
+          <p className="mt-2 text-lg text-gray-400">Choose an ID from the gallery to begin your order.</p>
         </header>
 
         {/* Gallery Grid */}
@@ -83,7 +83,7 @@ export default function OrderGalleryPage() {
                   src={state.imageUrl} 
                   alt={`${state.name} ID`} 
                   className="w-full h-auto aspect-[3/2] object-cover"
-                  onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400/1a202c/ff0000?text=Image+Error'; }}
+                  onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400/1F2937/ff0000?text=Image+Error'; }}
                 />
                 <div className="p-4">
                   <h3 className="text-lg font-bold text-white text-center truncate">{state.name}</h3>
