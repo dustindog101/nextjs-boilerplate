@@ -38,7 +38,7 @@ interface FormInputProps {
 }
 
 interface FormSelectProps {
-  label?: string; // Made label optional
+  label?: string; // Label is optional for cases like date dropdowns
   name: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -177,8 +177,8 @@ const IdForm: React.FC<IdFormProps> = ({ formData, onChange, onRemove }) => {
                 <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Height</label>
                     <div className="grid grid-cols-2 gap-2">
-                        <FormInput name="heightFeet" value={formData.heightFeet} onChange={handleInputChange} placeholder="ft" />
-                        <FormInput name="heightInches" value={formData.heightInches} onChange={handleInputChange} placeholder="in" />
+                        <FormInput label="Feet" name="heightFeet" value={formData.heightFeet} onChange={handleInputChange} placeholder="ft" />
+                        <FormInput label="Inches" name="heightInches" value={formData.heightInches} onChange={handleInputChange} placeholder="in" />
                     </div>
                 </div>
 
