@@ -55,7 +55,6 @@ interface FileInputProps {
 interface IdFormProps {
   formData: IdFormData;
   onChange: (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, isFile?: boolean) => void;
-  onRemove: (id: number) => void;
 }
 
 
@@ -74,7 +73,7 @@ const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
 const UploadIcon = () => <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>;
 const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-5 w-5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
-const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
+const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
 
 
 // --- Reusable Form Components ---
@@ -111,7 +110,7 @@ const FileInput: React.FC<FileInputProps> = ({ label, name, onChange, fileName }
 );
 
 // --- ID Form Component ---
-const IdForm: React.FC<IdFormProps> = ({ formData, onChange, onRemove }) => {
+const IdForm: React.FC<IdFormProps> = ({ formData, onChange }) => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => onChange(formData.id, e);
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => onChange(formData.id, e, true);
 
@@ -177,19 +176,19 @@ export default function OrderFormPage() {
 
     const [idForms, setIdForms] = useState<IdFormData[]>([createNewIdForm()]);
     const [activeFormId, setActiveFormId] = useState<number>(idForms[0].id);
-    const [isSidebarOpen, setSidebarOpen] = useState(true);
+    const [isSidebarOpen, setSidebarOpen] = useState(false); // Sidebar is closed by default
 
     const addIdForm = () => {
         const newForm = createNewIdForm();
         setIdForms([...idForms, newForm]);
-        setActiveFormId(newForm.id); // Switch to the new form
+        setActiveFormId(newForm.id);
+        setSidebarOpen(true); // Open sidebar when a new ID is added
     };
 
     const removeIdForm = (idToRemove: number) => {
-        if (idForms.length <= 1) return; // Don't remove the last form
+        if (idForms.length <= 1) return;
         const newForms = idForms.filter(form => form.id !== idToRemove);
         setIdForms(newForms);
-        // If the active form was removed, switch to the first available form
         if (activeFormId === idToRemove) {
             setActiveFormId(newForms[0].id);
         }
@@ -220,7 +219,15 @@ export default function OrderFormPage() {
               .sidebar-transition { transition: transform 0.3s ease-in-out; }
             `}</style>
             
-            <div className="flex">
+            <div className="relative flex min-h-screen">
+                {/* Backdrop for mobile */}
+                {isSidebarOpen && (
+                    <div 
+                        onClick={() => setSidebarOpen(false)} 
+                        className="fixed inset-0 bg-black/60 z-30 md:hidden"
+                    ></div>
+                )}
+                
                 {/* Sidebar */}
                 <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-gray-800 border-r border-gray-700 sidebar-transition ${isSidebarOpen ? 'transform-none' : '-translate-x-full'}`}>
                     <div className="h-full px-3 py-4 overflow-y-auto">
@@ -229,7 +236,13 @@ export default function OrderFormPage() {
                             {idForms.map((form, index) => (
                                 <li key={form.id}>
                                     <button
-                                        onClick={() => setActiveFormId(form.id)}
+                                        onClick={() => {
+                                            setActiveFormId(form.id);
+                                            // Close sidebar on mobile after selection for better UX
+                                            if (window.innerWidth < 768) {
+                                                setSidebarOpen(false);
+                                            }
+                                        }}
                                         className={`w-full flex items-center p-2 rounded-lg transition duration-75 group ${activeFormId === form.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
                                     >
                                         <span className="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">ID #{index + 1}</span>
@@ -253,9 +266,9 @@ export default function OrderFormPage() {
 
                 {/* Main Content */}
                 <main className={`flex-1 p-4 sm:p-8 sidebar-transition ${isSidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
-                    {/* Header with Menu Toggle and Back Button */}
-                    <div className="flex items-center mb-8">
-                         <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white mr-4">
+                    {/* Sticky Header for Mobile */}
+                    <div className="sticky top-0 bg-gray-900 py-2 -mx-4 px-4 z-20 flex items-center mb-8">
+                         <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white mr-4 p-2">
                             <MenuIcon />
                         </button>
                         <a href="/order" className="flex items-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors">
@@ -270,7 +283,7 @@ export default function OrderFormPage() {
                         <p className="mt-2 text-lg text-gray-400">Editing ID #{idForms.findIndex(f => f.id === activeFormId) + 1}</p>
                     </header>
 
-                    {activeForm && <IdForm formData={activeForm} onChange={handleFormChange} onRemove={removeIdForm} />}
+                    {activeForm && <IdForm formData={activeForm} onChange={handleFormChange} />}
                     
                     <div className="mt-8 flex justify-end">
                         <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg">
