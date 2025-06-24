@@ -25,6 +25,13 @@ const ShippingIcon = () => (
     </svg>
 );
 
+const BackArrowIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-5 w-5">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+);
+
 
 // --- Main App Component ---
 export default function App() {
@@ -67,6 +74,14 @@ export default function App() {
           }
         `}
       </style>
+
+      {/* Back Button - For Next.js, use the Link component. For this environment, a standard anchor tag is used. */}
+      <div className="absolute top-4 left-4">
+        <a href="/" className="flex items-center justify-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md">
+            <BackArrowIcon />
+            Back to Home
+        </a>
+      </div>
 
       <main className="w-full max-w-md">
         {/* Main Heading */}
