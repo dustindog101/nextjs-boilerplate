@@ -250,7 +250,7 @@ export default function OrderFormPage() {
                 )}
                 
                 {/* Sidebar */}
-                <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-gray-800 border-r border-gray-700 sidebar-transition ${isSidebarOpen ? 'transform-none' : '-translate-x-full'} md:relative md:transform-none`}>
+                <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-gray-800 border-r border-gray-700 sidebar-transition ${isSidebarOpen ? 'transform-none' :'-translate-x-full'}`}>
                     <div className="h-full px-3 py-4 overflow-y-auto">
                         <h3 className="text-xl font-semibold text-white mb-4 px-2">Your IDs</h3>
                         <ul className="space-y-2 font-medium">
