@@ -24,8 +24,8 @@ interface IdFormData {
   eyeColor: string;
   hairColor: string;
   sex: string;
-  photo?: File;
-  signature?: File;
+  photo?: File; // File object, will not be passed directly to checkout/DB
+  signature?: File; // File object, will not be passed directly to checkout/DB
 }
 
 // --- Prop Type Definitions for Components ---
@@ -35,6 +35,7 @@ interface FormInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
+  type?: string; // Added type prop for input elements
 }
 
 interface FormSelectProps {
@@ -72,15 +73,15 @@ const yearOptions = Array.from({ length: 100 }, (_, i) => String(new Date().getF
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
 const UploadIcon = () => <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>;
-const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-5 w-5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
-const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
+const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-5 w-5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
+const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
 
 
 // --- Reusable Form Components ---
-const FormInput: React.FC<FormInputProps> = ({ label, name, value, onChange, placeholder = '' }) => (
+const FormInput: React.FC<FormInputProps> = ({ label, name, value, onChange, placeholder = '', type = 'text' }) => (
     <div>
         <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
-        <input type="text" id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500" />
+        <input type={type} id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500" />
     </div>
 );
 
@@ -123,8 +124,8 @@ const IdForm: React.FC<IdFormProps> = ({ formData, onChange }) => {
                 <FormInput label="Last Name" name="lastName" value={formData.lastName} onChange={handleInputChange} />
                 <div className="md:col-span-3"> <FormInput label="Street Address" name="streetAddress" value={formData.streetAddress} onChange={handleInputChange} /> </div>
                 <FormInput label="City" name="city" value={formData.city} onChange={handleInputChange} />
-                <FormInput label="ZIP Code" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="5 digits" />
-                <FormInput label="ZIP+4" name="zipPlus4" value={formData.zipPlus4} onChange={handleInputChange} placeholder="Optional 4 digits" />
+                <FormInput label="ZIP Code" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="5 digits" type="number" />
+                <FormInput label="ZIP+4" name="zipPlus4" value={formData.zipPlus4} onChange={handleInputChange} placeholder="Optional 4 digits" type="number" />
                 <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Date of Birth</label>
                     <div className="grid grid-cols-3 gap-2">
@@ -145,11 +146,11 @@ const IdForm: React.FC<IdFormProps> = ({ formData, onChange }) => {
                 <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Height</label>
                     <div className="grid grid-cols-2 gap-2">
-                        <FormInput label="Feet" name="heightFeet" value={formData.heightFeet} onChange={handleInputChange} placeholder="ft" />
-                        <FormInput label="Inches" name="heightInches" value={formData.heightInches} onChange={handleInputChange} placeholder="in" />
+                        <FormInput label="Feet" name="heightFeet" value={formData.heightFeet} onChange={handleInputChange} placeholder="ft" type="number" />
+                        <FormInput label="Inches" name="heightInches" value={formData.heightInches} onChange={handleInputChange} placeholder="in" type="number" />
                     </div>
                 </div>
-                <FormInput label="Weight (lbs)" name="weight" value={formData.weight} onChange={handleInputChange} />
+                <FormInput label="Weight (lbs)" name="weight" value={formData.weight} onChange={handleInputChange} type="number" />
                 <FormSelect label="Eye Color" name="eyeColor" value={formData.eyeColor} onChange={handleInputChange} options={eyeColorOptions} />
                 <FormSelect label="Hair Color" name="hairColor" value={formData.hairColor} onChange={handleInputChange} options={hairColorOptions} />
                 <div className="md:col-span-3 grid md:grid-cols-2 gap-4">
@@ -211,6 +212,26 @@ export default function OrderFormPage() {
     
     const activeForm = idForms.find(form => form.id === activeFormId);
 
+    // --- NEW: Function to handle proceeding to checkout ---
+    const handleProceedToCheckout = () => {
+        if (idForms.length === 0) {
+            alert('Please create at least one ID form before proceeding to checkout.');
+            return;
+        }
+        // IMPORTANT: Filter out File objects as they cannot be directly stringified
+        const idFormsForStorage = idForms.map(({ photo, signature, ...rest }) => rest);
+
+        try {
+            // Save the ID forms data to localStorage
+            localStorage.setItem('idPirateOrderForms', JSON.stringify(idFormsForStorage));
+            // Navigate to the checkout page
+            window.location.href = '/checkout'; // Ensure your checkout page is at this path
+        } catch (error) {
+            console.error('Failed to save ID forms to localStorage:', error);
+            alert('Could not proceed to checkout. Please try again.');
+        }
+    };
+
     return (
         <div className="bg-gray-900 min-h-screen text-gray-200">
             <style>{`
@@ -229,7 +250,7 @@ export default function OrderFormPage() {
                 )}
                 
                 {/* Sidebar */}
-                <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-gray-800 border-r border-gray-700 sidebar-transition ${isSidebarOpen ? 'transform-none' : '-translate-x-full'}`}>
+                <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-gray-800 border-r border-gray-700 sidebar-transition ${isSidebarOpen ? 'transform-none' : '-translate-x-full'} md:relative md:transform-none`}>
                     <div className="h-full px-3 py-4 overflow-y-auto">
                         <h3 className="text-xl font-semibold text-white mb-4 px-2">Your IDs</h3>
                         <ul className="space-y-2 font-medium">
@@ -245,7 +266,7 @@ export default function OrderFormPage() {
                                         }}
                                         className={`w-full flex items-center p-2 rounded-lg transition duration-75 group ${activeFormId === form.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
                                     >
-                                        <span className="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">ID #{index + 1}</span>
+                                        <span className="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">ID #{index + 1} ({form.state || 'New'})</span>
                                         {idForms.length > 1 && (
                                             <span onClick={(e) => { e.stopPropagation(); removeIdForm(form.id);}} className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-400 bg-gray-700 hover:bg-red-500 hover:text-white rounded-full">
                                                 <TrashIcon />
@@ -286,7 +307,10 @@ export default function OrderFormPage() {
                     {activeForm && <IdForm formData={activeForm} onChange={handleFormChange} />}
                     
                     <div className="mt-8 flex justify-end">
-                        <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg">
+                        <button 
+                            onClick={handleProceedToCheckout} // NEW: Call the handler to save data and navigate
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
+                        >
                             Proceed to Checkout
                         </button>
                     </div>
@@ -299,3 +323,4 @@ export default function OrderFormPage() {
         </div>
     );
 }
+
