@@ -12,6 +12,7 @@ interface StateId {
 }
 
 // --- Data for the ID Gallery ---
+
 // Added price and features based on the provided screenshot.
 const states: StateId[] = [
     { name: 'Pennsylvania', slug: 'pennsylvania', imageUrl: 'https://placehold.co/600x400/1F2937/E5E7EB?text=Pennsylvania', price: 90, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'Duplicate Price: FREE' },
@@ -109,11 +110,12 @@ export default function OrderGalleryPage() {
                             <span>{state.duplicateInfo}</span>
                         </li>
                     </ul>
-
+{/* old order bbutton //<a href={`/order/${state.slug}`} className="block">*/}
                     <div className="mt-auto">
-                        <a href={`/order/${state.slug}`} className="block">
+                      <a href={`/order/new`} className="block">
+                        
                             <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                                Order Now!
+                                Order
                             </button>
                         </a>
                     </div>
