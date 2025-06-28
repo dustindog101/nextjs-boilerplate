@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-// import { useRouter } from 'next/router'; // Removed: Not compatible with current environment
+// Removed: import { useRouter } from 'next/router'; // This line caused compilation issues.
 // For this environment, we'll use window.location.href directly for navigation.
 
 // --- Interfaces ---
@@ -259,7 +259,7 @@ const IdForm: React.FC<IdFormProps> = ({ formData, onChange, isEditable, index }
 
 // --- Main Page Component ---
 export default function ViewEditOrderPage() {
-  // const router = useRouter(); // Removed: Not compatible with current environment
+  // const router = useRouter(); // Initialize useRouter here
   const [loggedInUser, setLoggedInUser] = useState<JwtPayload | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   
@@ -292,13 +292,11 @@ export default function ViewEditOrderPage() {
   };
 
   // --- Handle User Logout ---
-  // Moved to the top-level of the component so it's always defined
   const handleLogout = () => {
     localStorage.removeItem('idPirateAuthToken');
     // --- MVP Placeholder: No actual JWT removal needed for static MVP.
     // But keep this for future integration. ---
-    // Use window.location.href for navigation
-    window.location.href = '/account'; 
+    window.location.href = '/account'; // Use window.location.href for navigation
   };
 
 
@@ -306,7 +304,7 @@ export default function ViewEditOrderPage() {
   useEffect(() => {
     // --- MVP Placeholder Start (Auth & Data Fetch) ---
     const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJtdnAtZGV2LWxvY2FsLXVzZXIiLCJ1c2VybmFtZSI6Ik1WUEN1c3RvbWVyIiwiZXhwIjoxNzA1NTk2MDAwMH0.signature";
-    const mockDecoded: JwtPayload = { userId: "mvp-dev-local-user", username: "MVPCustomer", exp: Math.floor(Date.now() / 1000) + (60 * 60) };
+    const mockDecoded: JwtPayload = { userId: "mvp-dev-local-user", username: "MVPCustomer", exp: Math.floor(Date.now() / 1000) + (60 * 60) }; // Completed this line
     setLoggedInUser(mockDecoded);
     setIsAuthChecking(false);
 
