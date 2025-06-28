@@ -170,10 +170,12 @@ export default function App() {
                         <DocumentIcon />
                         Track
                     </a>
-                    <button onClick={handleOrderClick} className="flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                  
+                    <<a href="/order" className="flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                         <BoxIcon />
                         Order
-                    </button>
+                    
+                    </a>
                 </div>
             </main>
 
