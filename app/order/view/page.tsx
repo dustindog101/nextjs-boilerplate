@@ -35,8 +35,8 @@ interface IdFormData {
   eyeColor: string;
   hairColor: string;
   sex: string;
-  // photo?: File; // Excluded from data transfer/DB update scope for MVP
-  // signature?: File; // Excluded from data transfer/DB update scope for MVP
+  photo?: File; // Re-included this property
+  signature?: File; // Re-included this property
 }
 
 
@@ -297,7 +297,8 @@ export default function ViewEditOrderPage() {
     localStorage.removeItem('idPirateAuthToken');
     // --- MVP Placeholder: No actual JWT removal needed for static MVP.
     // But keep this for future integration. ---
-    window.location.href = '/account'; // Use window.location.href for navigation
+    // Use window.location.href for navigation
+    window.location.href = '/account'; 
   };
 
 
