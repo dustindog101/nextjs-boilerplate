@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-// Removed: import { useRouter } from 'next/router'; // This line caused compilation issues.
+// import { useRouter } from 'next/router'; // Removed: Not compatible with current environment
 // For this environment, we'll use window.location.href directly for navigation.
 
 // --- Interfaces ---
@@ -259,7 +259,7 @@ const IdForm: React.FC<IdFormProps> = ({ formData, onChange, isEditable, index }
 
 // --- Main Page Component ---
 export default function ViewEditOrderPage() {
-  // const router = useRouter(); // Initialize useRouter here
+  // const router = useRouter(); // Removed: Not compatible with current environment
   const [loggedInUser, setLoggedInUser] = useState<JwtPayload | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   
@@ -303,7 +303,7 @@ export default function ViewEditOrderPage() {
   // --- Authentication Check & Initial Data Fetch ---
   useEffect(() => {
     // --- MVP Placeholder Start (Auth & Data Fetch) ---
-    const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJtdnAtZGV2LWxvY2FsLXVzZXIiLCJ1c2VybmFtZSI6Ik1WUEN1c3RvbWVyIiwiZXhwIjoxNzA1NTk2MDAwMH0.signature";
+    const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJtdnAtZGV2LWxvY2FsLXVzZXIiLCJ1c2VybmFtZSI6Ik1WUEN1c3RvbWVyIiwiZXhwIjoi" + Math.floor(Date.now() / 1000) + (60 * 60) + "\"}}"; // Completed this line
     const mockDecoded: JwtPayload = { userId: "mvp-dev-local-user", username: "MVPCustomer", exp: Math.floor(Date.now() / 1000) + (60 * 60) }; // Completed this line
     setLoggedInUser(mockDecoded);
     setIsAuthChecking(false);
@@ -473,7 +473,7 @@ export default function ViewEditOrderPage() {
     await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call delay
     
     // Simulate validation
-    if (editableOrderData?.shipping.trim().length < 10) {
+    if (!editableOrderData || editableOrderData.shipping.trim().length < 10) { // Added null check for editableOrderData
       setSaveFeedback("Error: Shipping address is too short.");
       setIsSavingChanges(false);
       return;
