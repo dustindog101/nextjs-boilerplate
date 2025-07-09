@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect } from 'react';
 
 /**
@@ -7,7 +9,7 @@ import React, { useEffect } from 'react';
  * as soon as the page is loaded in the browser. It's a simple and effective
  * way to handle external redirects within a Next.js application.
  *
- * To use this, save this code as a file (e.g., `redirect.js`) in your `pages`
+ * To use this, save this code as a file (e.g., `redirect.js`) in your `app`
  * directory. Navigating to `/redirect` in your app will then trigger the
  * redirect to the specified URL.
  */
