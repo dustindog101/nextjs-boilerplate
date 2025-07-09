@@ -135,8 +135,8 @@ export default function App() {
   };
 
   return (
-    // Main container with dark background
-    <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center p-4 text-center text-gray-200 font-inter">
+    // CHANGE 1: Main container modified for sticky footer layout. Removed `justify-center`.
+    <div className="bg-gray-900 min-h-screen flex flex-col items-center p-4 text-center text-gray-200 font-inter">
       
       {/* Font Imports and Styles */}
       <style>
@@ -179,138 +179,140 @@ export default function App() {
         </a>
       </div>
 
-      <main className="w-full max-w-md"> {/* This remains focused on search input */}
-        {/* Main Heading */}
-        <h1 className="font-pirate-special text-7xl md:text-8xl font-bold text-white tracking-wider mb-4">
-          ID Pirate
-        </h1>
+      {/* CHANGE 2: Added a wrapper div with `flex-grow` to push the footer down */}
+      <div className="w-full flex-grow flex flex-col items-center justify-center">
+        <main className="w-full max-w-md"> {/* This remains focused on search input */}
+          {/* Main Heading */}
+          <h1 className="font-pirate-special text-7xl md:text-8xl font-bold text-white tracking-wider mb-4">
+            ID Pirate
+          </h1>
 
-        {/* Subheading */}
-        <p className="mt-2 text-lg text-gray-400 mb-8">
-          Track Your Treasure
-        </p>
+          {/* Subheading */}
+          <p className="mt-2 text-lg text-gray-400 mb-8">
+            Track Your Treasure
+          </p>
 
-        {/* Tracking Input Section */}
-        <div className="flex flex-col space-y-4">
-          <input 
-            type="text"
-            value={orderNumber}
-            onChange={(e) => setOrderNumber(e.target.value)}
-            placeholder="Enter your order number..."
-            className="w-full bg-gray-800 border-2 border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition"
-          />
-          <button 
-            onClick={handleTrackOrder}
-            disabled={isLoading}
-            className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 disabled:bg-gray-500 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-                <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Searching...
-                </>
-            ) : (
-                <>
-                    <SearchIcon />
-                    Check Status
-                </>
-            )}
-          </button>
-        </div>
-      </main>
+          {/* Tracking Input Section */}
+          <div className="flex flex-col space-y-4">
+            <input 
+              type="text"
+              value={orderNumber}
+              onChange={(e) => setOrderNumber(e.target.value)}
+              placeholder="Enter your order number..."
+              className="w-full bg-gray-800 border-2 border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition"
+            />
+            <button 
+              onClick={handleTrackOrder}
+              disabled={isLoading}
+              className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 disabled:bg-gray-500 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                  <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Searching...
+                  </>
+              ) : (
+                  <>
+                      <SearchIcon />
+                      Check Status
+                  </>
+              )}
+            </button>
+          </div>
+        </main>
 
-      {/* --- Order Tracking Results Section (appears only after lookup) --- */}
-      {isLoading && (
-        <div className="mt-8 p-6 bg-gray-800/70 rounded-lg shadow-lg border border-gray-700 animate-fade-in w-full max-w-lg md:max-w-xl lg:max-w-2xl">
-            <p className="text-center text-blue-400 text-lg font-semibold flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Loading order details...
-            </p>
-        </div>
-      )}
+        {/* --- Order Tracking Results Section (appears only after lookup) --- */}
+        {isLoading && (
+          <div className="mt-8 p-6 bg-gray-800/70 rounded-lg shadow-lg border border-gray-700 animate-fade-in w-full max-w-lg md:max-w-xl lg:max-w-2xl">
+              <p className="text-center text-blue-400 text-lg font-semibold flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Loading order details...
+              </p>
+          </div>
+        )}
 
-      {displayError && !isLoading && (
-        <div className="mt-8 p-6 bg-red-800/70 rounded-lg shadow-lg border border-red-700 animate-fade-in w-full max-w-lg md:max-w-xl lg:max-w-2xl">
-            <div className="flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-red-400">
-                   <circle cx="12" cy="12" r="10"></circle>
-                   <line x1="12" y1="8" x2="12" y2="12"></line>
-                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <h2 className="text-xl font-bold text-red-400 mt-4">Error</h2>
-                <p className="text-gray-300 mt-2">{displayError}</p>
-            </div>
-        </div>
-      )}
+        {displayError && !isLoading && (
+          <div className="mt-8 p-6 bg-red-800/70 rounded-lg shadow-lg border border-red-700 animate-fade-in w-full max-w-lg md:max-w-xl lg:max-w-2xl">
+              <div className="flex flex-col items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-red-400">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <h2 className="text-xl font-bold text-red-400 mt-4">Error</h2>
+                  <p className="text-gray-300 mt-2">{displayError}</p>
+              </div>
+          </div>
+        )}
 
-      {orderData && !isLoading && !displayError && (
-        <div className="mt-8 p-6 bg-gray-800/70 rounded-lg shadow-lg border border-gray-700 animate-fade-in w-full max-w-lg md:max-w-xl lg:max-w-3xl">
-            <h2 className="text-3xl font-bold text-white mb-6 font-pirate-special">Order Tracking</h2>
-            
-            {/* Order Basic Info */}
-            <div className="text-left mb-6 space-y-2 text-gray-300">
-                <p><span className="font-semibold text-white">Order ID:</span> {orderData.orderId}</p>
-                <p><span className="font-semibold text-white">Order Date:</span> {new Date(orderData.createdAt).toLocaleDateString()}</p>
-                <p><span className="font-semibold text-white">Total Items:</span> {orderData.ids.length}</p>
-                <p><span className="font-semibold text-white">Total Price:</span> ${orderData.price?.total ? orderData.price.total.toFixed(2) : 'N/A'}</p>
-            </div>
+        {orderData && !isLoading && !displayError && (
+          <div className="mt-8 p-6 bg-gray-800/70 rounded-lg shadow-lg border border-gray-700 animate-fade-in w-full max-w-lg md:max-w-xl lg:max-w-3xl">
+              <h2 className="text-3xl font-bold text-white mb-6 font-pirate-special">Order Tracking</h2>
+              
+              {/* Order Basic Info */}
+              <div className="text-left mb-6 space-y-2 text-gray-300">
+                  <p><span className="font-semibold text-white">Order ID:</span> {orderData.orderId}</p>
+                  <p><span className="font-semibold text-white">Order Date:</span> {new Date(orderData.createdAt).toLocaleDateString()}</p>
+                  <p><span className="font-semibold text-white">Total Items:</span> {orderData.ids.length}</p>
+                  <p><span className="font-semibold text-white">Total Price:</span> ${orderData.price?.total ? orderData.price.total.toFixed(2) : 'N/A'}</p>
+              </div>
 
-            {/* Payment Status */}
-            <div className="bg-gray-700/50 p-4 rounded-lg mb-6 flex items-center justify-between">
-                <h3 className="font-semibold text-lg text-white">Payment Status: <span className={`${orderData.paymentStatus === 'Paid' ? 'text-green-400' : 'text-red-400'}`}>{orderData.paymentStatus || 'N/A'}</span></h3>
-                <div className="flex items-center text-xl font-bold text-gray-300">
-                    <span className="mr-2 text-blue-400 text-3xl">{getPaymentMethodIcon(orderData.paymentMethod || '')}</span>
-                    {orderData.paymentMethod || 'N/A'}
-                </div>
-            </div>
+              {/* Payment Status */}
+              <div className="bg-gray-700/50 p-4 rounded-lg mb-6 flex items-center justify-between">
+                  <h3 className="font-semibold text-lg text-white">Payment Status: <span className={`${orderData.paymentStatus === 'Paid' ? 'text-green-400' : 'text-red-400'}`}>{orderData.paymentStatus || 'N/A'}</span></h3>
+                  <div className="flex items-center text-xl font-bold text-gray-300">
+                      <span className="mr-2 text-blue-400 text-3xl">{getPaymentMethodIcon(orderData.paymentMethod || '')}</span>
+                      {orderData.paymentMethod || 'N/A'}
+                  </div>
+              </div>
 
-            {/* Progress Tracker */}
-            <div className="relative flex justify-between items-center text-center py-6 px-2 sm:px-4">
-                {TRACKING_STAGES.map((stage, index) => {
-                    const currentStageIndex = TRACKING_STAGES.findIndex(s => s.key === orderData.status);
-                    const isCompleted = index <= currentStageIndex;
-                    const isCurrent = index === currentStageIndex;
-                    const isUpcoming = index > currentStageIndex;
+              {/* Progress Tracker */}
+              <div className="relative flex justify-between items-center text-center py-6 px-2 sm:px-4">
+                  {TRACKING_STAGES.map((stage, index) => {
+                      const currentStageIndex = TRACKING_STAGES.findIndex(s => s.key === orderData.status);
+                      const isCompleted = index <= currentStageIndex;
+                      const isCurrent = index === currentStageIndex;
+                      
+                      return (
+                          <React.Fragment key={stage.key}>
+                              {/* Line connecting previous stage */}
+                              {index > 0 && (
+                                  <div className={`absolute left-0 right-0 h-1 bg-gradient-to-r ${isCompleted ? 'from-green-500 to-green-500' : 'from-gray-700 to-gray-700'} ${isCurrent ? 'to-transparent' : ''}`} style={{ width: `${(100 / (TRACKING_STAGES.length - 1)) * index}%`, zIndex: 0, top: '40%' }}></div>
+                              )}
+                              
+                              {/* Stage Item */}
+                              <div className={`relative z-10 flex flex-col items-center flex-1 mx-1`}>
+                                  <div className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ease-in-out 
+                                      ${isCompleted ? 'bg-green-500' : 'bg-gray-700'}
+                                      ${isCurrent ? 'ring-4 ring-blue-500 ring-offset-gray-800 animate-pulse-ring' : ''}
+                                  `}>
+                                      {isCurrent ? (
+                                          <span className="text-white">
+                                              {getStageIcon(stage.key)} {/* Display specific icon for current */}
+                                          </span>
+                                      ) : (
+                                          <svg className={`w-4 h-4 ${isCompleted ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                      )}
+                                  </div>
+                                  <p className={`mt-2 text-sm text-center font-semibold ${isCompleted ? 'text-white' : 'text-gray-400'}`}>{stage.label}</p>
+                              </div>
+                          </React.Fragment>
+                      );
+                  })}
+              </div>
+          </div>
+        )}
+      </div>
 
-                    return (
-                        <React.Fragment key={stage.key}>
-                            {/* Line connecting previous stage */}
-                            {index > 0 && (
-                                <div className={`absolute left-0 right-0 h-1 bg-gradient-to-r ${isCompleted ? 'from-green-500 to-green-500' : 'from-gray-700 to-gray-700'} ${isCurrent ? 'to-transparent' : ''}`} style={{ width: `${(100 / (TRACKING_STAGES.length - 1)) * index}%`, zIndex: 0, top: '40%' }}></div>
-                            )}
-                            
-                            {/* Stage Item */}
-                            <div className={`relative z-10 flex flex-col items-center flex-1 mx-1`}>
-                                <div className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ease-in-out 
-                                    ${isCompleted ? 'bg-green-500' : 'bg-gray-700'}
-                                    ${isCurrent ? 'ring-4 ring-blue-500 ring-offset-gray-800 animate-pulse-ring' : ''}
-                                `}>
-                                    {isCurrent ? (
-                                        <span className="text-white">
-                                            {getStageIcon(stage.key)} {/* Display specific icon for current */}
-                                        </span>
-                                    ) : (
-                                        <svg className={`w-4 h-4 ${isCompleted ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                                    )}
-                                </div>
-                                <p className={`mt-2 text-sm text-center font-semibold ${isCompleted ? 'text-white' : 'text-gray-400'}`}>{stage.label}</p>
-                            </div>
-                        </React.Fragment>
-                    );
-                })}
-            </div>
-        </div>
-      )}
-
-      {/* Footer */}
-      <footer className="absolute bottom-4 text-gray-500 text-sm">
-        &copy; {new Date().getFullYear()} ID Pirate. All rights reserved.
+      {/* CHANGE 3: Footer is no longer absolutely positioned and will be pushed down correctly. */}
+      <footer className="w-full py-4 text-gray-500 text-sm">
+        © {new Date().getFullYear()} ID Pirate. All rights reserved.
       </footer>
     </div>
   );
