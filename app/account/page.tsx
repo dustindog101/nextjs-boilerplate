@@ -1,4 +1,4 @@
-// --- START OF FILE app/account/page.tsx (Refactored) ---
+// --- START OF FILE app/account/page.tsx (Fully Edited) ---
 
 "use client";
 import React, { useState, useEffect } from 'react';
@@ -60,7 +60,9 @@ export default function AccountPage() {
           throw new Error('Password must be at least 8 characters long.');
         }
         
-        await registerUser({ username, password, referrer: referrer.trim() || undefined });
+        // THIS IS THE CORRECTED CALL, PASSING confirmPassword
+        await registerUser({ username, password, confirmPassword, referrer: referrer.trim() || undefined });
+        
         setFeedbackMessage('Registration successful! Please log in.');
         setCurrentView('login');
         resetFormFields();
@@ -154,4 +156,4 @@ export default function AccountPage() {
   );
 }
 
-// --- END OF FILE app/account/page.tsx (Refactored) ---
+// --- END OF FILE app/account/page.tsx (Fully Edited) ---
