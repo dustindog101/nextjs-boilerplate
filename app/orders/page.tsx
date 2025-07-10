@@ -1,4 +1,4 @@
-// --- START OF FILE app/orders/page.tsx ---
+// --- START OF FILE app/orders/page.tsx (Fully Edited) ---
 
 "use client";
 import React, { useState, useEffect } from 'react';
@@ -30,7 +30,6 @@ function MyOrdersPage() {
     const loadOrders = async () => {
       try {
         const data = await fetchUserOrders();
-        // Sort orders by date, most recent first
         const sortedOrders = data.orders.sort((a: OrderDetails, b: OrderDetails) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
@@ -53,7 +52,7 @@ function MyOrdersPage() {
       default: return 'text-gray-400';
     }
   };
-
+  
   const getStatusLabel = (status: string) => {
     return (status.charAt(0).toUpperCase() + status.slice(1)).replace(/([A-Z])/g, ' $1').trim();
   };
@@ -67,7 +66,6 @@ function MyOrdersPage() {
         </div>
       );
     }
-
     if (fetchError) {
       return (
         <div className="text-center p-8 bg-red-800/20 rounded-lg border border-red-700">
@@ -76,7 +74,6 @@ function MyOrdersPage() {
         </div>
       );
     }
-
     if (orders.length === 0) {
       return (
         <div className="text-center p-8 bg-gray-800 rounded-lg border border-gray-700">
@@ -88,15 +85,12 @@ function MyOrdersPage() {
         </div>
       );
     }
-
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {orders.map(order => (
           <div key={order.orderId} className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col justify-between hover:border-blue-500 transition-colors">
             <div>
-              <h3 className="font-bold text-xl text-white mb-3 flex items-center">
-                <HashIcon /> Order #{order.orderId.substring(0, 8)}...
-              </h3>
+              <h3 className="font-bold text-xl text-white mb-3 flex items-center"><HashIcon /> Order #{order.orderId.substring(0, 8)}...</h3>
               <div className="space-y-2 text-gray-300">
                 <p className="flex items-center"><CalendarIcon />Date: {new Date(order.createdAt).toLocaleDateString()}</p>
                 <p><span className="font-semibold">Status:</span> <span className={`font-bold ${getStatusClass(order.status)}`}>{getStatusLabel(order.status)}</span></p>
@@ -114,7 +108,8 @@ function MyOrdersPage() {
   };
 
   return (
-    <div className="bg-gray-900 min-h-screen text-gray-200 font-inter">
+    // This div is now the flex container for the sticky footer
+    <div className="bg-gray-900 min-h-screen text-gray-200 font-inter flex flex-col">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
         .font-pirate-special { font-family: 'Uncial Antiqua', cursive; }
@@ -122,14 +117,16 @@ function MyOrdersPage() {
       
       <UniversalHeader />
       
-      <main className="container mx-auto p-4 sm:p-8">
+      {/* This main element will grow to push the footer down */}
+      <main className="container mx-auto p-4 sm:p-8 flex-grow">
         <h2 className="font-pirate-special text-4xl sm:text-5xl font-bold text-white text-center mb-8">
           My Orders
         </h2>
         {renderContent()}
       </main>
       
-      <footer className="py-8 text-gray-500 text-sm text-center mt-8">
+      {/* The footer will now stay at the bottom */}
+      <footer className="py-8 text-gray-500 text-sm text-center">
         © {new Date().getFullYear()} ID Pirate. All rights reserved.
       </footer>
     </div>
@@ -138,4 +135,4 @@ function MyOrdersPage() {
 
 export default withAuth(MyOrdersPage);
 
-// --- END OF FILE app/orders/page.tsx ---
+// --- END OF FILE app/orders/page.tsx (Fully Edited) ---

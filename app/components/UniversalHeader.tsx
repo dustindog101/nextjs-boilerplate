@@ -1,7 +1,7 @@
-// --- START OF FILE app/components/UniversalHeader.tsx ---
+// --- START OF FILE app/components/UniversalHeader.tsx (Fully Edited) ---
 
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 // --- SVG Icons ---
@@ -10,10 +10,27 @@ const ChevronDownIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props
 const PackageIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.27 9 5.16"></path><path d="m7.5 19.73 9-5.16"></path><path d="M3.27 6.3a2 2 0 0 0 0 3.4L9.5 12l-6.23 2.3a2 2 0 0 0 0 3.4L12 22l8.73-3.27a2 2 0 0 0 0-3.4L14.5 12l6.23-2.3a2 2 0 0 0 0-3.4L12 2Z"></path><path d="m12 2v20"></path></svg>;
 const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 
-
 export const UniversalHeader = () => {
   const { user, logout, isLoading } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null); // Ref to the dropdown container
+
+  // --- Click-away listener to close the dropdown ---
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    // Add listener when dropdown is open
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    // Cleanup listener
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   return (
     <header className="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center px-4 sm:px-8">
@@ -37,19 +54,18 @@ export const UniversalHeader = () => {
         {isLoading ? (
           <div className="h-10 w-24 bg-gray-700 rounded-lg animate-pulse"></div>
         ) : user ? (
-          // Logged-in user dropdown
-          <div 
-            className="relative group cursor-pointer"
-            onMouseEnter={() => setIsDropdownOpen(true)}
-            onMouseLeave={() => setIsDropdownOpen(false)}
-          >
-            <div className="flex items-center p-2 rounded-lg hover:bg-gray-700 transition">
+          // Logged-in user dropdown (now uses the ref)
+          <div ref={dropdownRef} className="relative">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center p-2 rounded-lg hover:bg-gray-700 transition"
+            >
               <span className="text-gray-300 flex items-center text-sm sm:text-base">
                 <UserIcon className="h-5 w-5 mr-1 sm:mr-2" />
                 <span className="font-semibold">{user.username}</span>
                 <ChevronDownIcon className={`h-4 w-4 ml-1 transition-transform ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
               </span>
-            </div>
+            </button>
             
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-gray-700 border border-gray-600 rounded-lg shadow-lg py-1 z-50">
@@ -78,4 +94,4 @@ export const UniversalHeader = () => {
   );
 };
 
-// --- END OF FILE app/components/UniversalHeader.tsx ---
+// --- END OF FILE app/components/UniversalHeader.tsx (Fully Edited) ---
