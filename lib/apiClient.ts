@@ -1,4 +1,4 @@
-// --- START OF FILE lib/apiClient.ts ---
+// --- START OF FILE lib/apiClient.ts (Fully Edited) ---
 
 // --- Type Definitions for API Payloads and Responses ---
 interface LoginPayload {
@@ -11,6 +11,7 @@ interface RegisterPayload {
   requestType: 'register';
   username: string;
   password: string;
+  confirmPassword: string; // <-- THIS FIELD IS NOW INCLUDED
   referrer?: string;
 }
 
@@ -89,27 +90,4 @@ export const loginUser = async (payload: Omit<LoginPayload, 'requestType'>): Pro
   });
 };
 
-// You can add more functions here for other protected API calls. For example:
-/*
-export const fetchUserOrders = async () => {
-    const LOOKUP_LAMBDA_URL = process.env.NEXT_PUBLIC_LOOKUP_LAMBDA_URL;
-    if (!LOOKUP_LAMBDA_URL) throw new Error("Lookup service URL is not configured.");
-
-    const token = localStorage.getItem('idPirateAuthToken');
-    if (!token) throw new Error("No authentication token found for protected route.");
-
-    const payload = { requestType: "list_user_orders" };
-
-    return apiFetch(LOOKUP_LAMBDA_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Automatically attach the token
-        },
-        body: JSON.stringify(payload),
-        mode: 'cors'
-    });
-};
-*/
-
-// --- END OF FILE lib/apiClient.ts ---
+// --- END OF FILE lib/apiClient.ts (Fully Edited) ---
