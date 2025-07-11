@@ -1,7 +1,7 @@
 // --- START OF FILE app/checkout/page.tsx (Corrected) ---
 
 "use client";
-import React, { useState, useEffect } from 'react'; // <-- CORRECTED IMPORT STATEMENT
+import React, { useState, useEffect } from 'react';
 import { withAuth } from '../components/withAuth';
 import { useAuth } from '../hooks/useAuth';
 
@@ -69,10 +69,16 @@ function CheckoutPage() {
         setLoading(true); setOrderStatus('processing'); setOrderMessage('Submitting your order...'); setShowModal(true);
 
         const fullShippingAddress = deliveryMethod === 'shipping' ? `${shippingFullName}, ${shippingStreetAddress}, ${shippingCity}, ${shippingStateProvince}, ${shippingZipCode}, USA` : "Local Delivery";
+        
+        // --- THIS IS THE FIX ---
+        // Spread the original form first, then overwrite/add the specific fields needed by the backend.
+        // This avoids the duplicate key error.
         const idsPayload = orderItems.map(idForm => ({
-            state: idForm.state, dob: `${idForm.dobYear}-${idForm.dobMonth}-${idForm.dobDay}`,
-            issueDate: `${idForm.issueYear}-${idForm.issueMonth}-${idForm.issueDay}`, ...idForm
+            ...idForm, // Spread all original properties
+            dob: `${idForm.dobYear}-${idForm.dobMonth}-${idForm.dobDay}`, // Add 'dob'
+            issueDate: `${idForm.issueYear}-${idForm.issueMonth}-${idForm.issueDay}`, // Add 'issueDate'
         }));
+        // -----------------------
 
         const orderPayload = {
             userId: user.userId,
