@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { withAuth } from '../components/withAuth';
 import { fetchUserOrders } from '../../lib/apiClient';
-import { UniversalHeader } from '../components/UniversalHeader';
+// REMOVED: import { UniversalHeader } from '../components/UniversalHeader';
 
 // --- Type Definitions ---
 interface OrderDetails {
@@ -108,24 +108,22 @@ function MyOrdersPage() {
   };
 
   return (
-    // This div is now the flex container for the sticky footer
-    <div className="bg-gray-900 min-h-screen text-gray-200 font-inter flex flex-col">
+    // The root div no longer needs flex properties as the layout handles it
+    <div className="text-gray-200 font-inter">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
-        .font-pirate-special { font-family: 'Uncial Antiqua', cursive; }
+        .font-pirate-special { font-family: 'Uncial+Antiqua', cursive; }
       `}</style>
       
-      <UniversalHeader />
+      {/* REMOVED: <UniversalHeader /> */}
       
-      {/* This main element will grow to push the footer down */}
-      <main className="container mx-auto p-4 sm:p-8 flex-grow">
+      <div className="container mx-auto p-4 sm:p-8">
         <h2 className="font-pirate-special text-4xl sm:text-5xl font-bold text-white text-center mb-8">
           My Orders
         </h2>
         {renderContent()}
-      </main>
+      </div>
       
-      {/* The footer will now stay at the bottom */}
       <footer className="py-8 text-gray-500 text-sm text-center">
         © {new Date().getFullYear()} ID Pirate. All rights reserved.
       </footer>

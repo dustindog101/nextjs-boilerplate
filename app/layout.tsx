@@ -3,7 +3,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "./contexts/AuthContext"; // <-- IMPORT THE PROVIDER
+import { AuthProvider } from "./contexts/AuthContext";
+import { UniversalHeader } from "./components/UniversalHeader"; // <-- IMPORT UNIVERSAL HEADER
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,11 +28,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      {/* The body is now a flex container to ensure proper layout with the header */}
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-900 flex flex-col min-h-screen`}
       >
-        <AuthProvider> {/* <-- WRAP CHILDREN WITH THE PROVIDER */}
-          {children}
+        <AuthProvider>
+          <UniversalHeader /> {/* <-- HEADER IS NOW UNIVERSAL */}
+          {/* The main content area grows to fill available space, pushing footers down */}
+          <main className="flex-grow">
+            {children}
+          </main>
         </AuthProvider>
       </body>
     </html>

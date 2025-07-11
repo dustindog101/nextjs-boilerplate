@@ -1,3 +1,5 @@
+// --- START OF FILE app/order/new/page.tsx (Modified) ---
+
 "use client";
 import React, { useState } from 'react';
 
@@ -73,7 +75,6 @@ const yearOptions = Array.from({ length: 100 }, (_, i) => String(new Date().getF
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
 const UploadIcon = () => <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>;
-const BackArrowIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-5 w-5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
 
 
@@ -177,13 +178,15 @@ export default function OrderFormPage() {
 
     const [idForms, setIdForms] = useState<IdFormData[]>([createNewIdForm()]);
     const [activeFormId, setActiveFormId] = useState<number>(idForms[0].id);
-    const [isSidebarOpen, setSidebarOpen] = useState(false); // Sidebar is closed by default
+    const [isSidebarOpen, setSidebarOpen] = useState(false); // Sidebar is closed by default on mobile
 
     const addIdForm = () => {
         const newForm = createNewIdForm();
         setIdForms([...idForms, newForm]);
         setActiveFormId(newForm.id);
-        setSidebarOpen(true); // Open sidebar when a new ID is added
+        if (window.innerWidth < 768) {
+            setSidebarOpen(true);
+        }
     };
 
     const removeIdForm = (idToRemove: number) => {
@@ -212,20 +215,16 @@ export default function OrderFormPage() {
     
     const activeForm = idForms.find(form => form.id === activeFormId);
 
-    // --- NEW: Function to handle proceeding to checkout ---
     const handleProceedToCheckout = () => {
         if (idForms.length === 0) {
             alert('Please create at least one ID form before proceeding to checkout.');
             return;
         }
-        // IMPORTANT: Filter out File objects as they cannot be directly stringified
         const idFormsForStorage = idForms.map(({ photo, signature, ...rest }) => rest);
 
         try {
-            // Save the ID forms data to localStorage
             localStorage.setItem('idPirateOrderForms', JSON.stringify(idFormsForStorage));
-            // Navigate to the checkout page
-            window.location.href = '/checkout'; // Ensure your checkout page is at this path
+            window.location.href = '/checkout';
         } catch (error) {
             console.error('Failed to save ID forms to localStorage:', error);
             alert('Could not proceed to checkout. Please try again.');
@@ -233,10 +232,10 @@ export default function OrderFormPage() {
     };
 
     return (
-        <div className="bg-gray-900 min-h-screen text-gray-200">
+        <div className="text-gray-200">
             <style>{`
               @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
-              .font-pirate-special { font-family: 'Uncial Antiqua', cursive; }
+              .font-pirate-special { font-family: 'Uncial+Antiqua', cursive; }
               .sidebar-transition { transition: transform 0.3s ease-in-out; }
             `}</style>
             
@@ -250,8 +249,13 @@ export default function OrderFormPage() {
                 )}
                 
                 {/* Sidebar */}
-                <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-gray-800 border-r border-gray-700 sidebar-transition ${isSidebarOpen ? 'transform-none' :'-translate-x-full'}`}>
+                <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-gray-800 border-r border-gray-700 sidebar-transition ${isSidebarOpen ? 'transform-none' :'-translate-x-full md:translate-x-0'}`}>
                     <div className="h-full px-3 py-4 overflow-y-auto">
+                        <div className="h-16 flex items-center pl-2 md:hidden"> {/* Spacer for universal header */}
+                             <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white mr-4 p-2">
+                                <MenuIcon />
+                            </button>
+                        </div>
                         <h3 className="text-xl font-semibold text-white mb-4 px-2">Your IDs</h3>
                         <ul className="space-y-2 font-medium">
                             {idForms.map((form, index) => (
@@ -259,10 +263,7 @@ export default function OrderFormPage() {
                                     <button
                                         onClick={() => {
                                             setActiveFormId(form.id);
-                                            // Close sidebar on mobile after selection for better UX
-                                            if (window.innerWidth < 768) {
-                                                setSidebarOpen(false);
-                                            }
+                                            if (window.innerWidth < 768) { setSidebarOpen(false); }
                                         }}
                                         className={`w-full flex items-center p-2 rounded-lg transition duration-75 group ${activeFormId === form.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
                                     >
@@ -286,17 +287,13 @@ export default function OrderFormPage() {
                 </aside>
 
                 {/* Main Content */}
-                <main className={`flex-1 p-4 sm:p-8 sidebar-transition ${isSidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
-                    {/* Sticky Header for Mobile */}
-                    <div className="sticky top-0 bg-gray-900 py-2 -mx-4 px-4 z-20 flex items-center mb-8">
-                         <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white mr-4 p-2">
-                            <MenuIcon />
+                <div className={`flex-1 p-4 sm:p-8 sidebar-transition md:ml-64`}>
+                     {/* Mobile-only menu button */}
+                     <div className="md:hidden flex items-center mb-4">
+                        <button onClick={() => setSidebarOpen(true)} className="text-gray-400 hover:text-white p-2">
+                           <MenuIcon />
                         </button>
-                        <a href="/order" className="flex items-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors">
-                            <BackArrowIcon /> Back to Gallery
-                        </a>
-                    </div>
-
+                     </div>
                     <header className="text-center mb-12">
                         <h1 className="font-pirate-special text-5xl md:text-6xl font-bold text-white tracking-wider">
                             Create Your Order
@@ -308,7 +305,7 @@ export default function OrderFormPage() {
                     
                     <div className="mt-8 flex justify-end">
                         <button 
-                            onClick={handleProceedToCheckout} // NEW: Call the handler to save data and navigate
+                            onClick={handleProceedToCheckout}
                             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
                         >
                             Proceed to Checkout
@@ -316,11 +313,12 @@ export default function OrderFormPage() {
                     </div>
 
                     <footer className="text-center py-8 mt-8 text-gray-500 text-sm">
-                        &copy; {new Date().getFullYear()} ID Pirate. All rights reserved.
+                        © {new Date().getFullYear()} ID Pirate. All rights reserved.
                     </footer>
-                </main>
+                </div>
             </div>
         </div>
     );
 }
 
+// --- END OF FILE app/order/new/page.tsx (Modified) ---
