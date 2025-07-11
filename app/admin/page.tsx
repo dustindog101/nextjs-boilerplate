@@ -1,8 +1,8 @@
-// --- START OF FILE app/admin/page.tsx (Final Version) ---
+// --- START OF FILE app/admin/page.tsx (Modified) ---
 "use client";
 import React, { useState } from 'react';
 import { withAdminAuth } from '../components/withAdminAuth';
-import { UniversalHeader } from '../components/UniversalHeader';
+// REMOVED: import { UniversalHeader } from '../components/UniversalHeader';
 import { AdminLayout, AdminSection } from './AdminLayout';
 import { Menu } from 'lucide-react';
 
@@ -27,10 +27,9 @@ function AdminDashboardPage() {
   };
 
   return (
-    <div className="bg-gray-900 min-h-screen text-gray-200 font-inter flex flex-col">
-      {/* The UniversalHeader is now part of the page, making it truly site-wide */}
-      <UniversalHeader />
-
+    <div className="text-gray-200 font-inter flex flex-col h-screen">
+      {/* REMOVED: The UniversalHeader is now in the root layout */}
+      
       {/* The AdminLayout now fills the remaining vertical space */}
       <AdminLayout 
         activeSection={activeSection} 
@@ -47,4 +46,4 @@ function AdminDashboardPage() {
 
 // This page is protected by our admin-only HOC
 export default withAdminAuth(AdminDashboardPage);
-// --- END OF FILE app/admin/page.tsx (Final Version) ---
+// --- END OF FILE app/admin/page.tsx (Modified) ---
