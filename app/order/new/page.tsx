@@ -1,7 +1,8 @@
-// --- START OF FILE app/order/new/page.tsx (Modified) ---
+// --- START OF FILE app/order/new/page.tsx (Secured) ---
 
 "use client";
 import React, { useState } from 'react';
+import { withAuth } from '../../components/withAuth'; // <-- IMPORT HOC
 
 // --- Type Definitions ---
 interface IdFormData {
@@ -26,18 +27,18 @@ interface IdFormData {
   eyeColor: string;
   hairColor: string;
   sex: string;
-  photo?: File; // File object, will not be passed directly to checkout/DB
-  signature?: File; // File object, will not be passed directly to checkout/DB
+  photo?: File;
+  signature?: File;
 }
 
-// --- Prop Type Definitions for Components ---
+// --- Prop Type Definitions ---
 interface FormInputProps {
   label: string;
   name: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
-  type?: string; // Added type prop for input elements
+  type?: string;
 }
 
 interface FormSelectProps {
@@ -85,7 +86,6 @@ const FormInput: React.FC<FormInputProps> = ({ label, name, value, onChange, pla
         <input type={type} id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500" />
     </div>
 );
-
 const FormSelect: React.FC<FormSelectProps> = ({ label, name, value, onChange, options }) => (
     <div>
         {label && <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>}
@@ -94,7 +94,6 @@ const FormSelect: React.FC<FormSelectProps> = ({ label, name, value, onChange, o
         </select>
     </div>
 );
-
 const FileInput: React.FC<FileInputProps> = ({ label, name, onChange, fileName }) => (
      <div>
         <label className="block text-sm font-medium text-gray-400 mb-1">{label}</label>
@@ -110,12 +109,9 @@ const FileInput: React.FC<FileInputProps> = ({ label, name, onChange, fileName }
         </div>
     </div>
 );
-
-// --- ID Form Component ---
 const IdForm: React.FC<IdFormProps> = ({ formData, onChange }) => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => onChange(formData.id, e);
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => onChange(formData.id, e, true);
-
     return (
         <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -163,162 +159,50 @@ const IdForm: React.FC<IdFormProps> = ({ formData, onChange }) => {
     );
 };
 
-// --- Main Page Component ---
-export default function OrderFormPage() {
-    const createNewIdForm = (): IdFormData => ({
-        id: Date.now(),
-        state: stateOptions[0],
-        dobMonth: '01', dobDay: '01', dobYear: '2000',
-        issueMonth: '01', issueDay: '01', issueYear: String(new Date().getFullYear()),
-        firstName: '', middleName: '', lastName: '',
-        streetAddress: '', city: '', zipCode: '', zipPlus4: '',
-        heightFeet: '', heightInches: '', weight: '',
-        eyeColor: eyeColorOptions[0], hairColor: hairColorOptions[0], sex: sexOptions[0],
-    });
-
+function OrderFormPage() {
+    const createNewIdForm = (): IdFormData => ({ id: Date.now(), state: stateOptions[0], dobMonth: '01', dobDay: '01', dobYear: '2000', issueMonth: '01', issueDay: '01', issueYear: String(new Date().getFullYear()), firstName: '', middleName: '', lastName: '', streetAddress: '', city: '', zipCode: '', zipPlus4: '', heightFeet: '', heightInches: '', weight: '', eyeColor: eyeColorOptions[0], hairColor: hairColorOptions[0], sex: sexOptions[0] });
     const [idForms, setIdForms] = useState<IdFormData[]>([createNewIdForm()]);
     const [activeFormId, setActiveFormId] = useState<number>(idForms[0].id);
-    const [isSidebarOpen, setSidebarOpen] = useState(false); // Sidebar is closed by default on mobile
+    const [isSidebarOpen, setSidebarOpen] = useState(true);
 
-    const addIdForm = () => {
-        const newForm = createNewIdForm();
-        setIdForms([...idForms, newForm]);
-        setActiveFormId(newForm.id);
-        if (window.innerWidth < 768) {
-            setSidebarOpen(true);
-        }
-    };
-
-    const removeIdForm = (idToRemove: number) => {
-        if (idForms.length <= 1) return;
-        const newForms = idForms.filter(form => form.id !== idToRemove);
-        setIdForms(newForms);
-        if (activeFormId === idToRemove) {
-            setActiveFormId(newForms[0].id);
-        }
-    };
-
-    const handleFormChange = (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, isFile = false) => {
-        setIdForms(prevForms =>
-            prevForms.map(form => {
-                if (form.id === id) {
-                    if (isFile) {
-                        const target = e.target as HTMLInputElement;
-                        return { ...form, [target.name]: target.files ? target.files[0] : undefined };
-                    }
-                    return { ...form, [e.target.name]: e.target.value };
-                }
-                return form;
-            })
-        );
-    };
-    
+    const addIdForm = () => { const newForm = createNewIdForm(); setIdForms([...idForms, newForm]); setActiveFormId(newForm.id); };
+    const removeIdForm = (idToRemove: number) => { if (idForms.length <= 1) return; const newForms = idForms.filter(form => form.id !== idToRemove); setIdForms(newForms); if (activeFormId === idToRemove) { setActiveFormId(newForms[0].id); } };
+    const handleFormChange = (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, isFile = false) => { setIdForms(prevForms => prevForms.map(form => { if (form.id === id) { if (isFile) { const target = e.target as HTMLInputElement; return { ...form, [target.name]: target.files ? target.files[0] : undefined }; } return { ...form, [e.target.name]: e.target.value }; } return form; })); };
     const activeForm = idForms.find(form => form.id === activeFormId);
-
-    const handleProceedToCheckout = () => {
-        if (idForms.length === 0) {
-            alert('Please create at least one ID form before proceeding to checkout.');
-            return;
-        }
-        const idFormsForStorage = idForms.map(({ photo, signature, ...rest }) => rest);
-
-        try {
-            localStorage.setItem('idPirateOrderForms', JSON.stringify(idFormsForStorage));
-            window.location.href = '/checkout';
-        } catch (error) {
-            console.error('Failed to save ID forms to localStorage:', error);
-            alert('Could not proceed to checkout. Please try again.');
-        }
-    };
+    const handleProceedToCheckout = () => { if (idForms.length === 0) { alert('Please create at least one ID form.'); return; } const idFormsForStorage = idForms.map(({ photo, signature, ...rest }) => rest); try { localStorage.setItem('idPirateOrderForms', JSON.stringify(idFormsForStorage)); window.location.href = '/checkout'; } catch (error) { console.error('Failed to save ID forms to localStorage:', error); alert('Could not proceed to checkout.'); } };
 
     return (
         <div className="text-gray-200">
-            <style>{`
-              @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
-              .font-pirate-special { font-family: 'Uncial+Antiqua', cursive; }
-              .sidebar-transition { transition: transform 0.3s ease-in-out; }
-            `}</style>
-            
-            <div className="relative flex min-h-screen">
-                {/* Backdrop for mobile */}
-                {isSidebarOpen && (
-                    <div 
-                        onClick={() => setSidebarOpen(false)} 
-                        className="fixed inset-0 bg-black/60 z-30 md:hidden"
-                    ></div>
-                )}
-                
-                {/* Sidebar */}
-                <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-gray-800 border-r border-gray-700 sidebar-transition ${isSidebarOpen ? 'transform-none' :'-translate-x-full md:translate-x-0'}`}>
+            <style>{` .font-pirate-special { font-family: 'Uncial Antiqua', cursive; } .sidebar-transition { transition: transform 0.3s ease-in-out, width 0.3s ease-in-out; } `}</style>
+            <div className="relative flex">
+                <aside className={`fixed top-0 left-0 z-40 h-screen bg-gray-800 border-r border-gray-700 sidebar-transition ${isSidebarOpen ? 'w-64' : 'w-0 -translate-x-full'}`}>
                     <div className="h-full px-3 py-4 overflow-y-auto">
-                        <div className="h-16 flex items-center pl-2 md:hidden"> {/* Spacer for universal header */}
-                             <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white mr-4 p-2">
-                                <MenuIcon />
-                            </button>
-                        </div>
+                        <div className="h-16"></div> {/* Spacer for Universal Header */}
                         <h3 className="text-xl font-semibold text-white mb-4 px-2">Your IDs</h3>
                         <ul className="space-y-2 font-medium">
-                            {idForms.map((form, index) => (
-                                <li key={form.id}>
-                                    <button
-                                        onClick={() => {
-                                            setActiveFormId(form.id);
-                                            if (window.innerWidth < 768) { setSidebarOpen(false); }
-                                        }}
-                                        className={`w-full flex items-center p-2 rounded-lg transition duration-75 group ${activeFormId === form.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
-                                    >
-                                        <span className="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">ID #{index + 1} ({form.state || 'New'})</span>
-                                        {idForms.length > 1 && (
-                                            <span onClick={(e) => { e.stopPropagation(); removeIdForm(form.id);}} className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-400 bg-gray-700 hover:bg-red-500 hover:text-white rounded-full">
-                                                <TrashIcon />
-                                            </span>
-                                        )}
-                                    </button>
-                                </li>
-                            ))}
-                             <li>
-                                <button onClick={addIdForm} className="w-full flex items-center p-2 text-gray-300 rounded-lg hover:bg-gray-700 group">
-                                    <PlusIcon />
-                                    <span className="ms-3">Add Another ID</span>
-                                </button>
-                            </li>
+                            {idForms.map((form, index) => (<li key={form.id}><button onClick={() => setActiveFormId(form.id)} className={`w-full flex items-center p-2 rounded-lg transition duration-75 group ${activeFormId === form.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}><span className="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">ID #{index + 1} ({form.state || 'New'})</span>{idForms.length > 1 && (<span onClick={(e) => { e.stopPropagation(); removeIdForm(form.id);}} className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-400 bg-gray-700 hover:bg-red-500 hover:text-white rounded-full"><TrashIcon /></span>)}</button></li>))}
+                            <li><button onClick={addIdForm} className="w-full flex items-center p-2 text-gray-300 rounded-lg hover:bg-gray-700 group"><PlusIcon /><span className="ms-3">Add Another ID</span></button></li>
                         </ul>
                     </div>
                 </aside>
-
-                {/* Main Content */}
-                <div className={`flex-1 p-4 sm:p-8 sidebar-transition md:ml-64`}>
-                     {/* Mobile-only menu button */}
-                     <div className="md:hidden flex items-center mb-4">
-                        <button onClick={() => setSidebarOpen(true)} className="text-gray-400 hover:text-white p-2">
-                           <MenuIcon />
-                        </button>
-                     </div>
+                <div className={`p-4 sm:p-8 sidebar-transition flex-1 ${isSidebarOpen ? 'md:ml-64' : 'ml-0'}`}>
+                    <div className="md:hidden flex items-center mb-4">
+                        <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white p-2"><MenuIcon /></button>
+                    </div>
                     <header className="text-center mb-12">
-                        <h1 className="font-pirate-special text-5xl md:text-6xl font-bold text-white tracking-wider">
-                            Create Your Order
-                        </h1>
+                        <h1 className="font-pirate-special text-5xl md:text-6xl font-bold text-white tracking-wider">Create Your Order</h1>
                         <p className="mt-2 text-lg text-gray-400">Editing ID #{idForms.findIndex(f => f.id === activeFormId) + 1}</p>
                     </header>
-
                     {activeForm && <IdForm formData={activeForm} onChange={handleFormChange} />}
-                    
                     <div className="mt-8 flex justify-end">
-                        <button 
-                            onClick={handleProceedToCheckout}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
-                        >
-                            Proceed to Checkout
-                        </button>
+                        <button onClick={handleProceedToCheckout} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg">Proceed to Checkout</button>
                     </div>
-
-                    <footer className="text-center py-8 mt-8 text-gray-500 text-sm">
-                        © {new Date().getFullYear()} ID Pirate. All rights reserved.
-                    </footer>
+                    <footer className="text-center py-8 mt-8 text-gray-500 text-sm">© {new Date().getFullYear()} ID Pirate. All rights reserved.</footer>
                 </div>
             </div>
         </div>
     );
 }
 
-// --- END OF FILE app/order/new/page.tsx (Modified) ---
+export default withAuth(OrderFormPage); // <-- EXPORT WRAPPED WITH HOC
+// --- END OF FILE app/order/new/page.tsx (Secured) ---
