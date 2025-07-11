@@ -1,16 +1,14 @@
-// --- START OF FILE app/admin-dashboard/page.tsx (Final Version) ---
-
+// --- START OF FILE app/admin/page.tsx (Final) ---
 "use client";
 import React, { useState } from 'react';
 import { withAdminAuth } from '../components/withAdminAuth';
 import { AdminLayout, AdminSection } from './AdminLayout';
 
-// Import the new, modular section components
+// Import the modular section components from the 'components' subfolder
 import { MetricsSection } from './components/MetricsSection';
 import { UsersSection } from './components/UsersSection';
 
 function AdminDashboardPage() {
-  // The active section state is now managed by the layout
   const [activeSection, setActiveSection] = useState<AdminSection>('metrics');
 
   const renderContent = () => {
@@ -30,7 +28,6 @@ function AdminDashboardPage() {
       case 'discounts':
         return <div className="p-6"><h2 className="text-3xl font-bold text-white">Discount Management</h2><p className="text-gray-400 mt-2">Functionality to create and manage site-wide discount codes coming soon.</p></div>;
       default:
-        // Fallback to metrics or a dedicated dashboard home
         return <MetricsSection />;
     }
   };
@@ -43,5 +40,4 @@ function AdminDashboardPage() {
 }
 
 export default withAdminAuth(AdminDashboardPage);
-
-// --- END OF FILE app/admin-dashboard/page.tsx (Final Version) ---
+// --- END OF FILE app/admin/page.tsx (Final) ---
