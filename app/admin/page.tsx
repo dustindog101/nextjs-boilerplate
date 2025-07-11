@@ -1,4 +1,4 @@
-// --- START OF FILE app/admin-dashboard/page.tsx (Corrected) ---
+// --- START OF FILE app/admin-dashboard/page.tsx (Final Corrected Version) ---
 
 "use client";
 import React, { useState, useEffect, ReactNode } from 'react';
@@ -6,8 +6,7 @@ import { withAdminAuth } from '../components/withAdminAuth';
 import { useAuth } from '../hooks/useAuth';
 import { listAllUsers, adminUpdateUser, User } from '../../lib/apiClient';
 
-// --- Type-Safe SVG Icons ---
-// By defining the props as React.SVGProps, we get proper type checking.
+// --- Type-Safe SVG Icon Components ---
 const UsersIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
 const PackageIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props}><path d="m7.5 4.27 9 5.16"></path><path d="m7.5 19.73 9-5.16"></path><path d="M3.27 6.3a2 2 0 0 0 0 3.4L9.5 12l-6.23 2.3a2 2 0 0 0 0 3.4L12 22l8.73-3.27a2 2 0 0 0 0-3.4L14.5 12l6.23-2.3a2 2 0 0 0 0-3.4L12 2Z"></path><path d="m12 2v20"></path></svg>;
 const TagIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props}><path d="M12.586 12.586a2 2 0 1 0 2.828 2.828L22 7V2h-5z"></path><path d="M2 12l6.64 6.64a2 2 0 0 0 2.828 0L22 7"></path></svg>;
@@ -17,7 +16,14 @@ const LogOutIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props}><pa
 const EditIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 
+// --- Type Definitions for the Page ---
 type AdminSection = 'users' | 'orders' | 'discounts';
+
+interface SidebarLink {
+  id: AdminSection;
+  name: string;
+  icon: React.ReactElement;
+}
 
 // --- Edit User Modal Component ---
 interface EditUserModalProps {
@@ -38,7 +44,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md relative border border-gray-700">
-        <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-white"><CloseIcon width="24" height="24"/></button>
+        <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-white"><CloseIcon width="24" height="24" strokeWidth="2"/></button>
         <h3 className="text-2xl font-bold text-white mb-4">Edit User: {user.username}</h3>
         <div className="space-y-4 text-gray-300">
             <div>
@@ -96,27 +102,21 @@ function AdminDashboardPage() {
     try {
         await adminUpdateUser(userId, updatedData);
         setEditingUser(null);
-        // Refresh list after saving
         const userList = await listAllUsers();
         setUsers(userList);
     } catch (err: any) {
         alert(`Failed to save user: ${err.message}`);
     }
   };
-
-  // --- THE FIX IS HERE ---
-  // We explicitly type the iconProps object to satisfy TypeScript.
+  
   const iconProps: React.SVGProps<SVGSVGElement> = {
-    width: 24,
-    height: 24,
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 2,
-    strokeLinecap: "round",
-    strokeLinejoin: "round"
+    width: 24, height: 24, fill: "none", stroke: "currentColor",
+    strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round"
   };
 
-  const sidebarLinks = [
+  // --- THE FIX IS HERE ---
+  // We explicitly type the array to ensure `link.id` is of type `AdminSection`.
+  const sidebarLinks: SidebarLink[] = [
     { id: 'users', name: 'Users', icon: <UsersIcon {...iconProps} /> },
     { id: 'orders', name: 'Orders', icon: <PackageIcon {...iconProps} /> },
     { id: 'discounts', name: 'Discounts', icon: <TagIcon {...iconProps} /> },
@@ -128,7 +128,7 @@ function AdminDashboardPage() {
         <div onClick={() => setSidebarOpen(false)} className={`fixed inset-0 bg-black/50 z-30 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}></div>
         
         <aside className={`fixed top-0 left-0 h-full bg-gray-800 border-r border-gray-700 z-40 flex flex-col transition-all duration-300 ease-in-out lg:relative ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
-            <div className={`flex items-center p-4 border-b border-gray-700 h-[73px] ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
+            <div className={`flex items-center p-4 border-b border-gray-700 h-[73px] flex-shrink-0 ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
                 {isSidebarOpen && <a href="/" className="font-pirate-special text-3xl text-white">ID Pirate</a>}
                 <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-2 rounded-md hover:bg-gray-700 text-gray-300">
                     <ChevronLeftIcon {...iconProps} className={`transition-transform duration-300 ${isSidebarOpen ? '' : 'rotate-180'}`} />
@@ -144,7 +144,7 @@ function AdminDashboardPage() {
                 ))}
             </nav>
 
-            <div className="px-2 py-4 border-t border-gray-700">
+            <div className="px-2 py-4 border-t border-gray-700 flex-shrink-0">
                  <button onClick={logout} className={`w-full flex items-center p-3 rounded-lg transition-colors text-red-400 hover:bg-red-500/20 ${!isSidebarOpen && 'justify-center'}`}>
                     <LogOutIcon {...iconProps} />
                     {isSidebarOpen && <span className="ml-4 font-semibold">Logout</span>}
@@ -152,8 +152,8 @@ function AdminDashboardPage() {
             </div>
         </aside>
 
-        <div className="flex-1 flex flex-col">
-            <header className="flex items-center p-4 lg:hidden border-b border-gray-700 h-[73px]">
+        <div className="flex-1 flex flex-col max-w-full overflow-hidden">
+            <header className="flex items-center p-4 lg:hidden border-b border-gray-700 h-[73px] flex-shrink-0">
                 <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-md hover:bg-gray-700 text-gray-300">
                     <MenuIcon {...iconProps} />
                 </button>
@@ -161,8 +161,6 @@ function AdminDashboardPage() {
             </header>
             
             <main className="flex-grow overflow-y-auto p-4 sm:p-6">
-                {/* Content rendering logic is now cleaner */}
-                {/* Each section could be its own component in the future */}
                 {activeSection === 'users' && (
                     <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700">
                         {isLoading && <p className="text-center text-gray-400 p-8">Loading users...</p>}
@@ -187,7 +185,7 @@ function AdminDashboardPage() {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{user.isReseller ? 'Yes' : 'No'}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{user.userId}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button onClick={() => setEditingUser(user)} className="text-blue-400 hover:text-blue-300"><EditIcon width="20" height="20"/></button>
+                                                    <button onClick={() => setEditingUser(user)} className="text-blue-400 hover:text-blue-300"><EditIcon width="20" height="20" strokeWidth="2"/></button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -197,7 +195,6 @@ function AdminDashboardPage() {
                         )}
                     </div>
                 )}
-                {/* Placeholders for other sections */}
                 {activeSection === 'orders' && <p className="text-center p-8">Order management coming soon.</p>}
                 {activeSection === 'discounts' && <p className="text-center p-8">Discount management coming soon.</p>}
             </main>
@@ -208,4 +205,4 @@ function AdminDashboardPage() {
 
 export default withAdminAuth(AdminDashboardPage);
 
-// --- END OF FILE app/admin-dashboard/page.tsx (Corrected) ---
+// --- END OF FILE app/admin-dashboard/page.tsx (Final Corrected Version) ---
