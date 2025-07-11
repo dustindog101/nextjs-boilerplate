@@ -1,10 +1,17 @@
-// --- START OF FILE app/admin/AdminLayout.tsx (Final Refactored Version) ---
+// --- START OF FILE app/admin/AdminLayout.tsx (Corrected) ---
 "use client";
 import React, { useState, ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Home, Users, Package, Tag, BarChart3, Handshake, ShoppingBag, LogOut, ChevronLeft } from 'lucide-react';
+import { Home, Users, Package, Tag, BarChart3, Handshake, ShoppingBag, LogOut } from 'lucide-react';
 
 export type AdminSection = 'metrics' | 'users' | 'orders' | 'products' | 'resellers' | 'affiliates' | 'discounts';
+
+// Define the type for a sidebar link object
+interface SidebarLink {
+  id: AdminSection;
+  name: string;
+  icon: React.ReactElement;
+}
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -17,7 +24,10 @@ interface AdminLayoutProps {
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSection, setActiveSection, isSidebarOpen, setSidebarOpen }) => {
   const { logout } = useAuth();
 
-  const sidebarLinks = [
+  // --- THE FIX IS HERE ---
+  // By explicitly typing `sidebarLinks` as `SidebarLink[]`, we guarantee
+  // that `link.id` is of type `AdminSection`, satisfying the compiler.
+  const sidebarLinks: SidebarLink[] = [
     { id: 'metrics', name: 'Metrics', icon: <BarChart3 size={22} /> },
     { id: 'users', name: 'Users', icon: <Users size={22} /> },
     { id: 'orders', name: 'Orders', icon: <Package size={22} /> },
@@ -30,19 +40,24 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Mobile Sidebar Backdrop */}
-      <div onClick={() => setSidebarOpen(false)} className={`fixed inset-0 bg-black/60 z-30 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}></div>
+      <div onClick={() => setSidebarOpen(false)} className={`fixed inset-0 bg-black/60 z-20 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}></div>
       
       {/* Full-Height Sidebar */}
-      <aside className={`fixed top-0 left-0 pt-[73px] lg:pt-0 h-full bg-gray-800 border-r border-gray-700 z-20 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'w-64' : 'w-20'} ${!isSidebarOpen && '-translate-x-full'}`}>
-        <div className={`hidden lg:flex items-center p-4 border-b border-gray-700 h-[73px] flex-shrink-0 ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-2 rounded-md hover:bg-gray-700 text-gray-300">
-            <ChevronLeft className={`transition-transform duration-300 ${isSidebarOpen ? '' : 'rotate-180'}`} />
-          </button>
-        </div>
+      <aside className={`fixed top-0 left-0 pt-[73px] lg:pt-0 h-full bg-gray-800 border-r border-gray-700 z-30 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'w-64' : 'w-20'} ${!isSidebarOpen && '-translate-x-full'}`}>
+        {/* This div is a placeholder to push content below the global header on mobile */}
+        <div className="lg:hidden h-[73px] flex-shrink-0"></div>
         
         <nav className="flex-grow px-2 py-4 space-y-1 overflow-y-auto">
           {sidebarLinks.map(link => (
-            <button key={link.id} onClick={() => { setActiveSection(link.id); if (window.innerWidth < 1024) { setSidebarOpen(false); } }} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeSection === link.id ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'} ${!isSidebarOpen && 'justify-center'}`} title={link.name}>
+            <button 
+              key={link.id} 
+              onClick={() => { 
+                setActiveSection(link.id); // This now passes type-checking
+                if (window.innerWidth < 1024) { setSidebarOpen(false); } 
+              }} 
+              className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeSection === link.id ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'} ${!isSidebarOpen && 'justify-center'}`} 
+              title={link.name}
+            >
               {link.icon}
               {isSidebarOpen && <span className="ml-4 font-semibold">{link.name}</span>}
             </button>
@@ -68,4 +83,4 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
     </div>
   );
 };
-// --- END OF FILE app/admin/AdminLayout.tsx (Final Refactored Version) ---
+// --- END OF FILE app/admin/AdminLayout.tsx (Corrected) ---
