@@ -1,4 +1,5 @@
-// --- START OF FILE app/admin-dashboard/StatCard.tsx ---
+// --- START OF FILE app/admin-dashboard/components/StatCard.tsx ---
+"use client";
 import React, { ReactNode } from 'react';
 
 interface StatCardProps {
@@ -29,4 +30,4 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, change, 
     </div>
   );
 };
-// --- END OF FILE app/admin-dashboard/StatCard.tsx ---
+// --- END OF FILE app/admin-dashboard/components/StatCard.tsx ---
