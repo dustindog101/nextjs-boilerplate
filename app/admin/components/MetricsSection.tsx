@@ -1,12 +1,11 @@
-// --- START OF FILE app/admin-dashboard/components/MetricsSection.tsx ---
+// --- START OF FILE app/admin/components/MetricsSection.tsx ---
 "use client";
 import React from 'react';
 import { LineChart, BarChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { StatCard } from './StatCard';
-import { ChartCard } from './ChartCard';
+import { StatCard } from './StatCard'; // Correct relative import
+import { ChartCard } from './ChartCard'; // Correct relative import
 import { DollarSign, ShoppingCart, Users, Activity } from 'lucide-react';
 
-// Mock data - we will replace this with real API data later
 const revenueData = [
   { name: 'Jan', revenue: 4000 }, { name: 'Feb', revenue: 3000 },
   { name: 'Mar', revenue: 5000 }, { name: 'Apr', revenue: 4500 },
@@ -32,8 +31,8 @@ export const MetricsSection = () => (
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={revenueData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="name" stroke="#9CA3AF" />
-            <YAxis stroke="#9CA3AF" />
+            <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
+            <YAxis stroke="#9CA3AF" fontSize={12} />
             <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
             <Legend />
             <Line type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 8 }} />
@@ -44,8 +43,8 @@ export const MetricsSection = () => (
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={ordersData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="name" stroke="#9CA3AF" />
-            <YAxis stroke="#9CA3AF" />
+            <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
+            <YAxis stroke="#9CA3AF" fontSize={12} />
             <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
             <Legend />
             <Bar dataKey="orders" fill="#3B82F6" radius={[4, 4, 0, 0]} />
@@ -55,4 +54,4 @@ export const MetricsSection = () => (
     </div>
   </div>
 );
-// --- END OF FILE app/admin-dashboard/components/MetricsSection.tsx ---
+// --- END OF FILE app/admin/components/MetricsSection.tsx ---

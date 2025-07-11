@@ -1,8 +1,8 @@
-// --- START OF FILE app/admin-dashboard/components/UsersSection.tsx ---
+// --- START OF FILE app/admin/components/UsersSection.tsx ---
 "use client";
 import React, { useState, useEffect } from 'react';
-import { listAllUsers, adminUpdateUser, User } from '../../../lib/apiClient';
-import { Edit, Trash2, X } from 'lucide-react';
+import { listAllUsers, adminUpdateUser, User } from '../../../lib/apiClient'; // Note the path goes up 3 levels
+import { Edit, X } from 'lucide-react';
 
 // --- Edit User Modal Component ---
 interface EditUserModalProps {
@@ -43,7 +43,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
                 <input type="checkbox" id="isReseller" name="isReseller" checked={!!editedUser.isReseller} onChange={handleChange} className="h-4 w-4 rounded bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-600"/>
                 <label htmlFor="isReseller" className="ml-2 text-sm font-medium">Is Reseller?</label>
             </div>
-            {/* Add more editable fields here in the future, like for discounts */}
             <div className="mt-6 flex justify-end gap-4">
                 <button onClick={onClose} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg" disabled={isSaving}>Cancel</button>
                 <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg" disabled={isSaving}>
@@ -75,21 +74,19 @@ export const UsersSection = () => {
     }
   };
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  useEffect(() => { loadUsers(); }, []);
   
   const handleSaveUser = async (userId: string, updatedData: Partial<User>) => {
     try {
         await adminUpdateUser(userId, updatedData);
         setEditingUser(null);
-        await loadUsers(); // Refresh list after saving
+        await loadUsers();
     } catch (err: any) {
-        alert(`Failed to save user: ${err.message}`); // Simple feedback for now
+        alert(`Failed to save user: ${err.message}`);
     }
   };
 
-  if (isLoading) return <div className="p-6 text-center">Loading users...</div>;
+  if (isLoading) return <div className="p-6 text-center text-gray-400">Loading users...</div>;
   if (error) return <div className="p-6 text-center text-red-400">Error: {error}</div>;
 
   return (
@@ -120,7 +117,6 @@ export const UsersSection = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{user.userId}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button onClick={() => setEditingUser(user)} className="text-blue-400 hover:text-blue-300 p-1"><Edit size={16}/></button>
-                  {/* <button className="text-red-400 hover:text-red-300 p-1 ml-2"><Trash2 size={16}/></button> */}
                 </td>
               </tr>
             ))}
@@ -130,4 +126,4 @@ export const UsersSection = () => {
     </div>
   );
 };
-// --- END OF FILE app/admin-dashboard/components/UsersSection.tsx ---
+// --- END OF FILE app/admin/components/UsersSection.tsx ---
