@@ -1,5 +1,5 @@
-// --- START OF FILE app/admin/components/ChartCard.tsx ---
-"use "use client";
+// --- START OF FILE app/admin/components/ChartCard.tsx (Corrected) ---
+"use client";
 import React, { ReactNode } from 'react';
 
 interface ChartCardProps {
@@ -15,4 +15,4 @@ export const ChartCard: React.FC<ChartCardProps> = ({ title, children }) => (
     </div>
   </div>
 );
-// --- END OF FILE app/admin/components/ChartCard.tsx ---
+// --- END OF FILE app/admin/components/ChartCard.tsx (Corrected) ---
