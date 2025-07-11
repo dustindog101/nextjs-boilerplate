@@ -1,10 +1,16 @@
-// --- START OF FILE app/admin/AdminLayout.tsx (Final) ---
+// --- START OF FILE app/admin/AdminLayout.tsx (Corrected) ---
 "use client";
 import React, { useState, ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Home, Users, Package, Tag, BarChart3, Handshake, ShoppingBag, LogOut, Menu, ChevronLeft } from 'lucide-react';
 
 export type AdminSection = 'metrics' | 'users' | 'orders' | 'products' | 'resellers' | 'affiliates' | 'discounts';
+
+interface SidebarLink {
+  id: AdminSection;
+  name: string;
+  icon: React.ReactElement;
+}
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -16,7 +22,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
   const { logout } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
-  const sidebarLinks = [
+  // --- THE FIX IS HERE ---
+  // We explicitly type the `sidebarLinks` constant as an array of `SidebarLink`.
+  // This ensures TypeScript knows that `link.id` is of type `AdminSection`.
+  const sidebarLinks: SidebarLink[] = [
     { id: 'metrics', name: 'Metrics', icon: <BarChart3 size={22} /> },
     { id: 'users', name: 'Users', icon: <Users size={22} /> },
     { id: 'orders', name: 'Orders', icon: <Package size={22} /> },
@@ -40,7 +49,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
         
         <nav className="flex-grow px-2 py-4 space-y-1 overflow-y-auto">
           {sidebarLinks.map(link => (
-            <button key={link.id} onClick={() => { setActiveSection(link.id); if (window.innerWidth < 1024) { setSidebarOpen(false); } }} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeSection === link.id ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'} ${!isSidebarOpen && 'justify-center'}`}>
+            <button 
+              key={link.id} 
+              onClick={() => { 
+                setActiveSection(link.id); // This will now pass type-checking
+                if (window.innerWidth < 1024) { setSidebarOpen(false); } 
+              }} 
+              className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeSection === link.id ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'} ${!isSidebarOpen && 'justify-center'}`}
+            >
               {link.icon}
               {isSidebarOpen && <span className="ml-4 font-semibold">{link.name}</span>}
             </button>
@@ -75,4 +91,4 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
     </div>
   );
 };
-// --- END OF FILE app/admin/AdminLayout.tsx (Final) ---
+// --- END OF FILE app/admin/AdminLayout.tsx (Corrected) ---
