@@ -1,10 +1,9 @@
-// --- START OF FILE app/checkout/page.tsx (Secured and Integrated) ---
+// --- START OF FILE app/checkout/page.tsx (Corrected) ---
 
 "use client";
-import React, 'react';
-import { useState, useEffect } from 'react';
-import { withAuth } from '../components/withAuth'; // <-- IMPORT HOC
-import { useAuth } from '../hooks/useAuth';       // <-- IMPORT AUTH HOOK
+import React, { useState, useEffect } from 'react'; // <-- CORRECTED IMPORT STATEMENT
+import { withAuth } from '../components/withAuth';
+import { useAuth } from '../hooks/useAuth';
 
 // --- Type Definitions ---
 interface IdFormData {
@@ -23,7 +22,7 @@ const paymentMethods = [ { name: 'Bitcoin', icon: '₿' }, { name: 'Zelle', icon
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 
 function CheckoutPage() {
-    const { user } = useAuth(); // <-- GET AUTHENTICATED USER
+    const { user } = useAuth();
     const [orderItems, setOrderItems] = useState<IdFormData[]>([]);
     const [deliveryMethod, setDeliveryMethod] = useState<'local' | 'shipping'>('shipping');
     const [activePayment, setActivePayment] = useState<string>(paymentMethods[0].name);
@@ -47,7 +46,6 @@ function CheckoutPage() {
             const storedForms = localStorage.getItem('idPirateOrderForms');
             if (storedForms) {
                 setOrderItems(JSON.parse(storedForms));
-                // Do NOT remove from local storage here, in case user navigates back
             } else {
                 console.warn("No order data found.");
             }
@@ -58,7 +56,7 @@ function CheckoutPage() {
     const total = subtotal + HANDLING_FEE + SHIPPING_FEE;
 
     const handleFinalOrderSubmit = async () => {
-        if (!user) { // <-- VALIDATION: Check for user
+        if (!user) {
             setOrderStatus('error'); setOrderMessage('You must be logged in to place an order.'); setShowModal(true); return;
         }
         if (orderItems.length === 0) {
@@ -77,7 +75,7 @@ function CheckoutPage() {
         }));
 
         const orderPayload = {
-            userId: user.userId, // <-- USE AUTHENTICATED USER ID
+            userId: user.userId,
             shipping: fullShippingAddress, paymentMethod: activePayment, notes: orderNotes,
             price: { subtotal, total }, ids: idsPayload,
         };
@@ -90,8 +88,7 @@ function CheckoutPage() {
             const data = await response.json();
             if (response.ok) {
                 setOrderStatus('success'); setOrderMessage(`Order placed! ID: ${data.orderId}`);
-                localStorage.removeItem('idPirateOrderForms'); // Clear storage on success
-                // Optionally redirect: setTimeout(() => window.location.href = `/track?orderId=${data.orderId}`, 2000);
+                localStorage.removeItem('idPirateOrderForms');
             } else {
                 setOrderStatus('error'); setOrderMessage(`Error: ${data.error || 'Failed to submit.'}`);
             }
@@ -181,6 +178,5 @@ function CheckoutPage() {
     );
 }
 
-export default withAuth(CheckoutPage); // <-- EXPORT WRAPPED WITH HOC
-
-// --- END OF FILE app/checkout/page.tsx (Secured and Integrated) ---
+export default withAuth(CheckoutPage);
+// --- END OF FILE app/checkout/page.tsx (Corrected) ---
