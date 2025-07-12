@@ -1,10 +1,10 @@
-// --- START OF FILE app/layout.tsx (Modified) ---
+// --- START OF FILE app/layout.tsx (Corrected) ---
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
-import { UniversalHeader } from "./components/UniversalHeader"; // <-- IMPORT UNIVERSAL HEADER
+import { UniversalHeader } from "./components/UniversalHeader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,20 +28,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      {/* The body is now a flex container to ensure proper layout with the header */}
+      {/* FIX: Simplified body classes. Background is now handled by globals.css and the main div inside the layout */}
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-900 flex flex-col min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <UniversalHeader /> {/* <-- HEADER IS NOW UNIVERSAL */}
-          {/* The main content area grows to fill available space, pushing footers down */}
-          <main className="flex-grow">
-            {children}
-          </main>
+            {/* FIX: The root container now enforces the background and flex layout */}
+            <div className="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
+              <UniversalHeader />
+              <main className="flex-grow flex-1">
+                {children}
+              </main>
+            </div>
         </AuthProvider>
       </body>
     </html>
   );
 }
 
-// --- END OF FILE app/layout.tsx (Modified) ---
+// --- END OF FILE app/layout.tsx (Corrected) ---
