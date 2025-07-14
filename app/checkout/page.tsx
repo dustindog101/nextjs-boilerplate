@@ -1,4 +1,4 @@
-// --- START OF FILE app/checkout/page.tsx (Complete and Corrected) ---
+// --- START OF FILE app/checkout/page.tsx (Corrected - Unused Components Removed) ---
 
 "use client";
 import React, { useState, useEffect } from 'react';
@@ -12,97 +12,14 @@ interface IdFormData {
   dobMonth: string; dobDay: string; dobYear: string;
   issueMonth: string; issueDay: string; issueYear: string;
   firstName: string; middleName: string; lastName: string;
-  streetAddress: string;
-  city: string;
-  zipCode: string;
-  zipPlus4: string;
-  heightFeet: string;
-  heightInches: string;
-  weight: string;
-  eyeColor: string;
-  hairColor: string;
-  sex: string;
-  photo?: File; // Keep for type consistency, but not passed to backend
-  signature?: File; // Keep for type consistency, but not passed to backend
+  streetAddress: string; city: string; zipCode: string; zipPlus4: string;
+  heightFeet: string; heightInches: string; weight: string;
+  eyeColor: string; hairColor: string; sex: string;
 }
 
-// --- Payment Methods Data ---
-const paymentMethods = [
-    { name: 'Bitcoin', icon: '₿' },
-    { name: 'Zelle', icon: 'Z' },
-    { name: 'Apple Pay', icon: '' },
-    { name: 'Cash App', icon: '$' },
-    { name: 'Venmo', icon: 'V' }
-];
-
-// --- SVG Icons ---
-const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
-const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2 text-yellow-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
-
-// --- Reusable Form Components ---
-const FormInput: React.FC<{ label: string; name: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; type?: string; }> = ({ label, name, value, onChange, placeholder = '', type = 'text' }) => (<div><label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-1">{label}</label><input type={type} id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500" /></div>);
-const FormSelect: React.FC<{ label?: string; name: string; value: string; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void; options: string[]; }> = ({ label, name, value, onChange, options }) => (<div>{label && <label htmlFor={name} className="block text-sm font-medium text-gray-400 mb-1">{label}</label>}<select id={name} name={name} value={value} onChange={onChange} aria-label={label || name} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500">{options.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>);
-const FileInput: React.FC<{ label: string; name: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; fileName?: string; }> = ({ label, name, onChange, fileName }) => (<div><label className="block text-sm font-medium text-gray-400 mb-1">{label}</label><div className="flex items-center justify-center w-full"><label htmlFor={name} className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700"><div className="flex flex-col items-center justify-center pt-5 pb-6"><svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg><p className="mb-2 text-sm text-gray-400"><span className="font-semibold">Click to upload</span></p>{fileName ? (<p className="text-xs text-green-400">{fileName}</p>) : (<p className="text-xs text-gray-500">PNG, JPG, or GIF</p>)}</div><input id={name} name={name} type="file" className="hidden" onChange={onChange} /></label></div></div>);
-
-// --- Data for Dropdowns ---
-const stateOptions = ['Pennsylvania', 'New Jersey', 'Old Maine', 'Washington', 'Oregon', 'South Carolina', 'Missouri', 'Illinois', 'Connecticut', 'Arizona', 'Florida', 'Texas'];
-const eyeColorOptions = ['Brown', 'Blue', 'Green', 'Hazel', 'Gray', 'Black'];
-const hairColorOptions = ['Brown', 'Black', 'Blonde', 'Red', 'Gray', 'Bald'];
-const sexOptions = ['M', 'F'];
-const monthOptions = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
-const dayOptions = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
-const yearOptions = Array.from({ length: 100 }, (_, i) => String(new Date().getFullYear() - i));
-
-// --- IdForm Component ---
-const IdForm: React.FC<IdFormProps> = ({ formData, onChange }) => {
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => onChange(formData.id, e);
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => onChange(formData.id, e, true);
-    return (
-        <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-3"> <FormSelect label="State" name="state" value={formData.state} onChange={handleInputChange} options={stateOptions} /> </div>
-                <FormInput label="First Name" name="firstName" value={formData.firstName} onChange={handleInputChange} />
-                <FormInput label="Middle Name" name="middleName" value={formData.middleName} onChange={handleInputChange} placeholder="Optional" />
-                <FormInput label="Last Name" name="lastName" value={formData.lastName} onChange={handleInputChange} />
-                <div className="md:col-span-3"> <FormInput label="Street Address" name="streetAddress" value={formData.streetAddress} onChange={handleInputChange} /> </div>
-                <FormInput label="City" name="city" value={formData.city} onChange={handleInputChange} />
-                <FormInput label="ZIP Code" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="5 digits" type="number" />
-                <FormInput label="ZIP+4" name="zipPlus4" value={formData.zipPlus4} onChange={handleInputChange} placeholder="Optional 4 digits" type="number" />
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Date of Birth</label>
-                    <div className="grid grid-cols-3 gap-2">
-                        <FormSelect name="dobMonth" value={formData.dobMonth} onChange={handleInputChange} options={monthOptions} />
-                        <FormSelect name="dobDay" value={formData.dobDay} onChange={handleInputChange} options={dayOptions} />
-                        <FormSelect name="dobYear" value={formData.dobYear} onChange={handleInputChange} options={yearOptions} />
-                    </div>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Issue Date</label>
-                    <div className="grid grid-cols-3 gap-2">
-                        <FormSelect name="issueMonth" value={formData.issueMonth} onChange={handleInputChange} options={monthOptions} />
-                        <FormSelect name="issueDay" value={formData.issueDay} onChange={handleInputChange} options={dayOptions} />
-                        <FormSelect name="issueYear" value={formData.issueYear} onChange={handleInputChange} options={yearOptions} />
-                    </div>
-                </div>
-                <FormSelect label="Sex" name="sex" value={formData.sex} onChange={handleInputChange} options={sexOptions} />
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Height</label>
-                    <div className="grid grid-cols-2 gap-2">
-                        <FormInput label="Feet" name="heightFeet" value={formData.heightFeet} onChange={handleInputChange} placeholder="ft" type="number" />
-                        <FormInput label="Inches" name="heightInches" value={formData.heightInches} onChange={handleInputChange} placeholder="in" type="number" />
-                    </div>
-                </div>
-                <FormInput label="Weight (lbs)" name="weight" value={formData.weight} onChange={handleInputChange} type="number" />
-                <FormSelect label="Eye Color" name="eyeColor" value={formData.eyeColor} onChange={handleInputChange} options={eyeColorOptions} />
-                <FormSelect label="Hair Color" name="hairColor" value={formData.hairColor} onChange={handleInputChange} options={hairColorOptions} />
-                <div className="md:col-span-3 grid md:grid-cols-2 gap-4">
-                     <FileInput label="Photo Upload" name="photo" onChange={handleFileChange} fileName={formData.photo?.name} />
-                     <FileInput label="Signature Upload" name="signature" onChange={handleFileChange} fileName={formData.signature?.name} />
-                </div>
-            </div>
-        </div>
-    );
-};
+// --- Component Data & Icons ---
+const paymentMethods = [ { name: 'Bitcoin', icon: '₿' }, { name: 'Zelle', icon: 'Z' }, { name: 'Apple Pay', icon: '' }, { name: 'Cash App', icon: '$' }, { name: 'Venmo', icon: 'V' } ];
+const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 
 function CheckoutPage() {
     const { user } = useAuth();
@@ -128,8 +45,7 @@ function CheckoutPage() {
         try {
             const storedForms = localStorage.getItem('idPirateOrderForms');
             if (storedForms) {
-                const parsedForms: IdFormData[] = JSON.parse(storedForms);
-                setOrderItems(parsedForms);
+                setOrderItems(JSON.parse(storedForms));
             } else {
                 console.warn("No order data found.");
             }
@@ -181,11 +97,9 @@ function CheckoutPage() {
     };
 
     return (
-        <div className="text-gray-200">
-            {/* FIX: Centralized font import in globals.css, so no inline styles needed here */}
-            <div className="container mx-auto p-4 sm:p-8">
+        <div className="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
+            <div className="container mx-auto p-4 sm:p-8 flex-grow">
                 <header className="text-center mb-12">
-                    {/* FIX: Corrected font class to 'font-pirate' */}
                     <h1 className="font-pirate text-6xl md:text-7xl font-bold text-white tracking-wider">
                         Order Overview
                     </h1>
@@ -194,7 +108,6 @@ function CheckoutPage() {
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className="w-full lg:w-2/3 space-y-8">
                         <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                            {/* FIX: Changed font-pirate-special to font-pirate */}
                             <h2 className="font-pirate text-3xl text-white mb-4">Order Summary</h2>
                             {orderItems.length > 0 ? (
                                 <div className="space-y-4">
@@ -209,22 +122,16 @@ function CheckoutPage() {
                             <a href="/order/new" className="inline-flex items-center text-blue-400 hover:text-blue-300 mt-4 text-sm"><EditIcon /> Edit Order</a>
                         </div>
                         <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                            {/* FIX: Changed font-pirate-special to font-pirate */}
                             <label htmlFor="order-notes" className="block font-pirate text-3xl text-white mb-4">Order Notes</label>
                             <textarea id="order-notes" rows={4} className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500" placeholder="Add any special instructions..." value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)}></textarea>
                         </div>
                         <div className="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                            {/* FIX: Changed font-pirate-special to font-pirate */}
                             <h2 className="font-pirate text-3xl text-white mb-4">Delivery Method</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <button onClick={() => setDeliveryMethod('local')} className={`p-4 rounded-lg border-2 text-left transition ${deliveryMethod === 'local' ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-blue-500'}`}>
-                                    <h3 className="font-bold text-lg">Local Delivery</h3>
-                                    <p className="text-sm text-gray-400">Arrange for local pickup.</p>
-                                </button>
+                                    <h3 className="font-bold text-lg">Local Delivery</h3><p className="text-sm text-gray-400">Arrange for local pickup.</p></button>
                                 <button onClick={() => setDeliveryMethod('shipping')} className={`p-4 rounded-lg border-2 text-left transition ${deliveryMethod === 'shipping' ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-blue-500'}`}>
-                                    <h3 className="font-bold text-lg">Shipping</h3>
-                                    <p className="text-sm text-gray-400">Deliver to your address.</p>
-                                </button>
+                                    <h3 className="font-bold text-lg">Shipping</h3><p className="text-sm text-gray-400">Deliver to your address.</p></button>
                             </div>
                             {deliveryMethod === 'shipping' && (
                                 <div className="mt-6 border-t border-gray-700 pt-6 space-y-4">
@@ -243,11 +150,9 @@ function CheckoutPage() {
                     <div className="w-full lg:w-1/3">
                         <div className="lg:sticky top-24 bg-gray-800 p-6 rounded-xl border border-gray-700 space-y-6">
                             <div>
-                                {/* FIX: Changed font-pirate-special to font-pirate */}
                                 <h2 className="font-pirate text-3xl text-white mb-4">Cost Breakdown</h2>
                                 <div className="space-y-2 text-gray-300">
                                     <div className="flex justify-between"><span>Subtotal ({orderItems.length} IDs)</span><span>${subtotal.toFixed(2)}</span></div>
-                                    {/* FIX: Changed "Handling" back to "Processing & Handling" */}
                                     <div className="flex justify-between"><span>Processing & Handling</span><span>${HANDLING_FEE.toFixed(2)}</span></div>
                                     {deliveryMethod === 'shipping' && <div className="flex justify-between"><span>Shipping</span><span>${SHIPPING_FEE.toFixed(2)}</span></div>}
                                     <div className="border-t border-gray-600 my-2"></div>
@@ -255,7 +160,6 @@ function CheckoutPage() {
                                 </div>
                             </div>
                             <div>
-                                {/* FIX: Changed font-pirate-special to font-pirate */}
                                 <h2 className="font-pirate text-3xl text-white mb-4">Payment Method</h2>
                                 <div className="space-y-3">
                                     {paymentMethods.map(method => (<button key={method.name} onClick={() => setActivePayment(method.name)} className={`w-full flex items-center p-3 rounded-lg border-2 transition ${activePayment === method.name ? 'border-blue-500 bg-blue-500/10' : 'border-gray-600 hover:border-blue-500'}`}><span className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-700 mr-3 font-bold text-lg">{method.icon}</span><span className="font-semibold">{method.name}</span></button>))}
@@ -289,4 +193,4 @@ function CheckoutPage() {
 }
 
 export default withAuth(CheckoutPage);
-// --- END OF FILE app/checkout/page.tsx (Full Code with Style/Layout Fixes) ---
+// --- END OF FILE app/checkout/page.tsx (Complete and Corrected) ---
