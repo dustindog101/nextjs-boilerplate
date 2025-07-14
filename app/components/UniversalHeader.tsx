@@ -1,9 +1,9 @@
-// --- START OF FILE app/components/UniversalHeader.tsx (Updated with Dynamic Nav) ---
+// --- START OF FILE app/components/UniversalHeader.tsx (Corrected for Dynamic Nav and Styling) ---
 
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { usePathname } from 'next/navigation'; // <-- Import usePathname
+import { usePathname } from 'next/navigation';
 
 // --- SVG Icons ---
 const UserIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
@@ -14,7 +14,7 @@ const BackArrowIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} 
 
 export const UniversalHeader = () => {
   const { user, logout, isLoading } = useAuth();
-  const pathname = usePathname(); // <-- Get current path
+  const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -28,23 +28,26 @@ export const UniversalHeader = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // --- Logic for dynamic navigation ---
-  const showBackButton = ['/order/new', '/checkout'].includes(pathname);
+  // --- Dynamic Navigation Logic ---
+  const isOrderFlowPage = ['/order/new', '/checkout'].includes(pathname);
   const backButtonHref = pathname === '/checkout' ? '/order/new' : '/order';
-  const backButtonText = pathname === '/checkout' ? 'Back to Edit' : 'Back to Gallery';
+  const backButtonText = pathname === '/checkout' ? 'Back to Edit Order' : 'Back to Gallery';
 
   return (
     <header className="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center px-4 sm:px-8 sticky top-0 z-50">
       <div className="flex items-center gap-4 sm:gap-6">
-        <a href="/" className="font-pirate-special text-3xl sm:text-4xl font-bold text-white tracking-wider">
+        {/* FIX: Apply 'font-pirate' class for consistent branding */}
+        <a href="/" className="font-pirate text-3xl sm:text-4xl font-bold text-white tracking-wider">
           ID Pirate
         </a>
         <nav className="hidden sm:flex items-center gap-4">
-          {showBackButton ? (
+          {isOrderFlowPage ? (
+            // Render dynamic back button
             <a href={backButtonHref} className="flex items-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors">
                 <BackArrowIcon className="h-5 w-5 mr-2" /> {backButtonText}
             </a>
           ) : (
+            // Default navigation links
             <>
               <a href="/order" className="flex items-center text-gray-300 hover:text-white font-semibold transition-colors"><PackageIcon className="h-5 w-5 mr-2" /> Order</a>
               <a href="/track" className="flex items-center text-gray-300 hover:text-white font-semibold transition-colors"><SearchIcon className="h-5 w-5 mr-2" /> Track</a>
@@ -75,8 +78,9 @@ export const UniversalHeader = () => {
                 <p className="font-semibold text-white truncate">{user.username}</p>
               </div>
               <a href="/orders" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">My Orders</a>
-              {user.isReseller && <a href="/reseller" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Reseller Panel</a>}
-              {user.role === 'admin' && <a href="/admin" className="block px-4 py-2 text-yellow-400 hover:bg-gray-600">Admin Dashboard</a>}
+              <a href="/settings" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Settings</a>
+              {user.isReseller && <a href="/reseller-dashboard" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Reseller</a>}
+              {user.role === 'admin' && <a href="/admin-dashboard" className="block px-4 py-2 text-yellow-400 hover:bg-gray-600">Admin Panel</a>}
               <div className="border-t border-gray-600 my-1"></div>
               <button onClick={logout} className="w-full text-left px-4 py-2 text-red-400 hover:bg-gray-600 hover:text-red-300">Logout</button>
             </div>
@@ -89,4 +93,4 @@ export const UniversalHeader = () => {
   );
 };
 
-// --- END OF FILE app/components/UniversalHeader.tsx (Updated with Dynamic Nav) ---
+// --- END OF FILE app/components/UniversalHeader.tsx (Corrected for Dynamic Nav and Styling) ---

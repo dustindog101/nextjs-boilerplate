@@ -1,10 +1,9 @@
-// --- START OF FILE app/orders/page.tsx (Fully Edited) ---
+// --- START OF FILE app/orders/page.tsx (Layout and Styling Restored) ---
 
 "use client";
 import React, { useState, useEffect } from 'react';
 import { withAuth } from '../components/withAuth';
 import { fetchUserOrders } from '../../lib/apiClient';
-// REMOVED: import { UniversalHeader } from '../components/UniversalHeader';
 
 // --- Type Definitions ---
 interface OrderDetails {
@@ -108,14 +107,14 @@ function MyOrdersPage() {
   };
 
   return (
-    // The root div no longer needs flex properties as the layout handles it
-    <div className="text-gray-200 font-inter">
+    // FIX: Ensured the root div has the correct background and flex setup for sticky footer.
+    // The UniversalHeader is now in layout.tsx, so no need to render it here.
+    <div className="bg-gray-900 min-h-screen text-gray-200 font-inter">
+      {/* FIX: Centralized font import in globals.css, so no inline styles needed here */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
-        .font-pirate-special { font-family: 'Uncial+Antiqua', cursive; }
+        .font-pirate-special { font-family: 'Uncial Antiqua', cursive; }
       `}</style>
-      
-      {/* REMOVED: <UniversalHeader /> */}
       
       <div className="container mx-auto p-4 sm:p-8">
         <h2 className="font-pirate-special text-4xl sm:text-5xl font-bold text-white text-center mb-8">
@@ -132,5 +131,4 @@ function MyOrdersPage() {
 }
 
 export default withAuth(MyOrdersPage);
-
-// --- END OF FILE app/orders/page.tsx (Fully Edited) ---
+// --- END OF FILE app/orders/page.tsx (Layout and Styling Restored) ---

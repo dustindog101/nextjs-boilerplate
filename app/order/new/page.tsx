@@ -1,4 +1,4 @@
-// --- START OF FILE app/order/new/page.tsx (Full Code with Style/Layout Fixes) ---
+// --- START OF FILE app/order/new/page.tsx (Full, Corrected Code) ---
 
 "use client";
 import React, { useState, useEffect } from 'react';
@@ -49,13 +49,40 @@ const IdForm: React.FC<IdFormProps> = ({ formData, onChange }) => {
                 <FormInput label="Middle Name" name="middleName" value={formData.middleName} onChange={handleInputChange} placeholder="Optional" />
                 <FormInput label="Last Name" name="lastName" value={formData.lastName} onChange={handleInputChange} />
                 <div className="md:col-span-3"> <FormInput label="Street Address" name="streetAddress" value={formData.streetAddress} onChange={handleInputChange} /> </div>
-                <FormInput label="City" name="city" value={formData.city} onChange={handleInputChange} /><FormInput label="ZIP Code" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="5 digits" type="number" /><FormInput label="ZIP+4" name="zipPlus4" value={formData.zipPlus4} onChange={handleInputChange} placeholder="Optional 4 digits" type="number" />
-                <div><label className="block text-sm font-medium text-gray-400 mb-1">Date of Birth</label><div className="grid grid-cols-3 gap-2"><FormSelect name="dobMonth" value={formData.dobMonth} onChange={handleInputChange} options={monthOptions} /><FormSelect name="dobDay" value={formData.dobDay} onChange={handleInputChange} options={dayOptions} /><FormSelect name="dobYear" value={formData.dobYear} onChange={handleInputChange} options={yearOptions} /></div></div>
-                <div><label className="block text-sm font-medium text-gray-400 mb-1">Issue Date</label><div className="grid grid-cols-3 gap-2"><FormSelect name="issueMonth" value={formData.issueMonth} onChange={handleInputChange} options={monthOptions} /><FormSelect name="issueDay" value={formData.issueDay} onChange={handleInputChange} options={dayOptions} /><FormSelect name="issueYear" value={formData.issueYear} onChange={handleInputChange} options={yearOptions} /></div></div>
+                <FormInput label="City" name="city" value={formData.city} onChange={handleInputChange} />
+                <FormInput label="ZIP Code" name="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="5 digits" type="number" />
+                <FormInput label="ZIP+4" name="zipPlus4" value={formData.zipPlus4} onChange={handleInputChange} placeholder="Optional 4 digits" type="number" />
+                <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Date of Birth</label>
+                    <div className="grid grid-cols-3 gap-2">
+                        <FormSelect name="dobMonth" value={formData.dobMonth} onChange={handleInputChange} options={monthOptions} />
+                        <FormSelect name="dobDay" value={formData.dobDay} onChange={handleInputChange} options={dayOptions} />
+                        <FormSelect name="dobYear" value={formData.dobYear} onChange={handleInputChange} options={yearOptions} />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Issue Date</label>
+                    <div className="grid grid-cols-3 gap-2">
+                        <FormSelect name="issueMonth" value={formData.issueMonth} onChange={handleInputChange} options={monthOptions} />
+                        <FormSelect name="issueDay" value={formData.issueDay} onChange={handleInputChange} options={dayOptions} />
+                        <FormSelect name="issueYear" value={formData.issueYear} onChange={handleInputChange} options={yearOptions} />
+                    </div>
+                </div>
                 <FormSelect label="Sex" name="sex" value={formData.sex} onChange={handleInputChange} options={sexOptions} />
-                <div><label className="block text-sm font-medium text-gray-400 mb-1">Height</label><div className="grid grid-cols-2 gap-2"><FormInput label="Feet" name="heightFeet" value={formData.heightFeet} onChange={handleInputChange} placeholder="ft" type="number" /><FormInput label="Inches" name="heightInches" value={formData.heightInches} onChange={handleInputChange} placeholder="in" type="number" /></div></div>
-                <FormInput label="Weight (lbs)" name="weight" value={formData.weight} onChange={handleInputChange} type="number" /><FormSelect label="Eye Color" name="eyeColor" value={formData.eyeColor} onChange={handleInputChange} options={eyeColorOptions} /><FormSelect label="Hair Color" name="hairColor" value={formData.hairColor} onChange={handleInputChange} options={hairColorOptions} />
-                <div className="md:col-span-3 grid md:grid-cols-2 gap-4"><FileInput label="Photo Upload" name="photo" onChange={handleFileChange} fileName={formData.photo?.name} /><FileInput label="Signature Upload" name="signature" onChange={handleFileChange} fileName={formData.signature?.name} /></div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Height</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <FormInput label="Feet" name="heightFeet" value={formData.heightFeet} onChange={handleInputChange} placeholder="ft" type="number" />
+                        <FormInput label="Inches" name="heightInches" value={formData.heightInches} onChange={handleInputChange} placeholder="in" type="number" />
+                    </div>
+                </div>
+                <FormInput label="Weight (lbs)" name="weight" value={formData.weight} onChange={handleInputChange} type="number" />
+                <FormSelect label="Eye Color" name="eyeColor" value={formData.eyeColor} onChange={handleInputChange} options={eyeColorOptions} />
+                <FormSelect label="Hair Color" name="hairColor" value={formData.hairColor} onChange={handleInputChange} options={hairColorOptions} />
+                <div className="md:col-span-3 grid md:grid-cols-2 gap-4">
+                     <FileInput label="Photo Upload" name="photo" onChange={handleFileChange} fileName={formData.photo?.name} />
+                     <FileInput label="Signature Upload" name="signature" onChange={handleFileChange} fileName={formData.signature?.name} />
+                </div>
             </div>
         </div>
     );
@@ -83,14 +110,24 @@ function OrderFormPage() {
             
             <aside className={`fixed top-0 left-0 z-40 h-full bg-gray-800 border-r border-gray-700 transition-transform duration-300 ease-in-out md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="h-full w-64 px-3 py-4 overflow-y-auto">
-                    <div className="h-16"></div>
+                    <div className="h-16"></div> {/* Spacer for Universal Header */}
                     <h3 className="font-pirate text-2xl text-white mb-4 px-2">Your IDs</h3>
                     <ul className="space-y-2 font-medium">
                         {idForms.map((form, index) => (
                             <li key={form.id}>
-                                <button onClick={() => {setActiveFormId(form.id); if (window.innerWidth < 768) setSidebarOpen(false);}} className={`w-full flex items-center p-2 rounded-lg transition duration-75 group ${activeFormId === form.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}>
+                                <button 
+                                    onClick={() => {
+                                        setActiveFormId(form.id);
+                                        if (window.innerWidth < 768) setSidebarOpen(false);
+                                    }} 
+                                    className={`w-full flex items-center p-2 rounded-lg transition duration-75 group ${activeFormId === form.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
+                                >
                                     <span className="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">ID #{index + 1} ({form.state || 'New'})</span>
-                                    {idForms.length > 1 && (<span onClick={(e) => { e.stopPropagation(); removeIdForm(form.id);}} className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-400 bg-gray-700 hover:bg-red-500 hover:text-white rounded-full"><TrashIcon /></span>)}
+                                    {idForms.length > 1 && (
+                                        <span onClick={(e) => { e.stopPropagation(); removeIdForm(form.id);}} className="inline-flex items-center justify-center w-6 h-6 text-sm font-medium text-gray-400 bg-gray-700 hover:bg-red-500 hover:text-white rounded-full">
+                                            <TrashIcon />
+                                        </span>
+                                    )}
                                 </button>
                             </li>
                         ))}
@@ -104,17 +141,14 @@ function OrderFormPage() {
                 </div>
             </aside>
 
-            {/* FIX: Restored correct responsive margin for main content area */}
             <div className="flex-1 md:ml-64">
                 <div className="p-4 sm:p-8">
-                    {/* FIX: Mobile menu button is part of the content, not the header */}
                     <div className="md:hidden flex items-center mb-4">
                         <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white p-2">
                             <MenuIcon />
                         </button>
                     </div>
                     <header className="text-center mb-12">
-                        {/* FIX: Changed font-pirate-special to font-pirate */}
                         <h1 className="font-pirate text-5xl md:text-6xl font-bold text-white tracking-wider">
                             Create Your Order
                         </h1>
@@ -124,7 +158,10 @@ function OrderFormPage() {
                     </header>
                     {activeForm && <IdForm formData={activeForm} onChange={handleFormChange} />}
                     <div className="mt-8 flex justify-end">
-                        <button onClick={handleProceedToCheckout} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg">
+                        <button 
+                            onClick={handleProceedToCheckout} 
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg"
+                        >
                             Proceed to Checkout
                         </button>
                     </div>
