@@ -262,7 +262,7 @@ export default function ViewEditOrderPage() {
   // const router = useRouter(); // Removed: Not compatible with current environment
   const [loggedInUser, setLoggedInUser] = useState<JwtPayload | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-  
+
   const [orderData, setOrderData] = useState<OrderDetails | null>(null); // Original fetched data
   const [editableOrderData, setEditableOrderData] = useState<OrderDetails | null>(null); // Data for editing
   const [isEditing, setIsEditing] = useState(false); // Controls view/edit mode
@@ -416,7 +416,7 @@ export default function ViewEditOrderPage() {
       // Handle nested price object separately if needed, otherwise direct update
       // This part would need more robust logic if 'price' object itself were directly editable through UI inputs.
       // For now, assuming price is calculated/read-only based on IDs.
-      if (field === 'price') { 
+      if (field === 'price') {
         console.warn("Attempted to directly edit price object, which is read-only in this context.");
         return prevData; // Do not modify price via this handler
       }
@@ -438,7 +438,7 @@ export default function ViewEditOrderPage() {
   };
 
   const handleEditOrder = () => {
-    if (orderData && (orderData.status === 'shipped' || orderData.status === 'delivered' || orderData.status === 'processing')) { 
+    if (orderData && (orderData.status === 'shipped' || orderData.status === 'delivered' || orderData.status === 'processing')) {
       // General details (shipping, notes, paymentMethod) are editable if NOT shipped/delivered.
       // ID details are only fully editable if status is 'pending'.
       if (!isGeneralDetailsEditable && !isIdDetailsFullyEditable) {
@@ -450,7 +450,7 @@ export default function ViewEditOrderPage() {
       if (orderData.status === 'processing') {
         setSaveFeedback("This order is being processed. Only general details can be modified.");
       } else if (!isIdDetailsFullyEditable) { // This handles 'shipped' or 'delivered' specifically
-         setSaveFeedback("This order is closed. No edits allowed.");
+        setSaveFeedback("This order is closed. No edits allowed.");
       }
       setIsEditing(true); // Enter edit mode, but controls will be disabled based on isEditable props
       return;
@@ -471,7 +471,7 @@ export default function ViewEditOrderPage() {
 
     // --- MVP Placeholder Start (Save Changes) ---
     await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call delay
-    
+
     // Simulate validation
     if (!editableOrderData || editableOrderData.shipping.trim().length < 10) { // Added null check for editableOrderData
       setSaveFeedback("Error: Shipping address is too short.");
@@ -527,7 +527,7 @@ export default function ViewEditOrderPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('idPirateAuthToken')}` // Send JWT
+          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('idPirateAuthToken') : ''}` // Send JWT
         },
         body: JSON.stringify(payload),
         mode: 'cors',
@@ -568,7 +568,7 @@ export default function ViewEditOrderPage() {
           <p className="text-xl text-red-400 font-semibold mb-2">Error Loading Order:</p>
           <p className="text-gray-300">{fetchError}</p>
           <a href="/dashboard" className="mt-6 inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
-            <BackArrowIcon className="mr-2"/> Back to Dashboard
+            <BackArrowIcon className="mr-2" /> Back to Dashboard
           </a>
         </div>
       </div>
@@ -580,7 +580,7 @@ export default function ViewEditOrderPage() {
       <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center">
         <p className="text-xl font-semibold text-gray-400">No order data available.</p>
         <a href="/dashboard" className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
-          <BackArrowIcon className="mr-2"/> Back to Dashboard
+          <BackArrowIcon className="mr-2" /> Back to Dashboard
         </a>
       </div>
     );
@@ -594,7 +594,6 @@ export default function ViewEditOrderPage() {
   return (
     <div className="bg-gray-900 min-h-screen flex flex-col font-inter text-gray-200">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
         .font-pirate-special { font-family: 'Uncial Antiqua', cursive; }
         .font-inter { font-family: 'Inter', sans-serif; }
         /* Dropdown Styles */
@@ -634,18 +633,18 @@ export default function ViewEditOrderPage() {
             Orders
           </a>
         </div>
-        
+
         {/* Center: ID Pirate Logo */}
         <div className="flex-grow flex justify-center">
           <h1 className="font-pirate-special text-3xl sm:text-4xl font-bold text-white tracking-wider truncate px-2">
             ID Pirate
           </h1>
         </div>
-        
+
         {/* Right: User Dropdown */}
         <div className="flex-shrink-0 relative">
           {loggedInUser && (
-            <div 
+            <div
               className="relative group cursor-pointer p-2 rounded-lg hover:bg-gray-700 transition"
               onMouseEnter={() => setIsDropdownOpen(true)}
               onMouseLeave={() => setIsDropdownOpen(false)}
@@ -708,18 +707,18 @@ export default function ViewEditOrderPage() {
               const isCompleted = index <= currentStageIndex;
               const isCurrent = index === currentStageIndex;
 
-              const stageLabel = 
+              const stageLabel =
                 stageKey === 'pending' ? 'Order Created' :
-                stageKey === 'processing' ? 'Order Processing' :
-                stageKey === 'shipped' ? 'Shipped' :
-                stageKey === 'delivered' ? 'Delivered' : stageKey; // Fallback
+                  stageKey === 'processing' ? 'Order Processing' :
+                    stageKey === 'shipped' ? 'Shipped' :
+                      stageKey === 'delivered' ? 'Delivered' : stageKey; // Fallback
 
-              const StageIcon = 
+              const StageIcon =
                 stageKey === 'pending' ? InfoIcon : // Use info icon for pending
-                stageKey === 'processing' ? PackageIcon : // Use package for processing
-                stageKey === 'shipped' ? CalendarIcon : // Re-using calendar for shipped
-                stageKey === 'delivered' ? HashIcon : // Re-using hash for delivered
-                InfoIcon; // Default
+                  stageKey === 'processing' ? PackageIcon : // Use package for processing
+                    stageKey === 'shipped' ? CalendarIcon : // Re-using calendar for shipped
+                      stageKey === 'delivered' ? HashIcon : // Re-using hash for delivered
+                        InfoIcon; // Default
 
               return (
                 <React.Fragment key={stageKey}>
@@ -727,7 +726,7 @@ export default function ViewEditOrderPage() {
                   {index > 0 && (
                     <div className={`absolute left-0 right-0 h-1 bg-gradient-to-r ${isCompleted ? 'from-green-500 to-green-500' : 'from-gray-700 to-gray-700'} ${isCurrent ? 'to-transparent' : ''}`} style={{ width: `${(100 / (['pending', 'processing', 'shipped', 'delivered'].length - 1)) * index}%`, zIndex: 0, top: '40%' }}></div>
                   )}
-                  
+
                   {/* Stage Item */}
                   <div className={`relative z-10 flex flex-col items-center flex-1 mx-1`}>
                     <div className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ease-in-out 
@@ -735,9 +734,9 @@ export default function ViewEditOrderPage() {
                         ${isCurrent ? 'ring-4 ring-blue-500 ring-offset-gray-800 animate-pulse' : ''}
                     `}>
                       {isCurrent ? (
-                          <StageIcon className="text-white h-5 w-5" />
+                        <StageIcon className="text-white h-5 w-5" />
                       ) : (
-                          <svg className={`w-4 h-4 ${isCompleted ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                        <svg className={`w-4 h-4 ${isCompleted ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                       )}
                     </div>
                     <p className={`mt-2 text-sm text-center font-semibold ${isCompleted ? 'text-white' : 'text-gray-400'}`}>{stageLabel}</p>
@@ -750,11 +749,11 @@ export default function ViewEditOrderPage() {
 
           {/* Payment Status (Re-used from tracking page) */}
           <div className="bg-gray-700/50 p-4 rounded-lg flex items-center justify-between">
-              <h3 className="font-semibold text-lg text-white">Payment Status: <span className={`${orderData.paymentStatus === 'Paid' ? 'text-green-400' : 'text-red-400'}`}>{orderData.paymentStatus || 'N/A'}</span></h3>
-              <div className="flex items-center text-xl font-bold text-gray-300">
-                  <span className="mr-2 text-blue-400 text-3xl">₿</span> {/* Placeholder for payment method logo */}
-                  {orderData.paymentMethod || 'N/A'}
-              </div>
+            <h3 className="font-semibold text-lg text-white">Payment Status: <span className={`${orderData.paymentStatus === 'Paid' ? 'text-green-400' : 'text-red-400'}`}>{orderData.paymentStatus || 'N/A'}</span></h3>
+            <div className="flex items-center text-xl font-bold text-gray-300">
+              <span className="mr-2 text-blue-400 text-3xl">₿</span> {/* Placeholder for payment method logo */}
+              {orderData.paymentMethod || 'N/A'}
+            </div>
           </div>
 
         </div>
@@ -763,22 +762,22 @@ export default function ViewEditOrderPage() {
         <div className="flex justify-end gap-4 mb-8">
           {isEditing ? (
             <>
-              <button 
-                onClick={handleCancelEdit} 
+              <button
+                onClick={handleCancelEdit}
                 className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors duration-200"
                 disabled={isSavingChanges}
               >
                 <CancelIcon className="mr-2" /> Cancel
               </button>
-              <button 
-                onClick={handleSaveChanges} 
+              <button
+                onClick={handleSaveChanges}
                 className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors duration-200"
                 disabled={isSavingChanges}
               >
                 {isSavingChanges ? (
-                    <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 ) : (
-                    <SaveIcon className="mr-2" />
+                  <SaveIcon className="mr-2" />
                 )}
                 Save Changes
               </button>
@@ -786,15 +785,15 @@ export default function ViewEditOrderPage() {
           ) : (
             // Only allow edit if status permits
             isGeneralDetailsEditable ? (
-              <button 
-                onClick={handleEditOrder} 
+              <button
+                onClick={handleEditOrder}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors duration-200"
               >
                 <EditIcon className="mr-2" /> Edit Order
               </button>
             ) : (
               <div className="text-gray-500 text-sm p-2 rounded-lg bg-gray-700/50">
-                <InfoIcon className="inline-block mr-1"/> Order not editable at this stage.
+                <InfoIcon className="inline-block mr-1" /> Order not editable at this stage.
               </div>
             )
           )}
@@ -807,11 +806,11 @@ export default function ViewEditOrderPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label htmlFor="shipping" className="block text-sm font-medium text-gray-400 mb-1">Shipping Address</label>
-              <textarea 
+              <textarea
                 id="shipping"
                 name="shipping"
                 rows={3}
-                value={editableOrderData.shipping} 
+                value={editableOrderData.shipping}
                 onChange={(e) => handleGeneralDetailsChange(e, 'shipping')}
                 readOnly={!isEditing || !isGeneralDetailsEditable}
                 className={`w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 ${(!isEditing || !isGeneralDetailsEditable) ? 'opacity-70 cursor-not-allowed' : ''}`}
@@ -836,11 +835,11 @@ export default function ViewEditOrderPage() {
             </div>
             <div>
               <label htmlFor="notes" className="block text-sm font-medium text-gray-400 mb-1">Order Notes</label>
-              <textarea 
+              <textarea
                 id="notes"
                 name="notes"
                 rows={3}
-                value={editableOrderData.notes} 
+                value={editableOrderData.notes}
                 onChange={(e) => handleGeneralDetailsChange(e, 'notes')}
                 readOnly={!isEditing || !isGeneralDetailsEditable}
                 className={`w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 ${(!isEditing || !isGeneralDetailsEditable) ? 'opacity-70 cursor-not-allowed' : ''}`}
@@ -848,7 +847,7 @@ export default function ViewEditOrderPage() {
             </div>
           </div>
           {!isGeneralDetailsEditable && (
-             <p className="text-gray-500 text-sm mt-4">General details cannot be edited for this order status.</p>
+            <p className="text-gray-500 text-sm mt-4">General details cannot be edited for this order status.</p>
           )}
         </div>
 
@@ -858,9 +857,9 @@ export default function ViewEditOrderPage() {
           <div className="space-y-4">
             {editableOrderData.ids.map((idData, index) => (
               <IdAccordion key={idData.id} title={`ID #${index + 1} (${idData.state} - ${idData.firstName} ${idData.lastName})`} >
-                <IdForm 
-                  formData={idData} 
-                  onChange={(field, value) => handleIdDetailsChange(index, field, value)} 
+                <IdForm
+                  formData={idData}
+                  onChange={(field, value) => handleIdDetailsChange(index, field, value)}
                   isEditable={isEditing && isIdDetailsFullyEditable} // Only editable if overall editing AND status allows
                   index={index}
                 />

@@ -1,16 +1,17 @@
-// --- START OF FILE app/components/UniversalHeader.tsx (Corrected for Dynamic Nav and Styling) ---
+// --- Universal Header Component ---
+// Provides consistent navigation across all pages
 
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { usePathname } from 'next/navigation';
-
-// --- SVG Icons ---
-const UserIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
-const ChevronDownIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
-const PackageIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.27 9 5.16"></path><path d="m7.5 19.73 9-5.16"></path><path d="M3.27 6.3a2 2 0 0 0 0 3.4L9.5 12l-6.23 2.3a2 2 0 0 0 0 3.4L12 22l8.73-3.27a2 2 0 0 0 0-3.4L14.5 12l6.23-2.3a2 2 0 0 0 0-3.4L12 2Z"></path><path d="m12 2v20"></path></svg>;
-const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
-const BackArrowIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
+import {
+  UserIcon,
+  ChevronDownIcon,
+  PackageIcon,
+  SearchIcon,
+  BackArrowIcon,
+} from './icons';
 
 export const UniversalHeader = () => {
   const { user, logout, isLoading } = useAuth();
@@ -36,26 +37,27 @@ export const UniversalHeader = () => {
   return (
     <header className="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center px-4 sm:px-8 sticky top-0 z-50">
       <div className="flex items-center gap-4 sm:gap-6">
-        {/* FIX: Apply 'font-pirate' class for consistent branding */}
         <a href="/" className="font-pirate text-3xl sm:text-4xl font-bold text-white tracking-wider">
           ID Pirate
         </a>
         <nav className="hidden sm:flex items-center gap-4">
           {isOrderFlowPage ? (
-            // Render dynamic back button
             <a href={backButtonHref} className="flex items-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors">
-                <BackArrowIcon className="h-5 w-5 mr-2" /> {backButtonText}
+              <BackArrowIcon className="h-5 w-5 mr-2" /> {backButtonText}
             </a>
           ) : (
-            // Default navigation links
             <>
-              <a href="/order" className="flex items-center text-gray-300 hover:text-white font-semibold transition-colors"><PackageIcon className="h-5 w-5 mr-2" /> Order</a>
-              <a href="/track" className="flex items-center text-gray-300 hover:text-white font-semibold transition-colors"><SearchIcon className="h-5 w-5 mr-2" /> Track</a>
+              <a href="/order" className="flex items-center text-gray-300 hover:text-white font-semibold transition-colors">
+                <PackageIcon className="h-5 w-5 mr-2" /> Order
+              </a>
+              <a href="/track" className="flex items-center text-gray-300 hover:text-white font-semibold transition-colors">
+                <SearchIcon className="h-5 w-5 mr-2" /> Track
+              </a>
             </>
           )}
         </nav>
       </div>
-      
+
       <div className="flex-shrink-0 relative">
         {isLoading ? (
           <div className="h-10 w-24 bg-gray-700 rounded-lg animate-pulse"></div>
@@ -71,8 +73,11 @@ export const UniversalHeader = () => {
                 <ChevronDownIcon className={`h-4 w-4 ml-1 transition-transform ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
               </span>
             </button>
-            
-            <div onMouseLeave={() => setIsDropdownOpen(false)} className={`absolute right-0 mt-2 w-56 bg-gray-700 border border-gray-600 rounded-lg shadow-lg py-1 z-50 transition-all duration-200 ease-out ${isDropdownOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 -translate-y-2 invisible'}`}>
+
+            <div
+              onMouseLeave={() => setIsDropdownOpen(false)}
+              className={`absolute right-0 mt-2 w-56 bg-gray-700 border border-gray-600 rounded-lg shadow-lg py-1 z-50 transition-all duration-200 ease-out ${isDropdownOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 -translate-y-2 invisible'}`}
+            >
               <div className="px-4 py-2 border-b border-gray-600">
                 <p className="text-sm text-gray-400">Signed in as</p>
                 <p className="font-semibold text-white truncate">{user.username}</p>
@@ -92,5 +97,3 @@ export const UniversalHeader = () => {
     </header>
   );
 };
-
-// --- END OF FILE app/components/UniversalHeader.tsx (Corrected for Dynamic Nav and Styling) ---

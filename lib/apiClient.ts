@@ -1,5 +1,7 @@
 // --- START OF FILE lib/apiClient.ts (Complete and Updated) ---
 
+import { getStorageItem } from './storage';
+
 // --- Type Definitions for API Payloads and Responses ---
 
 // Auth Payloads
@@ -112,24 +114,25 @@ export const loginUser = async (payload: Omit<LoginPayload, 'requestType'>): Pro
  * Fetches all orders for the currently authenticated user. (Protected)
  */
 export const fetchUserOrders = async (): Promise<{ orders: any[] }> => {
-    if (!LOOKUP_LAMBDA_URL) {
-      console.error("Vercel Environment Variable NEXT_PUBLIC_LOOKUP_LAMBDA_URL is not configured.");
-      throw new Error("Order lookup service is not available.");
-    }
-    const token = localStorage.getItem('idPirateAuthToken');
-    if (!token) {
-      throw new Error("No authentication token found for protected route.");
-    }
-    const payload = { requestType: "list_user_orders" };
-    return apiFetch<{ orders: any[] }>(LOOKUP_LAMBDA_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload),
-        mode: 'cors'
-    });
+  if (!LOOKUP_LAMBDA_URL) {
+    console.error("Vercel Environment Variable NEXT_PUBLIC_LOOKUP_LAMBDA_URL is not configured.");
+    throw new Error("Order lookup service is not available.");
+  }
+  // Use safe storage utility
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) {
+    throw new Error("No authentication token found for protected route.");
+  }
+  const payload = { requestType: "list_user_orders" };
+  return apiFetch<{ orders: any[] }>(LOOKUP_LAMBDA_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(payload),
+    mode: 'cors'
+  });
 };
 
 
@@ -145,8 +148,9 @@ async function adminApiFetch<T>(payload: object): Promise<T> {
     console.error("Vercel Environment Variable NEXT_PUBLIC_ADMIN_LAMBDA_URL is not configured.");
     throw new Error("Admin service is not available.");
   }
-  
-  const token = localStorage.getItem('idPirateAuthToken');
+
+  // Use safe storage utility
+  const token = getStorageItem('idPirateAuthToken');
   if (!token) {
     throw new Error("Admin action requires authentication token.");
   }
@@ -155,8 +159,8 @@ async function adminApiFetch<T>(payload: object): Promise<T> {
   return apiFetch<T>(ADMIN_LAMBDA_URL, {
     method: 'POST',
     headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify(payload)
   });
@@ -181,7 +185,7 @@ export const adminUpdateUser = async (userId: string, updateData: Partial<User>)
     userId: userId,
     updateData: updateData
   };
-  return adminApiFetch<{ message:string }>(payload);
+  return adminApiFetch<{ message: string }>(payload);
 };
 
 

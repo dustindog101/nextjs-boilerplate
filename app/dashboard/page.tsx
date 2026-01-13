@@ -103,7 +103,7 @@ export default function DashboardPage() {
     // Replace this block with actual JWT verification on client-side and backend call.
     setLoggedInUser(mockDecoded);
     setIsAuthChecking(false);
-    
+
     // Call mock data fetch
     fetchUserOrders(mockDecoded.userId, mockToken); // Pass mock data
     // --- MVP Placeholder End ---
@@ -139,7 +139,7 @@ export default function DashboardPage() {
 
     // --- MVP Placeholder Start ---
     // Simulate a network delay
-    await new Promise(resolve => setTimeout(resolve, 1000)); 
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const staticOrders: OrderDetails[] = [
       {
@@ -172,7 +172,7 @@ export default function DashboardPage() {
         ids: [{ /* ... */ }],
         numberOfIds: 1
       },
-       {
+      {
         orderId: "mvp-order-004",
         createdAt: "2024-06-10T12:00:00Z",
         status: "delivered", // Example status
@@ -248,7 +248,6 @@ export default function DashboardPage() {
   return (
     <div className="bg-gray-900 min-h-screen text-gray-200 font-inter">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Inter:wght@400;500;700&display=swap');
         .font-pirate-special { font-family: 'Uncial Antiqua', cursive; }
         .font-inter { font-family: 'Inter', sans-serif; }
       `}</style>
@@ -317,19 +316,18 @@ export default function DashboardPage() {
                     <span className="ml-1">Date: {new Date(order.createdAt).toLocaleDateString()}</span>
                   </p>
                   <p className="text-gray-400 text-sm mb-2">
-                    <span className="font-semibold text-white">Status:</span> 
-                    <span className={`ml-1 font-bold ${
-                        order.status === 'shipped' || order.status === 'delivered' ? 'text-green-400' :
+                    <span className="font-semibold text-white">Status:</span>
+                    <span className={`ml-1 font-bold ${order.status === 'shipped' || order.status === 'delivered' ? 'text-green-400' :
                         order.status === 'processing' ? 'text-blue-400' : 'text-yellow-400'
-                    }`}>
-                        {/* Map status key to display label */}
-                        {
-                          (order.status === 'pending' && 'Order Created') ||
-                          (order.status === 'processing' && 'Order Processing') ||
-                          (order.status === 'shipped' && 'Shipped') ||
-                          (order.status === 'delivered' && 'Delivered') ||
-                          order.status // Fallback if status key doesn't match
-                        }
+                      }`}>
+                      {/* Map status key to display label */}
+                      {
+                        (order.status === 'pending' && 'Order Created') ||
+                        (order.status === 'processing' && 'Order Processing') ||
+                        (order.status === 'shipped' && 'Shipped') ||
+                        (order.status === 'delivered' && 'Delivered') ||
+                        order.status // Fallback if status key doesn't match
+                      }
                     </span>
                   </p>
                   <p className="text-gray-400 text-sm mb-2">
