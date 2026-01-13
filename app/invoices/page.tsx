@@ -3,26 +3,22 @@ import React, { useState, useEffect, useRef } from 'react';
 
 // --- Type Definitions for TypeScript ---
 interface InvoiceData {
-  orderNumber: string;
-  date: string;
-  customer: string;
-  idType: string;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
-  handlingFee: number;
-  total: number;
-  paymentMethod: string;
+    orderNumber: string;
+    date: string;
+    customer: string;
+    idType: string;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+    handlingFee: number;
+    total: number;
+    paymentMethod: string;
 }
 
 // You can add these font imports to your global CSS file in your Next.js project.
 // For this example, I'm including them in a style tag for self-containment.
 const GlobalStyles = () => (
-  <style jsx global>{`
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Pirata+One&display=swap');
-    body {
-      font-family: 'Inter', sans-serif;
-    }
+    <style jsx global>{`
     .font-pirate {
       font-family: 'Pirata One', cursive;
     }
@@ -188,7 +184,7 @@ export default function App() {
             unitPrice: selectedOption ? selectedOption.price : 0,
         }));
     };
-    
+
     // Generate the invoice
     const handleGenerateInvoice = () => {
         // --- 1. Calculations ---
@@ -208,14 +204,14 @@ export default function App() {
 
         // --- 3. Set invoice data to state ---
         setInvoiceData({
-          ...formData,
-          orderNumber,
-          date: formattedDate,
-          subtotal,
-          total,
-          unitPrice,
-          quantity,
-          handlingFee,
+            ...formData,
+            orderNumber,
+            date: formattedDate,
+            subtotal,
+            total,
+            unitPrice,
+            quantity,
+            handlingFee,
         });
     };
 
@@ -270,9 +266,9 @@ export default function App() {
                             </select>
                         </div>
                     </div>
-                     <div className="mt-6">
+                    <div className="mt-6">
                         <label htmlFor="handling-fee" className="block text-sm font-medium text-gray-400 mb-2">Processing & Handling ($)</label>
-                        <input type="number" id="handling-fee" name="handlingFee" value={formData.handlingFee} onChange={handleChange} step="0.01" min="0" className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
+                        <input type="number" id="handling-fee" name="handlingFee" value={formData.handlingFee} onChange={handleChange} step="0.01" min="0" className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                     </div>
 
                     <div className="mt-8 text-center">
