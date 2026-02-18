@@ -10,6 +10,7 @@ interface FormInputProps {
     placeholder?: string;
     type?: string;
     readOnly?: boolean;
+    disabled?: boolean;
     className?: string;
 }
 
@@ -21,21 +22,26 @@ export const FormInput: React.FC<FormInputProps> = ({
     placeholder = '',
     type = 'text',
     readOnly = false,
+    disabled = false,
     className = '',
 }) => (
     <div className={className}>
-        <label className="block text-sm font-medium text-gray-400 mb-1">
+        <label htmlFor={name} className="text-label block mb-2">
             {label}
         </label>
         <input
             type={type}
+            id={name}
             name={name}
             value={value}
             onChange={onChange}
             placeholder={placeholder}
             readOnly={readOnly}
-            className={`w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 ${readOnly ? 'cursor-not-allowed opacity-70' : ''
-                }`}
+            disabled={disabled}
+            className={`w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-500
+                focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 focus:outline-none transition
+                ${readOnly ? 'opacity-60 cursor-default' : ''}
+                ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
         />
     </div>
 );

@@ -10,6 +10,7 @@ interface FormSelectProps {
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     options: string[];
     readOnly?: boolean;
+    disabled?: boolean;
     className?: string;
 }
 
@@ -20,11 +21,12 @@ export const FormSelect: React.FC<FormSelectProps> = ({
     onChange,
     options,
     readOnly = false,
+    disabled = false,
     className = '',
 }) => (
     <div className={className}>
         {label && (
-            <label className="block text-sm font-medium text-gray-400 mb-1">
+            <label className="text-label block mb-2">
                 {label}
             </label>
         )}
@@ -33,9 +35,10 @@ export const FormSelect: React.FC<FormSelectProps> = ({
                 name={name}
                 value={value}
                 onChange={onChange}
-                disabled={readOnly}
-                className={`w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 appearance-none ${readOnly ? 'cursor-not-allowed opacity-70' : ''
-                    }`}
+                disabled={readOnly || disabled}
+                className={`w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm
+                    focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 focus:outline-none transition appearance-none
+                    ${readOnly || disabled ? 'cursor-not-allowed opacity-50' : ''}`}
             >
                 <option value="">Select...</option>
                 {options.map((opt) => (
@@ -44,7 +47,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
                     </option>
                 ))}
             </select>
-            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
         </div>
     </div>
 );

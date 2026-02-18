@@ -1,11 +1,17 @@
-// --- START OF FILE app/orders/page.tsx (Layout and Styling Restored) ---
-
 "use client";
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { withAuth } from '../components/withAuth';
 import { fetchUserOrders } from '../../lib/apiClient';
+import {
+  PackageIcon,
+  CalendarIcon,
+  HashIcon,
+  DollarSignIcon,
+} from '../components/icons';
+import { Footer, Spinner } from '../components/ui';
 
-// --- Type Definitions ---
+// --- Type ---
 interface OrderDetails {
   orderId: string;
   createdAt: string;
@@ -14,11 +20,12 @@ interface OrderDetails {
   numberOfIds: number;
 }
 
-// --- SVG Icons ---
-const PackageIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 mr-2"><path d="m7.5 4.27 9 5.16"></path><path d="m7.5 19.73 9-5.16"></path><path d="M3.27 6.3a2 2 0 0 0 0 3.4L9.5 12l-6.23 2.3a2 2 0 0 0 0 3.4L12 22l8.73-3.27a2 2 0 0 0 0-3.4L14.5 12l6.23-2.3a2 2 0 0 0 0-3.4L12 2Z"></path><path d="m12 2v20"></path></svg>;
-const CalendarIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
-const HashIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>;
-const DollarSignIcon = (props: React.SVGProps<SVGSVGElement>) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>;
+const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
+  pending: { label: 'Order Created', color: 'text-amber-400', dot: 'bg-amber-400' },
+  processing: { label: 'Processing', color: 'text-indigo-400', dot: 'bg-indigo-400' },
+  shipped: { label: 'Shipped', color: 'text-sky-400', dot: 'bg-sky-400' },
+  delivered: { label: 'Delivered', color: 'text-emerald-400', dot: 'bg-emerald-400' },
+};
 
 function MyOrdersPage() {
   const [orders, setOrders] = useState<OrderDetails[]>([]);
@@ -26,108 +33,105 @@ function MyOrdersPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadOrders = async () => {
+    const load = async () => {
       try {
         const data = await fetchUserOrders();
-        const sortedOrders = data.orders.sort((a: OrderDetails, b: OrderDetails) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        const sorted = data.orders.sort(
+          (a: OrderDetails, b: OrderDetails) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-        setOrders(sortedOrders);
-      } catch (error: any) {
-        setFetchError(error.message || "Failed to fetch orders.");
+        setOrders(sorted);
+      } catch (err: any) {
+        setFetchError(err.message || 'Failed to fetch orders.');
       } finally {
         setIsLoading(false);
       }
     };
-    loadOrders();
+    load();
   }, []);
 
-  const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'delivered': return 'text-green-400';
-      case 'shipped': return 'text-blue-400';
-      case 'processing': return 'text-yellow-400';
-      case 'pending':
-      default: return 'text-gray-400';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    return (status.charAt(0).toUpperCase() + status.slice(1)).replace(/([A-Z])/g, ' $1').trim();
-  };
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="text-center p-8">
-          <svg className="animate-spin mx-auto h-12 w-12 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          <p className="mt-4 text-xl text-gray-300">Loading your order history...</p>
-        </div>
-      );
-    }
-    if (fetchError) {
-      return (
-        <div className="text-center p-8 bg-red-800/20 rounded-lg border border-red-700">
-          <p className="text-xl text-red-400 font-semibold mb-2">Error Fetching Orders</p>
-          <p className="text-gray-300">{fetchError}</p>
-        </div>
-      );
-    }
-    if (orders.length === 0) {
-      return (
-        <div className="text-center p-8 bg-gray-800 rounded-lg border border-gray-700">
-          <p className="text-2xl text-gray-300 font-semibold">No orders found.</p>
-          <p className="text-gray-500 mt-2">Ready to start your collection?</p>
-          <a href="/order" className="mt-6 inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-lg">
-            <PackageIcon /> Start New Order
-          </a>
-        </div>
-      );
-    }
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {orders.map(order => (
-          <div key={order.orderId} className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 flex flex-col justify-between hover:border-blue-500 transition-colors">
-            <div>
-              <h3 className="font-bold text-xl text-white mb-3 flex items-center"><HashIcon /> Order #{order.orderId.substring(0, 8)}...</h3>
-              <div className="space-y-2 text-gray-300">
-                <p className="flex items-center"><CalendarIcon />Date: {new Date(order.createdAt).toLocaleDateString()}</p>
-                <p><span className="font-semibold">Status:</span> <span className={`font-bold ${getStatusClass(order.status)}`}>{getStatusLabel(order.status)}</span></p>
-                <p><span className="font-semibold">Items:</span> {order.numberOfIds}</p>
-                <p className="flex items-center"><DollarSignIcon />Total: ${order.price?.total ? order.price.total.toFixed(2) : 'N/A'}</p>
-              </div>
-            </div>
-            <a href={`/track?orderId=${order.orderId}`} className="mt-4 w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors shadow-md">
-              View Details & Track
-            </a>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
-    // FIX: Ensured the root div has the correct background and flex setup for sticky footer.
-    // The UniversalHeader is now in layout.tsx, so no need to render it here.
-    <div className="bg-gray-900 min-h-screen text-gray-200 font-inter">
-      {/* FIX: Centralized font import in globals.css, so no inline styles needed here */}
-      <style>{`
-        .font-pirate-special { font-family: 'Uncial Antiqua', cursive; }
-      `}</style>
+    <div className="min-h-screen flex flex-col">
+      <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow">
 
-      <div className="container mx-auto p-4 sm:p-8">
-        <h2 className="font-pirate-special text-4xl sm:text-5xl font-bold text-white text-center mb-8">
-          My Orders
-        </h2>
-        {renderContent()}
+        <header className="mb-8 sm:mb-10 animate-fade-up">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            My Orders
+          </h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            {orders.length > 0 ? `${orders.length} order${orders.length !== 1 ? 's' : ''} total` : 'View and track your order history.'}
+          </p>
+        </header>
+
+        {isLoading ? (
+          <div className="glass p-12 flex flex-col items-center justify-center animate-fade-up">
+            <Spinner size="lg" />
+            <p className="mt-4 text-sm text-zinc-400">Loading your order history…</p>
+          </div>
+        ) : fetchError ? (
+          <div className="glass p-8 text-center animate-fade-up">
+            <p className="text-red-400 font-semibold mb-1">Error Fetching Orders</p>
+            <p className="text-sm text-zinc-500">{fetchError}</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="glass p-8 text-center animate-fade-up">
+            <p className="text-zinc-300 font-semibold text-lg mb-1">No orders found</p>
+            <p className="text-sm text-zinc-500 mb-5">Ready to start your collection?</p>
+            <Link href="/order" className="btn btn-primary px-6 py-2.5 text-sm inline-flex items-center gap-2">
+              <PackageIcon className="h-4 w-4" /> Start New Order
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {orders.map((order, i) => {
+              const cfg = statusConfig[order.status] || statusConfig.pending;
+              return (
+                <Link
+                  key={order.orderId}
+                  href={`/track?orderId=${order.orderId}`}
+                  className="glass p-5 flex flex-col justify-between hover:border-indigo-500/30 transition-all group animate-fade-up"
+                  style={{ animationDelay: `${50 * (i + 1)}ms` }}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-white group-hover:text-indigo-300 transition-colors flex items-center gap-2">
+                        <HashIcon className="h-4 w-4 text-zinc-500" />
+                        #{order.orderId.substring(0, 8)}…
+                      </h3>
+                      <span className={`flex items-center gap-1.5 text-xs font-medium ${cfg.color}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+                        {cfg.label}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 text-sm text-zinc-400">
+                      <p className="flex items-center gap-2">
+                        <CalendarIcon className="h-3.5 w-3.5" />
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                      <p>{order.numberOfIds} ID{order.numberOfIds !== 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                    <span className="text-price font-bold flex items-center gap-1">
+                      <DollarSignIcon className="h-3.5 w-3.5" />
+                      ${order.price?.total ? order.price.total.toFixed(2) : 'N/A'}
+                    </span>
+                    <span className="text-xs text-zinc-500 group-hover:text-indigo-400 transition-colors">
+                      View Details →
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      <footer className="py-8 text-gray-500 text-sm text-center">
-        © {new Date().getFullYear()} ID Pirate. All rights reserved.
-      </footer>
+      <Footer />
     </div>
   );
 }
 
 export default withAuth(MyOrdersPage);
-// --- END OF FILE app/orders/page.tsx (Layout and Styling Restored) ---

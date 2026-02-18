@@ -1,12 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 import { loginUser, registerUser } from '../../lib/apiClient';
-import { BackArrowIcon } from '../components/icons';
 import { Footer } from '../components/ui';
+import { Spinner } from '../components/ui/Spinner';
 
 export default function AccountPage() {
   const { user, login, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter();
 
   const [currentView, setCurrentView] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
@@ -14,13 +16,14 @@ export default function AccountPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [referrer, setReferrer] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isAuthLoading && user) {
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     }
-  }, [user, isAuthLoading]);
+  }, [user, isAuthLoading, router]);
 
   const resetFormFields = () => {
     setUsername('');
@@ -32,6 +35,7 @@ export default function AccountPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedbackMessage(null);
+    setIsSuccess(false);
     setIsSubmitting(true);
 
     try {
@@ -55,11 +59,13 @@ export default function AccountPage() {
         await registerUser({ username, password, confirmPassword, referrer: referrer.trim() || undefined });
 
         setFeedbackMessage('Registration successful! Please log in.');
+        setIsSuccess(true);
         setCurrentView('login');
         resetFormFields();
       }
     } catch (error: any) {
       setFeedbackMessage(error.message || 'An unexpected error occurred.');
+      setIsSuccess(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -67,79 +73,127 @@ export default function AccountPage() {
 
   if (isAuthLoading || user) {
     return (
-      <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center">
-        <svg className="animate-spin h-10 w-10 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <p className="mt-4 text-xl text-gray-300">Loading account...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Spinner size="lg" className="text-zinc-500" />
+        <p className="mt-4 text-sm text-zinc-400">Loading account...</p>
       </div>
     );
   }
 
+  const inputClasses = "w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 focus:outline-none transition text-sm";
+
   return (
-    <div className="bg-gray-900 min-h-screen text-gray-200 flex flex-col items-center justify-center p-4">
-      <div className="absolute top-4 left-4">
-        <a href="/" className="flex items-center justify-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md">
-          <BackArrowIcon className="mr-2 h-5 w-5" /> Back to Home
-        </a>
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-grow flex items-center justify-center px-4 py-12 sm:py-20">
+        <main className="w-full max-w-sm animate-fade-up">
+          {/* Tab Switcher */}
+          <div className="flex mb-6 glass overflow-hidden">
+            <button
+              onClick={() => { setCurrentView('login'); setFeedbackMessage(null); resetFormFields(); }}
+              className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${currentView === 'login'
+                  ? 'bg-indigo-500 text-white'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => { setCurrentView('register'); setFeedbackMessage(null); resetFormFields(); }}
+              className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${currentView === 'register'
+                  ? 'bg-indigo-500 text-white'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                }`}
+            >
+              Register
+            </button>
+          </div>
+
+          {/* Form Card */}
+          <div className="glass p-6 sm:p-8">
+            <h1 className="text-2xl font-bold text-white text-center mb-6">
+              {currentView === 'login' ? 'Welcome back' : 'Create account'}
+            </h1>
+
+            {feedbackMessage && (
+              <div className={`p-3 mb-5 rounded-xl text-center text-sm ${isSuccess
+                  ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                  : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                }`}>
+                {feedbackMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="username" className="text-label block mb-2">Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className={inputClasses}
+                  placeholder="Enter username"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="text-label block mb-2">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={inputClasses}
+                  placeholder="Enter password"
+                  required
+                />
+              </div>
+
+              {currentView === 'register' && (
+                <>
+                  <div>
+                    <label htmlFor="confirm-password" className="text-label block mb-2">Confirm Password</label>
+                    <input
+                      type="password"
+                      id="confirm-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={inputClasses}
+                      placeholder="Confirm password"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="referrer" className="text-label block mb-2">Referrer <span className="text-zinc-600">(optional)</span></label>
+                    <input
+                      type="text"
+                      id="referrer"
+                      value={referrer}
+                      onChange={(e) => setReferrer(e.target.value)}
+                      className={inputClasses}
+                      placeholder="Referral code or username"
+                    />
+                  </div>
+                </>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn btn-primary w-full py-3 text-base mt-2"
+              >
+                {isSubmitting ? (
+                  <><Spinner size="sm" className="text-white" /> Processing...</>
+                ) : (
+                  currentView === 'login' ? 'Sign In' : 'Create Account'
+                )}
+              </button>
+            </form>
+          </div>
+        </main>
       </div>
 
-      <main className="w-full max-w-md bg-gray-800 p-8 rounded-lg shadow-xl border border-gray-700">
-        <h1 className="font-pirate text-5xl md:text-6xl font-bold text-white tracking-wider text-center mb-6">
-          Account
-        </h1>
-
-        <div className="flex justify-center gap-4 mb-8">
-          <button onClick={() => { setCurrentView('login'); setFeedbackMessage(null); resetFormFields(); }} className={`px-6 py-2 rounded-lg font-semibold transition ${currentView === 'login' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
-            Login
-          </button>
-          <button onClick={() => { setCurrentView('register'); setFeedbackMessage(null); resetFormFields(); }} className={`px-6 py-2 rounded-lg font-semibold transition ${currentView === 'register' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
-            Register
-          </button>
-        </div>
-
-        {feedbackMessage && (
-          <div className={`p-3 mb-4 rounded-lg text-center ${feedbackMessage.includes('successful') ? 'bg-green-600' : 'bg-red-600'} text-white`}>
-            {feedbackMessage}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-400 mb-1">Username</label>
-            <input type="text" id="username" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500" placeholder="Your username" required />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-400 mb-1">Password</label>
-            <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500" placeholder="Your password" required />
-          </div>
-
-          {currentView === 'register' && (
-            <>
-              <div>
-                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-400 mb-1">Confirm Password</label>
-                <input type="password" id="confirm-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500" placeholder="Confirm your password" required />
-              </div>
-              <div>
-                <label htmlFor="referrer" className="block text-sm font-medium text-gray-400 mb-1">Referrer (Optional)</label>
-                <input type="text" id="referrer" value={referrer} onChange={(e) => setReferrer(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500" placeholder="Referral code or username" />
-              </div>
-            </>
-          )}
-
-          <button type="submit" disabled={isSubmitting} className={`w-full font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-lg flex items-center justify-center disabled:bg-gray-500 disabled:cursor-not-allowed ${currentView === 'login' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}>
-            {isSubmitting ? (
-              <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (currentView === 'login' ? 'Login' : 'Register')}
-          </button>
-        </form>
-      </main>
-
-      <Footer className="absolute bottom-4" />
+      <Footer />
     </div>
   );
 }

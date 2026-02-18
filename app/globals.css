@@ -1,35 +1,57 @@
 @import "tailwindcss";
 
-/* Fonts are now loaded via next/font in layout.tsx to avoid conflicts with Tailwind v4 */
+/* ============================================================
+   ID PIRATE — Design System
+   ============================================================ */
 
 :root {
-  --color-background: #0a0a0a;
-  /* Dark background for dark mode */
-  --color-foreground: #ededed;
-  /* Light text for dark mode */
-  --font-pirate: 'Uncial Antiqua', cursive;
-  /* Custom pirate font */
-  --font-sans: 'Inter', sans-serif;
-  /* Standard sans-serif font */
-  --font-mono: 'Inter', monospace;
-  /* Monospace font */
+  /* ---- Background ---- */
+  --bg: #09090B;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+
+  /* ---- Borders ---- */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.16);
+
+  /* ---- Accent ---- */
+  --accent: #6366F1;
+  --accent-hover: #818CF8;
+  --accent-subtle: rgba(99, 102, 241, 0.15);
+
+  /* ---- Semantic ---- */
+  --price: #F59E0B;
+  --success: #10B981;
+  --error: #EF4444;
+  --info: #3B82F6;
+
+  /* ---- Text ---- */
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-tertiary: #71717A;
+
+  /* ---- Fonts ---- */
+  --font-pirate: 'Pirata One', 'Uncial Antiqua', cursive;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ---- Radius ---- */
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
 }
 
-/* Apply base styles to the body */
+/* ---- Base ---- */
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
+  background: var(--bg);
+  color: var(--text-primary);
   font-family: var(--font-sans);
-  /* Default to Inter */
   margin: 0;
-  /* Remove default body margin */
   padding: 0;
-  /* Remove default body padding */
   box-sizing: border-box;
-  /* Ensure padding/border are included in element's total width/height */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ensure Tailwind's base styles are applied and reset */
 @layer base {
 
   *,
@@ -39,24 +61,118 @@ body {
   }
 }
 
-/* Apply custom font families where needed */
+/* Remove light mode override — this app is dark only */
+
+/* ============================================================
+   Utility Classes
+   ============================================================ */
+
+/* ---- Pirate brand font ---- */
 .font-pirate {
   font-family: var(--font-pirate);
 }
 
-/* Media query for light mode (if needed, but current setup is dark) */
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-background: #ffffff;
-    --color-foreground: #171717;
+/* ---- Glass card ---- */
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+}
+
+.glass-hover {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.glass-hover:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+/* ---- Text utilities ---- */
+.text-price {
+  color: var(--price);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* --- Shared Animations --- */
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.97);
   }
 
   to {
@@ -87,6 +203,30 @@ body {
   }
 }
 
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -95,6 +235,21 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ---- Animation classes ---- */
+.animate-fade-up {
+  animation: fade-up 0.5s ease-out both;
 }
 
 .animate-fade-in {
@@ -107,4 +262,45 @@ body {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* Stagger delays */
+.delay-1 {
+  animation-delay: 75ms;
+}
+
+.delay-2 {
+  animation-delay: 150ms;
+}
+
+.delay-3 {
+  animation-delay: 225ms;
+}
+
+.delay-4 {
+  animation-delay: 300ms;
+}
+
+.delay-5 {
+  animation-delay: 375ms;
+}
+
+.delay-6 {
+  animation-delay: 450ms;
+}
+
+/* ============================================================
+   Form Inputs (global)
+   ============================================================ */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+select,
+textarea {
+  font-family: var(--font-sans);
 }
