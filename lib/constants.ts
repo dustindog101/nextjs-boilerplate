@@ -2,7 +2,7 @@
 // Centralized dropdown options and other constant data
 
 // --- State Options for ID Selection ---
-export const STATE_OPTIONS = [
+export const stateOptions = [
     'Pennsylvania',
     'New Jersey',
     'Old Maine',
@@ -18,7 +18,7 @@ export const STATE_OPTIONS = [
 ];
 
 // --- Physical Attribute Options ---
-export const EYE_COLOR_OPTIONS = [
+export const eyeColorOptions = [
     'Brown',
     'Blue',
     'Green',
@@ -27,7 +27,7 @@ export const EYE_COLOR_OPTIONS = [
     'Amber',
 ];
 
-export const HAIR_COLOR_OPTIONS = [
+export const hairColorOptions = [
     'Black',
     'Brown',
     'Blonde',
@@ -37,34 +37,34 @@ export const HAIR_COLOR_OPTIONS = [
     'Auburn',
 ];
 
-export const SEX_OPTIONS = ['Male', 'Female'];
+export const sexOptions = ['Male', 'Female'];
 
 // --- Date Options ---
-export const MONTH_OPTIONS = [
+export const monthOptions = [
     '01', '02', '03', '04', '05', '06',
     '07', '08', '09', '10', '11', '12',
 ];
 
-export const DAY_OPTIONS = Array.from(
+export const dayOptions = Array.from(
     { length: 31 },
     (_, i) => String(i + 1).padStart(2, '0')
 );
 
-export const YEAR_OPTIONS = Array.from(
+export const yearOptions = Array.from(
     { length: 100 },
     (_, i) => String(new Date().getFullYear() - i)
 );
 
 // --- Height Options ---
-export const HEIGHT_FEET_OPTIONS = ['4', '5', '6', '7'];
+export const heightFeetOptions = ['4', '5', '6', '7'];
 
-export const HEIGHT_INCHES_OPTIONS = Array.from(
+export const heightInchesOptions = Array.from(
     { length: 12 },
     (_, i) => String(i)
 );
 
 // --- Pricing ---
-export const STATE_PRICES: Record<string, number> = {
+export const statePrices: Record<string, number> = {
     Pennsylvania: 95,
     'New Jersey': 95,
     'Old Maine': 95,
@@ -79,5 +79,5 @@ export const STATE_PRICES: Record<string, number> = {
     Texas: 95,
 };
 
-export const DEFAULT_ID_PRICE = 95;
-export const SHIPPING_COST = 20;
+export const defaultIdPrice = 95;
+export const shippingCost = 20;

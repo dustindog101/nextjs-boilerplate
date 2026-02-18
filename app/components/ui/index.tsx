@@ -6,3 +6,4 @@ export { FormSelect } from './FormSelect';
 export { FileInput } from './FileInput';
 export { Footer } from './Footer';
 export { Notification } from './Notification';
+export { Spinner, FullPageSpinner } from './Spinner';

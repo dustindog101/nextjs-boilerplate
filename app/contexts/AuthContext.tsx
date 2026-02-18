@@ -1,17 +1,12 @@
-// --- START OF FILE app/contexts/AuthContext.tsx ---
+// --- app/contexts/AuthContext.tsx ---
 
 "use client";
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { getStorageItem, setStorageItem, removeStorageItem } from '../../lib/storage';
+import type { JwtPayload } from '../../lib/types';
 
-// --- Interface for JWT Payload ---
-export interface JwtPayload {
-  userId: string;
-  username: string;
-  role: 'user' | 'admin';
-  isReseller: boolean;
-  exp: number;
-}
+// Re-export so existing consumers don't break
+export type { JwtPayload };
 
 // --- Type for the Context ---
 interface AuthContextType {

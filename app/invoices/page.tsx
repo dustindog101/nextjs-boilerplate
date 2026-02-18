@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 
-// --- Type Definitions for TypeScript ---
+// --- Type ---
 interface InvoiceData {
     orderNumber: string;
     date: string;
@@ -15,34 +15,19 @@ interface InvoiceData {
     paymentMethod: string;
 }
 
-// You can add these font imports to your global CSS file in your Next.js project.
-// For this example, I'm including them in a style tag for self-containment.
-const GlobalStyles = () => (
+// Print-only styles (fonts already loaded by layout.tsx)
+const PrintStyles = () => (
     <style jsx global>{`
-    .font-pirate {
-      font-family: 'Pirata One', cursive;
-    }
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      #invoice-container, #invoice-container * {
-        visibility: visible;
-      }
-      #invoice-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
-      .no-print {
-        display: none;
-      }
+      body * { visibility: hidden; }
+      #invoice-container, #invoice-container * { visibility: visible; }
+      #invoice-container { position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none; }
     }
   `}</style>
 );
 
-// Data for the ID types and their prices
+// Data for ID types and prices
 const idOptions = [
     { name: 'New Jersey (New Version)', price: 100 },
     { name: 'Old Maine', price: 85 },
@@ -56,125 +41,128 @@ const idOptions = [
     { name: 'Arizona', price: 90 },
 ];
 
-const paymentMethods = [
-    'Apple Pay', 'Crypto', 'Zelle', 'Card', 'Venmo', 'Cash App'
-];
+const paymentMethods = ['Apple Pay', 'Crypto', 'Zelle', 'Card', 'Venmo', 'Cash App'];
 
-// Main Invoice Component
+/* ── Invoice Preview ── */
 const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
     if (!data) return null;
 
-    const handlePrint = () => {
-        window.print();
-    };
-
     return (
-        <div id="invoice-container" className="max-w-4xl mx-auto bg-gray-800 shadow-lg rounded-xl overflow-hidden mt-8">
+        <div id="invoice-container" className="max-w-4xl mx-auto glass overflow-hidden mt-8 animate-fade-up">
             <div className="p-8 md:p-12">
                 <header className="flex justify-between items-start mb-12">
                     <div>
-                        <h1 className="font-pirate text-5xl md:text-6xl text-white tracking-wider">ID Pirate</h1>
-                        <p className="text-gray-400">idpirate.com</p>
+                        <h1 className="font-pirate text-4xl md:text-5xl text-white tracking-wider">ID Pirate</h1>
+                        <p className="text-zinc-500 text-sm">idpirate.com</p>
                     </div>
                     <div className="text-right">
-                        <h2 className="text-3xl md:text-4xl font-bold text-white">INVOICE</h2>
+                        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-wide">INVOICE</h2>
                     </div>
                 </header>
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                    <div className="space-y-2">
-                        <div className="flex items-center"><span className="font-semibold text-gray-400 w-32">Order Number:</span><span className="ml-2 text-white">{data.orderNumber}</span></div>
-                        <div className="flex items-center"><span className="font-semibold text-gray-400 w-32">Date:</span><span className="ml-2 text-white">{data.date}</span></div>
+
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                    <div className="space-y-2 text-sm">
+                        <div className="flex"><span className="text-zinc-500 w-32">Order Number:</span><span className="text-white">{data.orderNumber}</span></div>
+                        <div className="flex"><span className="text-zinc-500 w-32">Date:</span><span className="text-white">{data.date}</span></div>
                     </div>
-                    <div className="bg-gray-700/50 p-4 rounded-lg">
-                        <div className="flex items-center"><span className="font-semibold text-gray-400 w-20">Customer:</span><span className="ml-2 text-white">{data.customer}</span></div>
+                    <div className="bg-white/[0.03] p-4 rounded-lg border border-white/[0.06]">
+                        <div className="flex text-sm"><span className="text-zinc-500 w-20">Customer:</span><span className="text-white">{data.customer}</span></div>
                     </div>
                 </section>
-                <section className="mb-12">
-                    <table className="w-full text-left">
+
+                <section className="mb-10">
+                    <table className="w-full text-left text-sm">
                         <thead>
-                            <tr className="border-b-2 border-gray-600">
-                                <th className="p-3 text-sm font-semibold uppercase text-gray-400">Item</th>
-                                <th className="p-3 text-center text-sm font-semibold uppercase text-gray-400">Quantity</th>
-                                <th className="p-3 text-right text-sm font-semibold uppercase text-gray-400">Unit Price</th>
-                                <th className="p-3 text-right text-sm font-semibold uppercase text-gray-400">Total</th>
+                            <tr className="border-b border-white/[0.08]">
+                                <th className="p-3 text-xs font-semibold uppercase text-zinc-500 tracking-wider">Item</th>
+                                <th className="p-3 text-center text-xs font-semibold uppercase text-zinc-500 tracking-wider">Qty</th>
+                                <th className="p-3 text-right text-xs font-semibold uppercase text-zinc-500 tracking-wider">Unit Price</th>
+                                <th className="p-3 text-right text-xs font-semibold uppercase text-zinc-500 tracking-wider">Total</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr className="border-b border-gray-700">
-                                <td className="p-3">{data.idType}</td>
-                                <td className="p-3 text-center">{data.quantity}</td>
-                                <td className="p-3 text-right">${data.unitPrice.toFixed(2)}</td>
-                                <td className="p-3 text-right">${data.subtotal.toFixed(2)}</td>
+                            <tr className="border-b border-white/[0.04]">
+                                <td className="p-3 text-white">{data.idType}</td>
+                                <td className="p-3 text-center text-zinc-300">{data.quantity}</td>
+                                <td className="p-3 text-right text-zinc-300">${data.unitPrice.toFixed(2)}</td>
+                                <td className="p-3 text-right text-white font-medium">${data.subtotal.toFixed(2)}</td>
                             </tr>
-                            <tr className="border-b border-gray-700">
-                                <td className="p-3">Processing & Handling</td>
-                                <td className="p-3 text-center"></td>
-                                <td className="p-3 text-right"></td>
-                                <td className="p-3 text-right">${data.handlingFee.toFixed(2)}</td>
+                            <tr className="border-b border-white/[0.04]">
+                                <td className="p-3 text-zinc-400">Processing & Handling</td>
+                                <td className="p-3"></td>
+                                <td className="p-3"></td>
+                                <td className="p-3 text-right text-zinc-300">${data.handlingFee.toFixed(2)}</td>
                             </tr>
                         </tbody>
                     </table>
                 </section>
-                <section className="mb-12 border-t border-gray-700 pt-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                <section className="mb-10 border-t border-white/[0.06] pt-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <h3 className="font-semibold text-gray-400 mb-2 uppercase text-sm">Payment Method</h3>
-                            <div className="flex items-center space-x-3 bg-black/20 p-3 rounded-lg w-fit">
-                                <span className="text-white font-medium">{data.paymentMethod}</span>
+                            <h3 className="text-xs font-semibold uppercase text-zinc-500 tracking-wider mb-2">Payment Method</h3>
+                            <div className="bg-white/[0.03] px-4 py-2 rounded-lg w-fit border border-white/[0.06]">
+                                <span className="text-white font-medium text-sm">{data.paymentMethod}</span>
                             </div>
                         </div>
-                        <div className="flex items-center justify-start md:justify-end md:pt-6">
-                            <div className="flex items-center space-x-3"><input type="checkbox" id="crypto-discount" className="form-checkbox h-5 w-5 bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-500 rounded" /><label htmlFor="crypto-discount" className="text-lg font-semibold text-white">Crypto Discount</label></div>
+                        <div className="flex items-center justify-start md:justify-end md:pt-4">
+                            <div className="flex items-center gap-3">
+                                <input type="checkbox" id="crypto-discount" className="h-4 w-4 rounded bg-white/[0.04] border-white/[0.08] text-indigo-500 focus:ring-indigo-600" />
+                                <label htmlFor="crypto-discount" className="text-sm font-semibold text-white">Crypto Discount</label>
+                            </div>
                         </div>
                     </div>
                 </section>
+
                 <section className="flex justify-between items-start">
-                    <div className="flex items-center space-x-3"><input type="checkbox" id="paid-status" className="form-checkbox h-5 w-5 bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-500 rounded" /><label htmlFor="paid-status" className="text-lg font-semibold text-white">Paid?</label></div>
+                    <div className="flex items-center gap-3">
+                        <input type="checkbox" id="paid-status" className="h-4 w-4 rounded bg-white/[0.04] border-white/[0.08] text-indigo-500 focus:ring-indigo-600" />
+                        <label htmlFor="paid-status" className="text-sm font-semibold text-white">Paid?</label>
+                    </div>
                     <div className="text-right">
-                        <div className="text-gray-400 mb-1">Total</div>
-                        <div className="text-4xl font-bold text-white">${data.total.toFixed(2)}</div>
+                        <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Total</div>
+                        <div className="text-3xl font-bold text-price">${data.total.toFixed(2)}</div>
                     </div>
                 </section>
             </div>
-            <footer className="p-4 bg-gray-900/50 text-center no-print">
-                <button onClick={handlePrint} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Print Invoice</button>
+            <footer className="p-4 bg-white/[0.02] text-center no-print border-t border-white/[0.06]">
+                <button onClick={() => window.print()} className="btn btn-primary px-6 py-2 text-sm">
+                    Print Invoice
+                </button>
             </footer>
         </div>
     );
 };
 
+/* ── Input class ── */
+const inputCls = "w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 focus:outline-none transition-all";
 
-// Main App Component
+/* ── Main Form ── */
 export default function App() {
-    // State to hold all form data
     const [formData, setFormData] = useState({
         customer: '',
         batch: '',
-        idType: idOptions[0].name, // Default to the first ID type
-        unitPrice: idOptions[0].price, // Default to the first price
+        idType: idOptions[0].name,
+        unitPrice: idOptions[0].price,
         quantity: 1,
-        paymentMethod: paymentMethods[0], // Default to the first payment method
+        paymentMethod: paymentMethods[0],
         handlingFee: 5.00
     });
 
-    // State for the generated invoice data
     const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
     const invoiceRef = useRef<HTMLDivElement>(null);
 
-    // Effect to scroll to the invoice when it's generated
     useEffect(() => {
         if (invoiceData && invoiceRef.current) {
             invoiceRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [invoiceData]);
 
-    // Handle standard input changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Handle changes to the ID type dropdown to also update the price
     const handleIdTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedName = e.target.value;
         const selectedOption = idOptions.find(opt => opt.name === selectedName);
@@ -185,16 +173,13 @@ export default function App() {
         }));
     };
 
-    // Generate the invoice
     const handleGenerateInvoice = () => {
-        // --- 1. Calculations ---
         const quantity = parseFloat(String(formData.quantity)) || 0;
         const unitPrice = parseFloat(String(formData.unitPrice)) || 0;
         const handlingFee = parseFloat(String(formData.handlingFee)) || 0;
         const subtotal = quantity * unitPrice;
         const total = subtotal + handlingFee;
 
-        // --- 2. Generate dynamic data ---
         const customer = formData.customer || 'N/A';
         const batch = formData.batch || 'B0';
         const customerLastFour = customer.slice(-4);
@@ -202,7 +187,6 @@ export default function App() {
         const today = new Date();
         const formattedDate = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
-        // --- 3. Set invoice data to state ---
         setInvoiceData({
             ...formData,
             orderNumber,
@@ -216,69 +200,63 @@ export default function App() {
     };
 
     return (
-        <div className="bg-gray-900 text-gray-200 p-4 sm:p-8 min-h-screen">
-            <GlobalStyles />
+        <div className="min-h-screen p-4 sm:p-8">
+            <PrintStyles />
             <div className="max-w-4xl mx-auto">
-                {/* MANAGER SECTION */}
-                <div className="bg-gray-800 shadow-lg rounded-xl p-8 md:p-12 mb-8">
+                {/* Form Section */}
+                <div className="glass p-8 md:p-12 mb-8 animate-fade-up">
                     <header className="text-center mb-8">
-                        <h1 className="font-pirate text-5xl md:text-6xl text-white tracking-wider">Invoice Generator</h1>
-                        <p className="text-gray-400">Create a new invoice</p>
+                        <h1 className="text-3xl font-bold text-white tracking-tight">Invoice Generator</h1>
+                        <p className="text-zinc-500 text-sm mt-1">Create a new invoice</p>
                     </header>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Customer Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <label htmlFor="customer" className="block text-sm font-medium text-gray-400 mb-2">Customer Info (Phone Number)</label>
-                            <input type="text" id="customer" name="customer" value={formData.customer} onChange={handleChange} placeholder="e.g., 5712347562" className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <label htmlFor="customer" className="text-label mb-1.5 block">Customer Info (Phone Number)</label>
+                            <input type="text" id="customer" name="customer" value={formData.customer} onChange={handleChange} placeholder="e.g., 5712347562" className={inputCls} />
                         </div>
-                        {/* Batch */}
                         <div>
-                            <label htmlFor="batch" className="block text-sm font-medium text-gray-400 mb-2">Batch Number</label>
-                            <input type="text" id="batch" name="batch" value={formData.batch} onChange={handleChange} placeholder="e.g., B7" className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <label htmlFor="batch" className="text-label mb-1.5 block">Batch Number</label>
+                            <input type="text" id="batch" name="batch" value={formData.batch} onChange={handleChange} placeholder="e.g., B7" className={inputCls} />
                         </div>
-                        {/* ID Type */}
                         <div>
-                            <label htmlFor="id-type" className="block text-sm font-medium text-gray-400 mb-2">Type of ID</label>
-                            <select id="id-type" name="idType" value={formData.idType} onChange={handleIdTypeChange} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <label htmlFor="id-type" className="text-label mb-1.5 block">Type of ID</label>
+                            <select id="id-type" name="idType" value={formData.idType} onChange={handleIdTypeChange} className={inputCls}>
                                 {idOptions.map(option => (
                                     <option key={option.name} value={option.name}>{option.name}</option>
                                 ))}
                             </select>
                         </div>
-                        {/* Unit Price */}
                         <div>
-                            <label htmlFor="unit-price" className="block text-sm font-medium text-gray-400 mb-2">Unit Price ($)</label>
-                            <input type="number" id="unit-price" name="unitPrice" value={formData.unitPrice} onChange={handleChange} step="0.01" min="0" className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <label htmlFor="unit-price" className="text-label mb-1.5 block">Unit Price ($)</label>
+                            <input type="number" id="unit-price" name="unitPrice" value={formData.unitPrice} onChange={handleChange} step="0.01" min="0" className={inputCls} />
                         </div>
-                        {/* Quantity */}
                         <div>
-                            <label htmlFor="quantity" className="block text-sm font-medium text-gray-400 mb-2">Quantity</label>
-                            <input type="number" id="quantity" name="quantity" value={formData.quantity} onChange={handleChange} min="1" className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <label htmlFor="quantity" className="text-label mb-1.5 block">Quantity</label>
+                            <input type="number" id="quantity" name="quantity" value={formData.quantity} onChange={handleChange} min="1" className={inputCls} />
                         </div>
-                        {/* Payment Method */}
                         <div>
-                            <label htmlFor="payment-method" className="block text-sm font-medium text-gray-400 mb-2">Payment Method</label>
-                            <select id="payment-method" name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <label htmlFor="payment-method" className="text-label mb-1.5 block">Payment Method</label>
+                            <select id="payment-method" name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} className={inputCls}>
                                 {paymentMethods.map(method => (
                                     <option key={method} value={method}>{method}</option>
                                 ))}
                             </select>
                         </div>
                     </div>
-                    <div className="mt-6">
-                        <label htmlFor="handling-fee" className="block text-sm font-medium text-gray-400 mb-2">Processing & Handling ($)</label>
-                        <input type="number" id="handling-fee" name="handlingFee" value={formData.handlingFee} onChange={handleChange} step="0.01" min="0" className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    <div className="mt-5">
+                        <label htmlFor="handling-fee" className="text-label mb-1.5 block">Processing & Handling ($)</label>
+                        <input type="number" id="handling-fee" name="handlingFee" value={formData.handlingFee} onChange={handleChange} step="0.01" min="0" className={inputCls} />
                     </div>
 
                     <div className="mt-8 text-center">
-                        <button onClick={handleGenerateInvoice} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors text-lg">
+                        <button onClick={handleGenerateInvoice} className="btn btn-primary px-8 py-3 text-base">
                             Generate Invoice
                         </button>
                     </div>
                 </div>
 
-                {/* INVOICE DISPLAY SECTION */}
+                {/* Invoice Display */}
                 <div ref={invoiceRef}>
                     <Invoice data={invoiceData} />
                 </div>

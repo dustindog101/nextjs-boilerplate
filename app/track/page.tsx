@@ -1,15 +1,17 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   SearchIcon,
-  BackArrowIcon,
   OrderCreatedIcon,
   ProcessingIcon,
   ShippedIcon,
   DeliveredIcon,
 } from '../components/icons';
 import { Footer } from '../components/ui';
+import { Spinner } from '../components/ui/Spinner';
 import { OrderDetails, TRACKING_STAGES } from '../../lib/types';
+import { trackOrder } from '../../lib/apiClient';
 
 // --- Payment Method Icons ---
 const getPaymentMethodIcon = (method: string) => {
@@ -23,19 +25,21 @@ const getPaymentMethodIcon = (method: string) => {
   }
 };
 
-export default function TrackPage() {
-  const [orderNumber, setOrderNumber] = useState('');
+function TrackPageContent() {
+  const searchParams = useSearchParams();
+  const initialOrderId = searchParams.get('orderId') || '';
+
+  const [orderNumber, setOrderNumber] = useState(initialOrderId);
   const [isLoading, setIsLoading] = useState(false);
   const [orderData, setOrderData] = useState<OrderDetails | null>(null);
   const [displayError, setDisplayError] = useState<string | null>(null);
 
-  const LAMBDA_LOOKUP_URL = 'https://wdzff7ud3albhgtlrtat2w46y40yglzn.lambda-url.us-east-1.on.aws/';
-
-  const handleTrackOrder = async () => {
+  const handleTrackOrder = useCallback(async (idToTrack?: string) => {
+    const orderId = idToTrack || orderNumber;
     setOrderData(null);
     setDisplayError(null);
 
-    if (!orderNumber.trim()) {
+    if (!orderId.trim()) {
       setDisplayError('Please enter an order number.');
       return;
     }
@@ -43,108 +47,82 @@ export default function TrackPage() {
     setIsLoading(true);
 
     try {
-      const payload = {
-        requestType: "summary",
-        orderId: orderNumber
-      };
-
-      const response = await fetch(LAMBDA_LOOKUP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        mode: 'cors'
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        if (data) {
-          setOrderData(data);
-          setDisplayError(null);
-        } else {
-          setDisplayError('Order data is empty. Please check the order number.');
-        }
-      } else if (response.status === 404) {
-        setDisplayError(data.error || 'Order not found. Please check your order number and try again.');
+      const data = await trackOrder(orderId);
+      if (data) {
+        setOrderData(data);
+        setDisplayError(null);
       } else {
-        setDisplayError(data.error || 'An unexpected error occurred while fetching order status.');
+        setDisplayError('Order data is empty. Please check the order number.');
       }
     } catch (error: any) {
-      setDisplayError(`Network error: ${error.message || 'Please check your internet connection and try again.'}`);
+      setDisplayError(`Error: ${error.message || 'An unexpected error occurred.'}`);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [orderNumber]);
+
+  // Auto-trigger search if orderId is provided in URL params
+  useEffect(() => {
+    if (initialOrderId) {
+      handleTrackOrder(initialOrderId);
+    }
+    // Only run on mount — initialOrderId is stable from searchParams
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getStageIcon = (stageKey: string) => {
+    const cls = "h-5 w-5";
     switch (stageKey) {
-      case 'pending': return <OrderCreatedIcon className="h-6 w-6 text-gray-400" />;
-      case 'processing': return <ProcessingIcon className="h-6 w-6 text-gray-400 animate-spin" />;
-      case 'shipped': return <ShippedIcon className="h-6 w-6 text-gray-400" />;
-      case 'delivered': return <DeliveredIcon className="h-6 w-6 text-gray-400" />;
+      case 'pending': return <OrderCreatedIcon className={cls} />;
+      case 'processing': return <ProcessingIcon className={`${cls} animate-spin`} />;
+      case 'shipped': return <ShippedIcon className={cls} />;
+      case 'delivered': return <DeliveredIcon className={cls} />;
       default: return null;
     }
   };
 
   return (
-    <div className="bg-gray-900 min-h-screen flex flex-col items-center p-4 text-center text-gray-200">
-      {/* Back Button */}
-      <div className="absolute top-4 left-4">
-        <a href="/" className="flex items-center justify-center bg-gray-700/50 hover:bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300 shadow-md">
-          <BackArrowIcon className="mr-2 h-5 w-5" />
-          Back to Home
-        </a>
-      </div>
-
-      <div className="w-full flex-grow flex flex-col items-center justify-center">
-        <main className="w-full max-w-md">
-          <h1 className="font-pirate text-7xl md:text-8xl font-bold text-white tracking-wider mb-4">
-            ID Pirate
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 py-12 sm:py-20">
+        <main className="w-full max-w-md animate-fade-up">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white text-center mb-2">
+            Track Your Order
           </h1>
-
-          <p className="mt-2 text-lg text-gray-400 mb-8">
-            Track Your Treasure
+          <p className="text-sm text-zinc-400 text-center mb-8">
+            Enter your order number to check the latest status.
           </p>
 
-          <div className="flex flex-col space-y-4">
-            <input
-              type="text"
-              value={orderNumber}
-              onChange={(e) => setOrderNumber(e.target.value)}
-              placeholder="Enter your order number..."
-              className="w-full bg-gray-800 border-2 border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition"
-            />
-            <button
-              onClick={handleTrackOrder}
-              disabled={isLoading}
-              className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 disabled:bg-gray-500 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <SearchIcon className="mr-2 h-5 w-5" />
-                  Check Status
-                </>
-              )}
-            </button>
+          {/* Search */}
+          <div className="glass p-5 sm:p-6">
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                value={orderNumber}
+                onChange={(e) => setOrderNumber(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleTrackOrder()}
+                placeholder="Enter order number..."
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 focus:outline-none transition text-sm"
+              />
+              <button
+                onClick={() => handleTrackOrder()}
+                disabled={isLoading}
+                className="btn btn-primary w-full py-3"
+              >
+                {isLoading ? (
+                  <><Spinner size="sm" className="text-white" /> Searching...</>
+                ) : (
+                  <><SearchIcon className="h-4 w-4" /> Track Order</>
+                )}
+              </button>
+            </div>
           </div>
         </main>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="mt-8 p-6 bg-gray-800/70 rounded-lg shadow-lg border border-gray-700 animate-fade-in w-full max-w-lg md:max-w-xl lg:max-w-2xl">
-            <p className="text-center text-blue-400 text-lg font-semibold flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+          <div className="mt-8 glass p-6 animate-fade-in w-full max-w-md">
+            <p className="text-center text-indigo-400 text-sm font-medium flex items-center justify-center gap-2">
+              <Spinner size="sm" className="text-indigo-400" />
               Loading order details...
             </p>
           </div>
@@ -152,68 +130,87 @@ export default function TrackPage() {
 
         {/* Error State */}
         {displayError && !isLoading && (
-          <div className="mt-8 p-6 bg-red-800/70 rounded-lg shadow-lg border border-red-700 animate-fade-in w-full max-w-lg md:max-w-xl lg:max-w-2xl">
-            <div className="flex flex-col items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-red-400">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-              <h2 className="text-xl font-bold text-red-400 mt-4">Error</h2>
-              <p className="text-gray-300 mt-2">{displayError}</p>
-            </div>
+          <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-fade-in w-full max-w-md">
+            <p className="text-sm text-red-400 text-center">{displayError}</p>
           </div>
         )}
 
         {/* Order Results */}
         {orderData && !isLoading && !displayError && (
-          <div className="mt-8 p-6 bg-gray-800/70 rounded-lg shadow-lg border border-gray-700 animate-fade-in w-full max-w-lg md:max-w-xl lg:max-w-3xl">
-            <h2 className="text-3xl font-bold text-white mb-6 font-pirate">Order Tracking</h2>
+          <div className="mt-8 glass p-6 sm:p-8 animate-fade-up w-full max-w-lg md:max-w-2xl">
+            <h2 className="text-xl font-bold text-white mb-5">Order Details</h2>
 
-            <div className="text-left mb-6 space-y-2 text-gray-300">
-              <p><span className="font-semibold text-white">Order ID:</span> {orderData.orderId}</p>
-              <p><span className="font-semibold text-white">Order Date:</span> {new Date(orderData.createdAt).toLocaleDateString()}</p>
-              <p><span className="font-semibold text-white">Total Items:</span> {orderData.ids.length}</p>
-              <p><span className="font-semibold text-white">Total Price:</span> ${orderData.price?.total ? orderData.price.total.toFixed(2) : 'N/A'}</p>
+            {/* Order Info Grid */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <p className="text-label mb-1">Order ID</p>
+                <p className="text-sm text-white font-mono">{orderData.orderId}</p>
+              </div>
+              <div>
+                <p className="text-label mb-1">Date</p>
+                <p className="text-sm text-white">{new Date(orderData.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-label mb-1">Items</p>
+                <p className="text-sm text-white">{orderData.ids.length}</p>
+              </div>
+              <div>
+                <p className="text-label mb-1">Total</p>
+                <p className="text-price text-lg">${orderData.price?.total ? orderData.price.total.toFixed(2) : 'N/A'}</p>
+              </div>
             </div>
 
-            <div className="bg-gray-700/50 p-4 rounded-lg mb-6 flex items-center justify-between">
-              <h3 className="font-semibold text-lg text-white">Payment Status: <span className={`${orderData.paymentStatus === 'Paid' ? 'text-green-400' : 'text-red-400'}`}>{orderData.paymentStatus || 'N/A'}</span></h3>
-              <div className="flex items-center text-xl font-bold text-gray-300">
-                <span className="mr-2 text-blue-400 text-3xl">{getPaymentMethodIcon(orderData.paymentMethod || '')}</span>
-                {orderData.paymentMethod || 'N/A'}
+            {/* Payment Info */}
+            <div className="bg-white/[0.04] rounded-xl p-4 mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-label mb-1">Payment</p>
+                <span className={`text-sm font-medium ${orderData.paymentStatus === 'Paid' ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {orderData.paymentStatus || 'N/A'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-zinc-300">
+                <span className="text-lg text-indigo-400">{getPaymentMethodIcon(orderData.paymentMethod || '')}</span>
+                <span className="text-sm font-medium">{orderData.paymentMethod || 'N/A'}</span>
               </div>
             </div>
 
             {/* Progress Tracker */}
-            <div className="relative flex justify-between items-center text-center py-6 px-2 sm:px-4">
+            <div className="relative flex justify-between items-start pt-2 pb-4 px-2">
+              {/* Background line */}
+              <div className="absolute top-6 left-6 right-6 h-0.5 bg-white/[0.08]" />
+              {/* Active line */}
+              <div
+                className="absolute top-6 left-6 h-0.5 bg-indigo-500 transition-all duration-500"
+                style={{
+                  width: `${(TRACKING_STAGES.findIndex(s => s.key === orderData.status) / (TRACKING_STAGES.length - 1)) * (100 - 10)}%`
+                }}
+              />
+
               {TRACKING_STAGES.map((stage, index) => {
                 const currentStageIndex = TRACKING_STAGES.findIndex(s => s.key === orderData.status);
                 const isCompleted = index <= currentStageIndex;
                 const isCurrent = index === currentStageIndex;
 
                 return (
-                  <React.Fragment key={stage.key}>
-                    {index > 0 && (
-                      <div className={`absolute left-0 right-0 h-1 bg-gradient-to-r ${isCompleted ? 'from-green-500 to-green-500' : 'from-gray-700 to-gray-700'} ${isCurrent ? 'to-transparent' : ''}`} style={{ width: `${(100 / (TRACKING_STAGES.length - 1)) * index}%`, zIndex: 0, top: '40%' }}></div>
-                    )}
-
-                    <div className={`relative z-10 flex flex-col items-center flex-1 mx-1`}>
-                      <div className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ease-in-out 
-                                      ${isCompleted ? 'bg-green-500' : 'bg-gray-700'}
-                                      ${isCurrent ? 'ring-4 ring-blue-500 ring-offset-gray-800' : ''}
-                                  `}>
-                        {isCurrent ? (
-                          <span className="text-white">
-                            {getStageIcon(stage.key)}
-                          </span>
+                  <div key={stage.key} className="relative z-10 flex flex-col items-center flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
+                      ${isCompleted ? 'bg-indigo-500 text-white' : 'bg-zinc-800 border border-white/[0.12] text-zinc-500'}
+                      ${isCurrent ? 'ring-4 ring-indigo-500/30' : ''}
+                    `}>
+                      {isCurrent ? getStageIcon(stage.key) : (
+                        isCompleted ? (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                          </svg>
                         ) : (
-                          <svg className={`w-4 h-4 ${isCompleted ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                        )}
-                      </div>
-                      <p className={`mt-2 text-sm text-center font-semibold ${isCompleted ? 'text-white' : 'text-gray-400'}`}>{stage.label}</p>
+                          <div className="w-2 h-2 rounded-full bg-zinc-600" />
+                        )
+                      )}
                     </div>
-                  </React.Fragment>
+                    <p className={`mt-2 text-xs text-center font-medium ${isCompleted ? 'text-white' : 'text-zinc-500'}`}>
+                      {stage.label}
+                    </p>
+                  </div>
                 );
               })}
             </div>
@@ -221,7 +218,20 @@ export default function TrackPage() {
         )}
       </div>
 
-      <Footer className="w-full" />
+      <Footer />
     </div>
+  );
+}
+
+// Wrap in Suspense because useSearchParams() requires it in Next.js App Router
+export default function TrackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    }>
+      <TrackPageContent />
+    </Suspense>
   );
 }

@@ -4,7 +4,7 @@
 import "../lib/localStorage-polyfill";
 
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Uncial_Antiqua, Pirata_One } from "next/font/google";
 import "./globals.css"; // Ensure this import is present for global styles
 import { AuthProvider } from "./contexts/AuthContext";
 import { UniversalHeader } from "./components/UniversalHeader";
@@ -13,12 +13,48 @@ import { UniversalHeader } from "./components/UniversalHeader";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const uncial = Uncial_Antiqua({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-uncial",
+  display: "swap",
+});
+
+const pirata = Pirata_One({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-pirata",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "ID Pirate",
-  description: "Fast, Private, Crypto-Powered Novelty ID Platform"
+  title: {
+    default: "ID Pirate | Premium Novelty IDs",
+    template: "%s | ID Pirate"
+  },
+  description: "Fast, Private, Crypto-Powered Novelty ID Platform. 1:1 replicas with scannable barcodes, UV holograms, and microprint.",
+  keywords: ["novelty id", "fake id", "scannable id", "id pirate"],
+  openGraph: {
+    title: "ID Pirate | Premium Novelty IDs",
+    description: "Fast, Private, Crypto-Powered Novelty ID Platform.",
+    url: "https://idpirate.com",
+    siteName: "ID Pirate",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ID Pirate | Premium Novelty IDs",
+    description: "Fast, Private, Crypto-Powered Novelty ID Platform.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -29,15 +65,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Load decorative fonts via link tag (not available in next/font) */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Pirata+One&display=swap"
-          rel="stylesheet"
-        />
+        {/* Decorative fonts are now loaded via next/font in the body class */}
       </head>
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${inter.variable} ${uncial.variable} ${pirata.variable} antialiased`}>
         <AuthProvider>
-          <div className="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
+          <div className="bg-[var(--bg)] text-[var(--text-primary)] min-h-screen flex flex-col">
             <UniversalHeader />
             <main className="flex-grow flex-1">
               {children}

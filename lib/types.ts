@@ -8,7 +8,9 @@ export interface JwtPayload {
     role: 'user' | 'admin';
     isReseller: boolean;
     exp: number;
+    iat?: number; // Issued At
 }
+
 
 // --- ID Form Data ---
 export interface IdFormData {

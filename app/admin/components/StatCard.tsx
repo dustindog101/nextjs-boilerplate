@@ -1,4 +1,3 @@
-// --- START OF FILE app/admin/components/StatCard.tsx ---
 "use client";
 import React, { ReactNode } from 'react';
 
@@ -11,18 +10,18 @@ interface StatCardProps {
 }
 
 export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, change, changeType }) => {
-  const changeColor = changeType === 'increase' ? 'text-green-400' : 'text-red-400';
+  const changeColor = changeType === 'increase' ? 'text-emerald-400' : 'text-red-400';
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+    <div className="glass p-5">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-gray-400">{title}</p>
-        <div className="text-gray-500">{icon}</div>
+        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">{title}</p>
+        <div className="text-zinc-600">{icon}</div>
       </div>
       <div className="mt-2">
-        <h3 className="text-3xl font-bold text-white">{value}</h3>
+        <h3 className="text-2xl font-bold text-white">{value}</h3>
         {change && (
-          <p className={`text-sm mt-1 ${changeColor}`}>
+          <p className={`text-xs mt-1 ${changeColor}`}>
             {change} vs last month
           </p>
         )}
@@ -30,4 +29,3 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, change, 
     </div>
   );
 };
-// --- END OF FILE app/admin/components/StatCard.tsx ---
