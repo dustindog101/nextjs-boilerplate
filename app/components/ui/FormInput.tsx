@@ -3,7 +3,7 @@
 import React from 'react';
 
 interface FormInputProps {
-    label: string;
+    label?: string;
     name: string;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -26,9 +26,11 @@ export const FormInput: React.FC<FormInputProps> = ({
     className = '',
 }) => (
     <div className={className}>
-        <label htmlFor={name} className="text-label block mb-2">
-            {label}
-        </label>
+        {label && (
+            <label htmlFor={name} className="text-label block mb-2">
+                {label}
+            </label>
+        )}
         <input
             type={type}
             id={name}

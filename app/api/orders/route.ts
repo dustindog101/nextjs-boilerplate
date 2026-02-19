@@ -34,12 +34,7 @@ export async function GET(request: NextRequest) {
         });
 
         const data = await lambdaResponse.json();
-        return NextResponse.json(data, {
-            status: lambdaResponse.status,
-            headers: {
-                'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=59',
-            },
-        });
+        return NextResponse.json(data, { status: lambdaResponse.status });
     } catch (error: any) {
         console.error('[API /orders GET] Error:', error.message);
         return NextResponse.json(
