@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { withAuth } from '../components/withAuth';
 import { useAuth } from '../hooks/useAuth';
 import { getStorageItem, removeStorageItem } from '../../lib/storage';
-import { submitOrder } from '../../lib/apiClient';
+import { submitOrder, validateDiscount, DiscountValidation } from '../../lib/apiClient';
+import { statePrices, defaultIdPrice, handlingFee as HANDLING_FEE, shippingFee as SHIPPING_BASE } from '../../lib/constants';
 import { IdFormData } from '../../lib/types';
 import { EditIcon } from '../components/icons';
 import { Footer } from '../components/ui';
@@ -38,10 +39,12 @@ function CheckoutPage() {
     const [orderMessage, setOrderMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [discountCode, setDiscountCode] = useState('');
+    const [discountResult, setDiscountResult] = useState<DiscountValidation | null>(null);
+    const [discountLoading, setDiscountLoading] = useState(false);
+    const [discountError, setDiscountError] = useState<string | null>(null);
 
-    const BASE_PRICE_PER_ID = 95.00;
-    const HANDLING_FEE = 5.00;
-    const SHIPPING_FEE = deliveryMethod === 'shipping' ? 15.00 : 0;
+    const SHIPPING_FEE = deliveryMethod === 'shipping' ? SHIPPING_BASE : 0;
 
     useEffect(() => {
         const storedForms = getStorageItem('idPirateOrderForms');
@@ -52,8 +55,24 @@ function CheckoutPage() {
         }
     }, []);
 
-    const subtotal = orderItems.reduce((acc) => acc + BASE_PRICE_PER_ID, 0);
-    const total = subtotal + HANDLING_FEE + SHIPPING_FEE;
+    const subtotal = orderItems.reduce((acc, item) => acc + (statePrices[item.state] ?? defaultIdPrice), 0);
+    const discountAmount = discountResult?.discountAmount ?? 0;
+    const total = subtotal + HANDLING_FEE + SHIPPING_FEE - discountAmount;
+
+    const handleApplyDiscount = async () => {
+        if (!discountCode.trim()) return;
+        setDiscountLoading(true);
+        setDiscountError(null);
+        setDiscountResult(null);
+        try {
+            const result = await validateDiscount(discountCode.trim(), subtotal + HANDLING_FEE + SHIPPING_FEE);
+            setDiscountResult(result);
+        } catch (err: any) {
+            setDiscountError(err.message || 'Invalid code.');
+        } finally {
+            setDiscountLoading(false);
+        }
+    };
 
     const handleFinalOrderSubmit = async () => {
         if (!user) { setOrderStatus('error'); setOrderMessage('You must be logged in.'); setShowModal(true); return; }
@@ -66,10 +85,10 @@ function CheckoutPage() {
 
         const fullShippingAddress = deliveryMethod === 'shipping' ? `${shippingFullName}, ${shippingStreetAddress}, ${shippingCity}, ${shippingStateProvince}, ${shippingZipCode}, USA` : "Local Delivery";
 
-        const idsPayload = orderItems.map(idForm => ({
-            ...idForm,
-            dob: `${idForm.dobYear}-${idForm.dobMonth}-${idForm.dobDay}`,
-            issueDate: `${idForm.issueYear}-${idForm.issueMonth}-${idForm.issueDay}`,
+        const idsPayload = orderItems.map(({ id, photo, signature, ...rest }) => ({
+            ...rest,
+            dob: `${rest.dobYear}-${rest.dobMonth}-${rest.dobDay}`,
+            issueDate: `${rest.issueYear}-${rest.issueMonth}-${rest.issueDay}`,
         }));
 
         const orderPayload = {
@@ -78,6 +97,7 @@ function CheckoutPage() {
             paymentMethod: activePayment,
             notes: orderNotes,
             price: { subtotal, total },
+            discountCode: discountResult?.code || undefined,
             ids: idsPayload,
         };
 
@@ -118,7 +138,7 @@ function CheckoutPage() {
                                                 <p className="font-semibold text-white">{item.state} ID</p>
                                                 <p className="text-xs text-zinc-500">{item.firstName || 'N/A'} {item.lastName || 'N/A'}</p>
                                             </div>
-                                            <p className="text-price">${BASE_PRICE_PER_ID.toFixed(2)}</p>
+                                            <p className="text-price">${(statePrices[item.state] ?? defaultIdPrice).toFixed(2)}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -150,8 +170,8 @@ function CheckoutPage() {
                                 <button
                                     onClick={() => setDeliveryMethod('local')}
                                     className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${deliveryMethod === 'local'
-                                            ? 'border-indigo-500 bg-indigo-500/10'
-                                            : 'border-white/[0.08] hover:border-white/[0.16]'
+                                        ? 'border-indigo-500 bg-indigo-500/10'
+                                        : 'border-white/[0.08] hover:border-white/[0.16]'
                                         }`}
                                 >
                                     <h3 className="font-semibold text-sm text-white">Local Pickup</h3>
@@ -160,8 +180,8 @@ function CheckoutPage() {
                                 <button
                                     onClick={() => setDeliveryMethod('shipping')}
                                     className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${deliveryMethod === 'shipping'
-                                            ? 'border-indigo-500 bg-indigo-500/10'
-                                            : 'border-white/[0.08] hover:border-white/[0.16]'
+                                        ? 'border-indigo-500 bg-indigo-500/10'
+                                        : 'border-white/[0.08] hover:border-white/[0.16]'
                                         }`}
                                 >
                                     <h3 className="font-semibold text-sm text-white">Shipping</h3>
@@ -204,12 +224,50 @@ function CheckoutPage() {
                                             <span>${SHIPPING_FEE.toFixed(2)}</span>
                                         </div>
                                     )}
+                                    {discountResult && (
+                                        <div className="flex justify-between text-emerald-400">
+                                            <span>Discount ({discountResult.code})</span>
+                                            <span>-${discountResult.discountAmount.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     <div className="border-t border-white/[0.08] my-3" />
                                     <div className="flex justify-between text-white font-bold text-xl">
                                         <span>Total</span>
                                         <span className="text-price">${total.toFixed(2)}</span>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Discount Code */}
+                            <div>
+                                <h2 className="text-label mb-3">Discount Code</h2>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Enter code..."
+                                        className={inputClasses}
+                                        value={discountCode}
+                                        onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleApplyDiscount()}
+                                    />
+                                    <button
+                                        onClick={handleApplyDiscount}
+                                        disabled={discountLoading || !discountCode.trim()}
+                                        className="btn btn-outline px-4 py-2.5 text-sm flex-shrink-0"
+                                    >
+                                        {discountLoading ? <Spinner size="sm" /> : 'Apply'}
+                                    </button>
+                                </div>
+                                {discountError && (
+                                    <p className="text-red-400 text-xs mt-2">{discountError}</p>
+                                )}
+                                {discountResult && (
+                                    <p className="text-emerald-400 text-xs mt-2">
+                                        {discountResult.discountType === 'percentage'
+                                            ? `${discountResult.value}% off applied!`
+                                            : `$${discountResult.value.toFixed(2)} off applied!`}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Payment */}
@@ -221,8 +279,8 @@ function CheckoutPage() {
                                             key={method.name}
                                             onClick={() => setActivePayment(method.name)}
                                             className={`w-full flex items-center p-3 rounded-xl border transition-all cursor-pointer ${activePayment === method.name
-                                                    ? 'border-indigo-500 bg-indigo-500/10'
-                                                    : 'border-white/[0.08] hover:border-white/[0.16]'
+                                                ? 'border-indigo-500 bg-indigo-500/10'
+                                                : 'border-white/[0.08] hover:border-white/[0.16]'
                                                 }`}
                                         >
                                             <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-white/[0.08] mr-3 text-sm font-bold text-zinc-300">{method.icon}</span>
@@ -253,10 +311,10 @@ function CheckoutPage() {
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className={`glass p-8 max-w-sm w-full border ${orderStatus === 'success' ? 'border-emerald-500/30' :
-                            orderStatus === 'error' ? 'border-red-500/30' : 'border-indigo-500/30'
+                        orderStatus === 'error' ? 'border-red-500/30' : 'border-indigo-500/30'
                         } animate-fade-up`}>
                         <h3 className={`text-xl font-bold mb-3 text-center ${orderStatus === 'success' ? 'text-emerald-400' :
-                                orderStatus === 'error' ? 'text-red-400' : 'text-indigo-400'
+                            orderStatus === 'error' ? 'text-red-400' : 'text-indigo-400'
                             }`}>
                             {orderStatus === 'processing' ? 'Processing...' : orderStatus === 'success' ? 'Order Placed!' : 'Error'}
                         </h3>

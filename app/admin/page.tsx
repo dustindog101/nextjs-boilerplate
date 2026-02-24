@@ -8,6 +8,11 @@ import { Menu } from 'lucide-react';
 // Import the modular section components
 import { MetricsSection } from './components/MetricsSection';
 import { UsersSection } from './components/UsersSection';
+import { OrdersSection } from './components/OrdersSection';
+import { ProductsSection } from './components/ProductsSection';
+import { ResellersSection } from './components/ResellersSection';
+import { AffiliatesSection } from './components/AffiliatesSection';
+import { DiscountsSection } from './components/DiscountsSection';
 
 function AdminDashboardPage() {
   const [activeSection, setActiveSection] = useState<AdminSection>('metrics');
@@ -15,16 +20,14 @@ function AdminDashboardPage() {
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'metrics':
-        return <MetricsSection />;
-      case 'users':
-        return <UsersSection />;
-      default:
-        // FIX: Ensure background is set for default/unimplemented sections
-        return <div className="p-6 h-full">
-          <h2 className="text-3xl font-bold text-white">{activeSection}</h2>
-          <p className="text-zinc-400 mt-2">This section is under construction.</p>
-        </div>;
+      case 'metrics': return <MetricsSection />;
+      case 'users': return <UsersSection />;
+      case 'orders': return <OrdersSection />;
+      case 'products': return <ProductsSection />;
+      case 'resellers': return <ResellersSection />;
+      case 'affiliates': return <AffiliatesSection />;
+      case 'discounts': return <DiscountsSection />;
+      default: return <MetricsSection />;
     }
   };
 

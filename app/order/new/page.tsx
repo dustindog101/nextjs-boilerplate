@@ -10,25 +10,20 @@ import {
     sexOptions,
     monthOptions,
     dayOptions,
-    yearOptions
+    yearOptions,
+    statePrices,
+    defaultIdPrice,
 } from '../../../lib/constants';
 import { IdFormData } from '../../../lib/types';
+import { setStorageItem } from '../../../lib/storage';
 import { FormInput, FormSelect, FileInput, Footer } from '../../components/ui';
 import {
     PlusIcon,
     TrashIcon,
 } from '../../components/icons';
 
-/* ─── State Prices (mirrors gallery) ─── */
-const statePrices: Record<string, number> = {
-    'Pennsylvania': 90, 'New Jersey': 100, 'Old Maine': 85, 'Washington': 85,
-    'Oregon': 85, 'South Carolina': 85, 'Missouri': 85, 'Illinois': 90,
-    'Connecticut': 90, 'Arizona': 90, 'Florida': 100, 'Texas': 100,
-};
-const DEFAULT_PRICE = 90;
-
 /* ─── Helpers ─── */
-const getPrice = (state: string) => statePrices[state] ?? DEFAULT_PRICE;
+const getPrice = (state: string) => statePrices[state] ?? defaultIdPrice;
 const completionPct = (f: IdFormData) => {
     const fields = [f.firstName, f.lastName, f.streetAddress, f.city, f.zipCode, f.dobMonth, f.dobDay, f.dobYear];
     return Math.round((fields.filter(Boolean).length / fields.length) * 100);
@@ -203,7 +198,7 @@ function OrderFormPage() {
         setError(null);
         const idFormsForStorage = idForms.map(({ photo, signature, ...rest }) => rest);
         try {
-            localStorage.setItem('idPirateOrderForms', JSON.stringify(idFormsForStorage));
+            setStorageItem('idPirateOrderForms', JSON.stringify(idFormsForStorage));
             router.push('/checkout');
         } catch (err) {
             console.error('Failed to save:', err);

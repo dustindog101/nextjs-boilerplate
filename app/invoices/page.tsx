@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import { withAdminAuth } from '../components/withAdminAuth';
 
 // --- Type ---
 interface InvoiceData {
@@ -138,7 +139,7 @@ const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
 const inputCls = "w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 focus:outline-none transition-all";
 
 /* ── Main Form ── */
-export default function App() {
+function InvoicesPage() {
     const [formData, setFormData] = useState({
         customer: '',
         batch: '',
@@ -264,3 +265,5 @@ export default function App() {
         </div>
     );
 }
+
+export default withAdminAuth(InvoicesPage);
