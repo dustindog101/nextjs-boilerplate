@@ -146,7 +146,40 @@ export const trackOrder = async (orderId: string): Promise<any> => {
   return apiFetch<any>('/api/orders/track', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ orderId }),
+    body: JSON.stringify({ orderId, requestType: 'track' }),
+  });
+};
+
+/**
+ * Fetches a single order by ID (authenticated — user can only see their own).
+ */
+export const fetchOrderById = async (orderId: string): Promise<any> => {
+  return apiFetch<any>('/api/orders/track', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ orderId, requestType: 'get_order' }),
+  });
+};
+
+/**
+ * Validates a discount code against the current order total.
+ */
+export interface DiscountValidation {
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  value: number;
+  discountAmount: number;
+  newTotal: number;
+}
+
+export const validateDiscount = async (
+  code: string,
+  orderTotal: number
+): Promise<DiscountValidation> => {
+  return apiFetch<DiscountValidation>('/api/orders/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requestType: 'validate_discount', code, orderTotal }),
   });
 };
 
@@ -170,6 +203,8 @@ async function adminApiFetch<T>(payload: object): Promise<T> {
   });
 }
 
+// ── User Management ─────────────────────────────────────────────────
+
 /**
  * Fetches a list of all users from the admin endpoint.
  */
@@ -189,4 +224,98 @@ export const adminUpdateUser = async (
     userId,
     updateData,
   });
+};
+
+// ── Order Management ────────────────────────────────────────────────
+
+export const adminListOrders = async (): Promise<any[]> => {
+  return adminApiFetch<any[]>({ requestType: 'list_all_orders' });
+};
+
+export const adminGetOrder = async (orderId: string): Promise<any> => {
+  return adminApiFetch<any>({ requestType: 'get_order', orderId });
+};
+
+export const adminUpdateOrder = async (
+  orderId: string,
+  updateData: Record<string, any>
+): Promise<{ message: string }> => {
+  return adminApiFetch<{ message: string }>({
+    requestType: 'admin_update_order',
+    orderId,
+    updateData,
+  });
+};
+
+// ── Discount Management ─────────────────────────────────────────────
+
+export interface Discount {
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  value: number;
+  minOrder: number;
+  maxUses?: number;
+  usedCount: number;
+  isActive: boolean;
+  expiresAt?: string;
+  createdAt: string;
+}
+
+export const adminListDiscounts = async (): Promise<Discount[]> => {
+  return adminApiFetch<Discount[]>({ requestType: 'list_discounts' });
+};
+
+export const adminCreateDiscount = async (
+  data: Omit<Discount, 'usedCount' | 'isActive' | 'createdAt'>
+): Promise<{ message: string }> => {
+  return adminApiFetch<{ message: string }>({
+    requestType: 'create_discount',
+    ...data,
+  });
+};
+
+export const adminUpdateDiscount = async (
+  code: string,
+  updateData: Partial<Discount>
+): Promise<{ message: string }> => {
+  return adminApiFetch<{ message: string }>({
+    requestType: 'update_discount',
+    code,
+    updateData,
+  });
+};
+
+export const adminDeleteDiscount = async (
+  code: string
+): Promise<{ message: string }> => {
+  return adminApiFetch<{ message: string }>({
+    requestType: 'delete_discount',
+    code,
+  });
+};
+
+// ── Metrics ─────────────────────────────────────────────────────────
+
+export interface AdminMetrics {
+  totalOrders: number;
+  totalUsers: number;
+  totalRevenue: number;
+  resellerCount: number;
+  statusBreakdown: Record<string, number>;
+}
+
+export const adminGetMetrics = async (): Promise<AdminMetrics> => {
+  return adminApiFetch<AdminMetrics>({ requestType: 'get_metrics' });
+};
+
+// ── Referrals / Affiliates ──────────────────────────────────────────
+
+export interface ReferralGroup {
+  referrer: string;
+  count: number;
+  referredUsers: { userId: string; username: string; joinedAt: string }[];
+}
+
+export const adminListReferrals = async (): Promise<ReferralGroup[]> => {
+  return adminApiFetch<ReferralGroup[]>({ requestType: 'list_referrals' });
 };

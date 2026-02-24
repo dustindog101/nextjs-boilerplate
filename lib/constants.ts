@@ -63,21 +63,23 @@ export const heightInchesOptions = Array.from(
     (_, i) => String(i)
 );
 
-// --- Pricing ---
+// --- Pricing (Single Source of Truth) ---
 export const statePrices: Record<string, number> = {
-    Pennsylvania: 95,
-    'New Jersey': 95,
-    'Old Maine': 95,
-    Washington: 95,
-    Oregon: 95,
-    'South Carolina': 95,
-    Missouri: 95,
-    Illinois: 95,
-    Connecticut: 95,
-    Arizona: 95,
-    Florida: 95,
-    Texas: 95,
+    Pennsylvania: 90,
+    'New Jersey': 100,
+    'Old Maine': 85,
+    Washington: 85,
+    Oregon: 85,
+    'South Carolina': 85,
+    Missouri: 85,
+    Illinois: 90,
+    Connecticut: 90,
+    Arizona: 90,
+    Florida: 100,
+    Texas: 100,
 };
 
 export const defaultIdPrice = 95;
-export const shippingCost = 20;
+export const handlingFee = 5;
+export const shippingFee = 15;
+
