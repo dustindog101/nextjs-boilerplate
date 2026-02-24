@@ -5,6 +5,7 @@ import { withAdminAuth } from '../components/withAdminAuth';
 import { AdminLayout, AdminSection } from './AdminLayout';
 import { Menu } from 'lucide-react';
 
+
 // Import the modular section components
 import { MetricsSection } from './components/MetricsSection';
 import { UsersSection } from './components/UsersSection';
