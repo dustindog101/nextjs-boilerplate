@@ -40,8 +40,8 @@ export const FormInput: React.FC<FormInputProps> = ({
             placeholder={placeholder}
             readOnly={readOnly}
             disabled={disabled}
-            className={`w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-500
-                focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 focus:outline-none transition
+            className={`w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 text-sm placeholder-slate-400
+                focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 focus:outline-none transition
                 ${readOnly ? 'opacity-60 cursor-default' : ''}
                 ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
         />
