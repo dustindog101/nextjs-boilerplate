@@ -257,7 +257,9 @@ export interface Discount {
   maxUses?: number;
   usedCount: number;
   isActive: boolean;
+  startsAt?: string;
   expiresAt?: string;
+  allowedUsernames?: string[];
   createdAt: string;
 }
 

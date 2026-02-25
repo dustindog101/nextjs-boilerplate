@@ -53,28 +53,28 @@ const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
             <div className="p-8 md:p-12">
                 <header className="flex justify-between items-start mb-12">
                     <div>
-                        <h1 className="font-pirate text-4xl md:text-5xl text-white tracking-wider">ID Pirate</h1>
-                        <p className="text-zinc-500 text-sm">idpirate.com</p>
+                        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">ID Pirate</h1>
+                        <p className="text-slate-400 text-sm">idpirate.com</p>
                     </div>
                     <div className="text-right">
-                        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-wide">INVOICE</h2>
+                        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-wide">INVOICE</h2>
                     </div>
                 </header>
 
                 <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                     <div className="space-y-2 text-sm">
-                        <div className="flex"><span className="text-zinc-500 w-32">Order Number:</span><span className="text-white">{data.orderNumber}</span></div>
-                        <div className="flex"><span className="text-zinc-500 w-32">Date:</span><span className="text-white">{data.date}</span></div>
+                        <div className="flex"><span className="text-slate-400 w-32">Order Number:</span><span className="text-slate-900">{data.orderNumber}</span></div>
+                        <div className="flex"><span className="text-slate-400 w-32">Date:</span><span className="text-slate-900">{data.date}</span></div>
                     </div>
-                    <div className="bg-white/[0.03] p-4 rounded-lg border border-white/[0.06]">
-                        <div className="flex text-sm"><span className="text-zinc-500 w-20">Customer:</span><span className="text-white">{data.customer}</span></div>
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div className="flex text-sm"><span className="text-slate-400 w-20">Customer:</span><span className="text-slate-900">{data.customer}</span></div>
                     </div>
                 </section>
 
                 <section className="mb-10">
                     <table className="w-full text-left text-sm">
                         <thead>
-                            <tr className="border-b border-white/[0.08]">
+                            <tr className="border-b border-slate-200">
                                 <th className="p-3 text-xs font-semibold uppercase text-zinc-500 tracking-wider">Item</th>
                                 <th className="p-3 text-center text-xs font-semibold uppercase text-zinc-500 tracking-wider">Qty</th>
                                 <th className="p-3 text-right text-xs font-semibold uppercase text-zinc-500 tracking-wider">Unit Price</th>
@@ -82,34 +82,34 @@ const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr className="border-b border-white/[0.04]">
-                                <td className="p-3 text-white">{data.idType}</td>
-                                <td className="p-3 text-center text-zinc-300">{data.quantity}</td>
-                                <td className="p-3 text-right text-zinc-300">${data.unitPrice.toFixed(2)}</td>
-                                <td className="p-3 text-right text-white font-medium">${data.subtotal.toFixed(2)}</td>
+                            <tr className="border-b border-slate-100">
+                                <td className="p-3 text-slate-900">{data.idType}</td>
+                                <td className="p-3 text-center text-slate-600">{data.quantity}</td>
+                                <td className="p-3 text-right text-slate-600">${data.unitPrice.toFixed(2)}</td>
+                                <td className="p-3 text-right text-slate-900 font-medium">${data.subtotal.toFixed(2)}</td>
                             </tr>
-                            <tr className="border-b border-white/[0.04]">
-                                <td className="p-3 text-zinc-400">Processing & Handling</td>
+                            <tr className="border-b border-slate-100">
+                                <td className="p-3 text-slate-500">Processing & Handling</td>
                                 <td className="p-3"></td>
                                 <td className="p-3"></td>
-                                <td className="p-3 text-right text-zinc-300">${data.handlingFee.toFixed(2)}</td>
+                                <td className="p-3 text-right text-slate-600">${data.handlingFee.toFixed(2)}</td>
                             </tr>
                         </tbody>
                     </table>
                 </section>
 
-                <section className="mb-10 border-t border-white/[0.06] pt-8">
+                <section className="mb-10 border-t border-slate-200 pt-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <h3 className="text-xs font-semibold uppercase text-zinc-500 tracking-wider mb-2">Payment Method</h3>
-                            <div className="bg-white/[0.03] px-4 py-2 rounded-lg w-fit border border-white/[0.06]">
-                                <span className="text-white font-medium text-sm">{data.paymentMethod}</span>
+                            <div className="bg-slate-50 px-4 py-2 rounded-lg w-fit border border-slate-200">
+                                <span className="text-slate-900 font-medium text-sm">{data.paymentMethod}</span>
                             </div>
                         </div>
                         <div className="flex items-center justify-start md:justify-end md:pt-4">
                             <div className="flex items-center gap-3">
-                                <input type="checkbox" id="crypto-discount" className="h-4 w-4 rounded bg-white/[0.04] border-white/[0.08] text-indigo-500 focus:ring-indigo-600" />
-                                <label htmlFor="crypto-discount" className="text-sm font-semibold text-white">Crypto Discount</label>
+                                <input type="checkbox" id="crypto-discount" className="h-4 w-4 rounded bg-white border-slate-300 text-blue-600 focus:ring-blue-600" />
+                                <label htmlFor="crypto-discount" className="text-sm font-semibold text-slate-900">Crypto Discount</label>
                             </div>
                         </div>
                     </div>
@@ -117,8 +117,8 @@ const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
 
                 <section className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
-                        <input type="checkbox" id="paid-status" className="h-4 w-4 rounded bg-white/[0.04] border-white/[0.08] text-indigo-500 focus:ring-indigo-600" />
-                        <label htmlFor="paid-status" className="text-sm font-semibold text-white">Paid?</label>
+                        <input type="checkbox" id="paid-status" className="h-4 w-4 rounded bg-white border-slate-300 text-blue-600 focus:ring-blue-600" />
+                        <label htmlFor="paid-status" className="text-sm font-semibold text-slate-900">Paid?</label>
                     </div>
                     <div className="text-right">
                         <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Total</div>
@@ -126,7 +126,7 @@ const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
                     </div>
                 </section>
             </div>
-            <footer className="p-4 bg-white/[0.02] text-center no-print border-t border-white/[0.06]">
+            <footer className="p-4 bg-slate-50 text-center no-print border-t border-slate-200">
                 <button onClick={() => window.print()} className="btn btn-primary px-6 py-2 text-sm">
                     Print Invoice
                 </button>
@@ -136,7 +136,7 @@ const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
 };
 
 /* ── Input class ── */
-const inputCls = "w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 focus:outline-none transition-all";
+const inputCls = "w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-slate-900 text-sm placeholder-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:outline-none transition-all";
 
 /* ── Main Form ── */
 function InvoicesPage() {
@@ -207,8 +207,8 @@ function InvoicesPage() {
                 {/* Form Section */}
                 <div className="glass p-8 md:p-12 mb-8 animate-fade-up">
                     <header className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-white tracking-tight">Invoice Generator</h1>
-                        <p className="text-zinc-500 text-sm mt-1">Create a new invoice</p>
+                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Invoice Generator</h1>
+                        <p className="text-slate-500 text-sm mt-1">Create a new invoice</p>
                     </header>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

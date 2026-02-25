@@ -36,8 +36,8 @@ export const FormSelect: React.FC<FormSelectProps> = ({
                 value={value}
                 onChange={onChange}
                 disabled={readOnly || disabled}
-                className={`w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm
-                    focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 focus:outline-none transition appearance-none
+                className={`w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 text-sm
+                    focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 focus:outline-none transition appearance-none
                     ${readOnly || disabled ? 'cursor-not-allowed opacity-50' : ''}`}
             >
                 <option value="">Select...</option>

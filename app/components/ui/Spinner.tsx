@@ -39,6 +39,6 @@ export const Spinner: React.FC<SpinnerProps> = ({ size = "md", className = "" })
 
 export const FullPageSpinner: React.FC = () => (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-        <Spinner size="lg" className="text-zinc-500" />
+        <Spinner size="lg" className="text-slate-400" />
     </div>
 );

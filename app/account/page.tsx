@@ -74,13 +74,13 @@ export default function AccountPage() {
   if (isAuthLoading || user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <Spinner size="lg" className="text-zinc-500" />
-        <p className="mt-4 text-sm text-zinc-400">Loading account...</p>
+        <Spinner size="lg" className="text-slate-400" />
+        <p className="mt-4 text-sm text-slate-500">Loading account...</p>
       </div>
     );
   }
 
-  const inputClasses = "w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 focus:outline-none transition text-sm";
+  const inputClasses = "w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 focus:outline-none transition text-sm";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -91,8 +91,8 @@ export default function AccountPage() {
             <button
               onClick={() => { setCurrentView('login'); setFeedbackMessage(null); resetFormFields(); }}
               className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${currentView === 'login'
-                  ? 'bg-indigo-500 text-white'
-                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                 }`}
             >
               Sign In
@@ -100,8 +100,8 @@ export default function AccountPage() {
             <button
               onClick={() => { setCurrentView('register'); setFeedbackMessage(null); resetFormFields(); }}
               className={`flex-1 py-3 text-sm font-semibold transition-all cursor-pointer ${currentView === 'register'
-                  ? 'bg-indigo-500 text-white'
-                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                 }`}
             >
               Register
@@ -110,14 +110,14 @@ export default function AccountPage() {
 
           {/* Form Card */}
           <div className="glass p-6 sm:p-8">
-            <h1 className="text-2xl font-bold text-white text-center mb-6">
+            <h1 className="text-2xl font-bold text-slate-900 text-center mb-6">
               {currentView === 'login' ? 'Welcome back' : 'Create account'}
             </h1>
 
             {feedbackMessage && (
               <div className={`p-3 mb-5 rounded-xl text-center text-sm ${isSuccess
-                  ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                  : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                : 'bg-red-50 border border-red-200 text-red-600'
                 }`}>
                 {feedbackMessage}
               </div>
@@ -164,7 +164,7 @@ export default function AccountPage() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="referrer" className="text-label block mb-2">Referrer <span className="text-zinc-600">(optional)</span></label>
+                    <label htmlFor="referrer" className="text-label block mb-2">Referrer <span className="text-slate-400">(optional)</span></label>
                     <input
                       type="text"
                       id="referrer"
