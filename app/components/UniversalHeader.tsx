@@ -1,5 +1,5 @@
 // --- Universal Header Component ---
-// Navy header bar with clean sans-serif branding
+// Dark Maritime Premium header with backdrop blur
 
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
@@ -58,18 +58,18 @@ export const UniversalHeader = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[var(--header-bg)] shadow-sm">
+      <header className="sticky top-0 z-50 bg-[var(--header-bg)] backdrop-blur-xl border-b border-[var(--border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Left: Logo + Desktop Nav */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="text-xl sm:text-2xl font-bold text-white tracking-tight hover:opacity-90 transition-opacity">
-              ID PIRATE
+            <Link href="/" className="text-xl sm:text-2xl font-bold tracking-tight hover:opacity-90 transition-opacity font-[var(--font-display)]">
+              <span className="text-[var(--accent)]">ID</span> <span className="text-white">PIRATE</span>
             </Link>
             <nav className="hidden md:flex items-center gap-1">
               {isOrderFlowPage ? (
                 <Link
                   href={backButtonHref}
-                  className="flex items-center gap-2 text-sm font-medium text-blue-100 hover:text-white px-3 py-2 rounded-lg hover:bg-white/[0.1] transition-all"
+                  className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] hover:text-white px-3 py-2 rounded-lg hover:bg-white/[0.06] transition-all"
                 >
                   <BackArrowIcon className="h-4 w-4" /> {backButtonText}
                 </Link>
@@ -78,8 +78,8 @@ export const UniversalHeader = () => {
                   <Link
                     href="/order"
                     className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-all ${pathname === '/order'
-                      ? 'text-white bg-white/[0.15]'
-                      : 'text-blue-100 hover:text-white hover:bg-white/[0.1]'
+                      ? 'text-[var(--accent)] bg-[var(--accent-subtle)]'
+                      : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06]'
                       }`}
                   >
                     <PackageIcon className="h-4 w-4" /> Order
@@ -87,8 +87,8 @@ export const UniversalHeader = () => {
                   <Link
                     href="/track"
                     className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-all ${pathname === '/track'
-                      ? 'text-white bg-white/[0.15]'
-                      : 'text-blue-100 hover:text-white hover:bg-white/[0.1]'
+                      ? 'text-[var(--accent)] bg-[var(--accent-subtle)]'
+                      : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06]'
                       }`}
                   >
                     <SearchIcon className="h-4 w-4" /> Track
@@ -96,8 +96,8 @@ export const UniversalHeader = () => {
                   <Link
                     href="/news"
                     className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-all ${pathname === '/news'
-                      ? 'text-white bg-white/[0.15]'
-                      : 'text-blue-100 hover:text-white hover:bg-white/[0.1]'
+                      ? 'text-[var(--accent)] bg-[var(--accent-subtle)]'
+                      : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06]'
                       }`}
                   >
                     <NewsIcon className="h-4 w-4" /> News
@@ -117,7 +117,7 @@ export const UniversalHeader = () => {
                 <div ref={dropdownRef} className="relative">
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-blue-100 hover:text-white hover:bg-white/[0.1] transition-all cursor-pointer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
                   >
                     <UserIcon className="h-4 w-4" />
                     <span className="font-medium">{user.username}</span>
@@ -126,37 +126,37 @@ export const UniversalHeader = () => {
 
                   <div
                     onMouseLeave={() => setIsDropdownOpen(false)}
-                    className={`absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50 transition-all duration-200 ease-out ${isDropdownOpen
+                    className={`absolute right-0 mt-2 w-52 bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border)] py-1 z-50 transition-all duration-200 ease-out ${isDropdownOpen
                       ? 'opacity-100 translate-y-0 visible'
                       : 'opacity-0 -translate-y-2 invisible pointer-events-none'
                       }`}
                   >
-                    <Link href="/dashboard" className="block px-4 py-2.5 border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                      <p className="text-xs text-slate-500">Signed in as</p>
-                      <p className="text-sm font-semibold text-slate-900 truncate">{user.username}</p>
+                    <Link href="/dashboard" className="block px-4 py-2.5 border-b border-[var(--border)] hover:bg-[var(--bg-hover)] transition-colors">
+                      <p className="text-xs text-[var(--text-tertiary)]">Signed in as</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{user.username}</p>
                     </Link>
-                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors">
+                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
                       Dashboard
                     </Link>
-                    <Link href="/orders" className="block px-4 py-2 text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors">
+                    <Link href="/orders" className="block px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
                       My Orders
                     </Link>
                     {user.role === 'admin' && (
-                      <Link href="/admin" className="block px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-slate-50 transition-colors">
+                      <Link href="/admin" className="block px-4 py-2 text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-colors">
                         Admin Panel
                       </Link>
                     )}
-                    <div className="border-t border-slate-100 my-1" />
+                    <div className="border-t border-[var(--border)] my-1" />
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-500 hover:text-red-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                     >
                       Logout
                     </button>
                   </div>
                 </div>
               ) : (
-                <Link href="/account" className="btn btn-primary text-sm py-2 px-4 bg-white text-[var(--header-bg)] hover:bg-blue-50 font-semibold">
+                <Link href="/account" className="btn btn-primary text-sm py-2 px-4">
                   Login
                 </Link>
               )}
@@ -165,13 +165,13 @@ export const UniversalHeader = () => {
             {/* Mobile: Login + Hamburger */}
             <div className="flex md:hidden items-center gap-2">
               {!isLoading && !user && (
-                <Link href="/account" className="btn text-xs py-1.5 px-3 bg-white text-[var(--header-bg)] font-semibold">
+                <Link href="/account" className="btn btn-primary text-xs py-1.5 px-3">
                   Login
                 </Link>
               )}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg text-blue-100 hover:text-white hover:bg-white/[0.1] transition-all cursor-pointer"
+                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
                 aria-label="Toggle menu"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -193,39 +193,39 @@ export const UniversalHeader = () => {
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
           {/* Panel */}
-          <div className="absolute right-0 top-0 h-full w-72 bg-white border-l border-slate-200 shadow-xl animate-slide-in-right">
+          <div className="absolute right-0 top-0 h-full w-72 bg-[var(--bg-elevated)] border-l border-[var(--border)] shadow-xl animate-slide-in-right">
             <div className="p-6 pt-20 flex flex-col gap-1">
-              <Link href="/order" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all">
+              <Link href="/order" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
                 <PackageIcon className="h-5 w-5" /> Order
               </Link>
-              <Link href="/track" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all">
+              <Link href="/track" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
                 <SearchIcon className="h-5 w-5" /> Track
               </Link>
-              <Link href="/news" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all">
+              <Link href="/news" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
                 <NewsIcon className="h-5 w-5" /> News
               </Link>
               {user && (
                 <>
-                  <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all">
+                  <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
                     <UserIcon className="h-5 w-5" /> Dashboard
                   </Link>
-                  <Link href="/orders" className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all">
+                  <Link href="/orders" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
                     <UserIcon className="h-5 w-5" /> My Orders
                   </Link>
                   {user.role === 'admin' && (
-                    <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-xl text-blue-600 hover:text-blue-700 hover:bg-slate-50 transition-all">
+                    <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-all">
                       Admin Panel
                     </Link>
                   )}
                 </>
               )}
-              <div className="border-t border-slate-200 my-3" />
+              <div className="border-t border-[var(--border)] my-3" />
               {user ? (
                 <>
-                  <div className="px-4 py-2 text-xs text-slate-500">Signed in as <span className="text-slate-900 font-medium">{user.username}</span></div>
+                  <div className="px-4 py-2 text-xs text-[var(--text-tertiary)]">Signed in as <span className="text-[var(--text-primary)] font-medium">{user.username}</span></div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:text-red-600 hover:bg-slate-50 transition-all text-left w-full cursor-pointer"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-[var(--bg-hover)] transition-all text-left w-full cursor-pointer"
                   >
                     Logout
                   </button>

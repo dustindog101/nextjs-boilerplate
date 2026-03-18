@@ -4,21 +4,28 @@
 import "../lib/localStorage-polyfill";
 
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Space_Grotesk, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UniversalHeader } from "./components/UniversalHeader";
 
-// Load Inter font via next/font for optimal performance
-const inter = Inter({
-  variable: "--font-inter",
+// Load Space Grotesk for display/headings
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["600", "700"],
+});
+
+// Load DM Sans for body text
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "ID Pirate — Premium Novelty IDs",
-  description: "The #1 source for premium novelty IDs. Fast turnaround, discreet shipping, and all security features included.",
+  title: "ID Pirate — Premium Novelty IDs | Trusted Since 2024",
+  description: "The #1 source for premium novelty IDs. Scannable barcodes, UV holograms, microprint. Fast turnaround, discreet shipping, and all security features included.",
 };
 
 export default function RootLayout({
@@ -28,9 +35,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${spaceGrotesk.variable} ${dmSans.variable} antialiased`}>
         <AuthProvider>
-          <div className="bg-[var(--bg)] text-[var(--text-primary)] min-h-screen flex flex-col">
+          <div className="bg-[var(--bg-primary)] text-[var(--text-primary)] min-h-screen flex flex-col">
             <UniversalHeader />
             <main className="flex-grow flex-1">
               {children}
