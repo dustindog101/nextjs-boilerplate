@@ -1,53 +1,71 @@
 @import "tailwindcss";
 
 /* ============================================================
-   ID PIRATE — Clean Modern Design System
+   ID PIRATE — Dark Maritime Premium Design System
    ============================================================ */
 
 :root {
-  /* ---- Background ---- */
-  --bg: #FFFFFF;
-  --bg-secondary: #F8FAFC;
-  --surface: #FFFFFF;
-  --surface-hover: #F1F5F9;
+  /* ---- Backgrounds ---- */
+  --bg-primary: #0B0F1A;
+  --bg-secondary: #111827;
+  --bg-elevated: #1A2235;
+  --bg-hover: #1E293B;
 
-  /* ---- Borders ---- */
-  --border: #E2E8F0;
-  --border-hover: #CBD5E1;
+  /* ---- Accent (Electric Cyan) ---- */
+  --accent: #06B6D4;
+  --accent-hover: #22D3EE;
+  --accent-subtle: rgba(6, 182, 212, 0.12);
+  --accent-glow: rgba(6, 182, 212, 0.25);
 
-  /* ---- Accent (Professional Blue) ---- */
-  --accent: #2563EB;
-  --accent-hover: #1D4ED8;
-  --accent-subtle: rgba(37, 99, 235, 0.08);
-
-  /* ---- Semantic ---- */
-  --price: #059669;
-  --success: #10B981;
-  --error: #EF4444;
-  --info: #3B82F6;
+  /* ---- Secondary Accent (Gold) ---- */
+  --gold: #F59E0B;
+  --gold-subtle: rgba(245, 158, 11, 0.12);
 
   /* ---- Text ---- */
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-tertiary: #94A3B8;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --text-on-accent: #FFFFFF;
+
+  /* ---- Semantic ---- */
+  --success: #10B981;
+  --error: #EF4444;
+  --price: #34D399;
+
+  /* ---- Borders ---- */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-accent: rgba(6, 182, 212, 0.3);
+
+  /* ---- Surfaces ---- */
+  --glass: rgba(17, 24, 39, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.06);
 
   /* ---- Header ---- */
-  --header-bg: #1A2744;
+  --header-bg: rgba(11, 15, 26, 0.85);
 
-  /* ---- Fonts ---- */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  /* ---- Shadows ---- */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.15);
 
   /* ---- Radius ---- */
+  --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+
+  /* ---- Fonts ---- */
+  --font-display: 'Space Grotesk', var(--font-space-grotesk), sans-serif;
+  --font-body: 'DM Sans', var(--font-dm-sans), sans-serif;
 }
 
 /* ---- Base ---- */
 body {
-  background: var(--bg);
+  background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -56,6 +74,7 @@ body {
 }
 
 @layer base {
+
   *,
   *::before,
   *::after {
@@ -64,51 +83,55 @@ body {
 }
 
 /* ============================================================
-   Utility Classes
+   Cards
    ============================================================ */
 
-/* ---- Card (clean white surface) ---- */
 .card {
-  background: var(--surface);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-sm);
 }
 
 .card-hover {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .card-hover:hover {
-  border-color: var(--border-hover);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
 }
 
-/* ---- Legacy .glass → maps to .card for backward compat ---- */
+/* Legacy glass compat */
 .glass {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .glass-hover {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .glass-hover:hover {
-  border-color: var(--border-hover);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
 }
 
-/* ---- Buttons ---- */
+/* ============================================================
+   Buttons
+   ============================================================ */
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: 0.875rem;
   line-height: 1.25rem;
@@ -123,7 +146,7 @@ body {
 
 .btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent);
 }
 
 .btn:disabled {
@@ -132,12 +155,14 @@ body {
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: white;
+  background: linear-gradient(135deg, var(--accent), #0891B2);
+  color: var(--text-on-accent);
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  box-shadow: 0 0 24px rgba(6, 182, 212, 0.5);
+  transform: translateY(-1px);
 }
 
 .btn-outline {
@@ -147,24 +172,28 @@ body {
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: var(--surface-hover);
+  background: var(--bg-hover);
   border-color: var(--border-hover);
 }
 
 .btn-secondary {
-  background: var(--bg-secondary);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   border: 1px solid var(--border);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--surface-hover);
+  background: var(--bg-hover);
 }
 
-/* ---- Text utilities ---- */
+/* ============================================================
+   Text Utilities
+   ============================================================ */
+
 .text-price {
   color: var(--price);
   font-weight: 700;
+  font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
 }
 
@@ -176,41 +205,48 @@ body {
   color: var(--text-tertiary);
 }
 
-/* ---- Badge ---- */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* ============================================================
+   Badges
+   ============================================================ */
+
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.25rem 0.625rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   white-space: nowrap;
 }
 
-.badge-blue {
-  background: rgba(37, 99, 235, 0.08);
-  color: #2563EB;
+.badge-cyan {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.badge-gold {
+  background: var(--gold-subtle);
+  color: var(--gold);
 }
 
 .badge-green {
-  background: rgba(5, 150, 105, 0.08);
-  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+}
+
+.badge-blue {
+  background: var(--accent-subtle);
+  color: var(--accent);
 }
 
 .badge-amber {
-  background: rgba(245, 158, 11, 0.08);
-  color: #D97706;
-}
-
-/* ---- Star rating ---- */
-.star {
-  color: #FBBF24;
-}
-
-/* ---- Section backgrounds ---- */
-.bg-section {
-  background: var(--bg-secondary);
+  background: var(--gold-subtle);
+  color: var(--gold);
 }
 
 /* ============================================================
@@ -220,7 +256,7 @@ body {
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(20px);
   }
 
   to {
@@ -308,17 +344,44 @@ body {
 }
 
 @keyframes pulse-soft {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
 }
 
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 24px rgba(6, 182, 212, 0.5);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+
+  50% {
+    transform: translateY(-8px) rotate(-6deg);
+  }
+}
+
 /* ---- Animation classes ---- */
 .animate-fade-up {
-  animation: fade-up 0.5s ease-out both;
+  animation: fade-up 0.6s ease-out both;
 }
 
 .animate-fade-in {
@@ -335,6 +398,14 @@ body {
 
 .animate-pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
 }
 
 /* Stagger delays */
@@ -362,8 +433,16 @@ body {
   animation-delay: 450ms;
 }
 
+.delay-7 {
+  animation-delay: 525ms;
+}
+
+.delay-8 {
+  animation-delay: 600ms;
+}
+
 /* ============================================================
-   Form Inputs (global)
+   Form Inputs
    ============================================================ */
 
 input[type="text"],
@@ -375,5 +454,96 @@ input[type="url"],
 input[type="search"],
 select,
 textarea {
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  padding: 0.75rem 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+  outline: none;
+}
+
+/* ============================================================
+   Hero Background
+   ============================================================ */
+
+.hero-bg {
+  background:
+    radial-gradient(ellipse at 70% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 30% 80%, rgba(245, 158, 11, 0.04) 0%, transparent 50%),
+    var(--bg-primary);
+}
+
+/* Noise texture overlay */
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ============================================================
+   Section Backgrounds
+   ============================================================ */
+
+.bg-section {
+  background: var(--bg-secondary);
+}
+
+.section-border {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ============================================================
+   ID Card Mockup Styles
+   ============================================================ */
+
+.id-card-mockup {
+  width: 260px;
+  height: 164px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.id-card-mockup::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ============================================================
+   Scrollbar Styling
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
 }
