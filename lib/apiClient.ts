@@ -321,3 +321,27 @@ export interface ReferralGroup {
 export const adminListReferrals = async (): Promise<ReferralGroup[]> => {
   return adminApiFetch<ReferralGroup[]>({ requestType: 'list_referrals' });
 };
+
+
+// ====================================================================
+// RESELLER API FUNCTIONS
+// ====================================================================
+
+/**
+ * Updates an order's status / paymentStatus via the reseller endpoint.
+ * The Lambda verifies the caller owns this order.
+ */
+export const resellerUpdateOrder = async (
+  orderId: string,
+  updateData: { status?: string; paymentStatus?: string }
+): Promise<{ message: string }> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) {
+    throw new Error('Reseller action requires authentication token.');
+  }
+  return apiFetch<{ message: string }>('/api/reseller/update-order', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ orderId, updateData }),
+  });
+};

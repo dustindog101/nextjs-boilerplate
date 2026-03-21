@@ -1,121 +1,268 @@
 "use client";
-import React, { useEffect, useMemo, useState } from 'react';
-import { Search, ChevronDown, ChevronUp } from 'lucide-react';
-import { Spinner } from '../../components/ui';
-import { useResellerData, ResellerOrder } from '../ResellerDataContext';
+import React, { useState, useMemo } from 'react';
+import { Search, ChevronDown, ChevronUp, Check, Loader2 } from 'lucide-react';
+import { useResellerData } from '../ResellerDataContext';
+import { resellerUpdateOrder } from '@/lib/apiClient';
 
-const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
-    pending: { label: 'Pending', color: 'text-amber-600', dot: 'bg-amber-500' },
-    processing: { label: 'Processing', color: 'text-blue-600', dot: 'bg-blue-500' },
-    shipped: { label: 'Shipped', color: 'text-sky-600', dot: 'bg-sky-500' },
-    delivered: { label: 'Delivered', color: 'text-emerald-600', dot: 'bg-emerald-500' },
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const STATUS_OPTIONS = ['pending', 'in-progress', 'completed', 'cancelled'];
+const PAYMENT_OPTIONS = ['Unpaid', 'Paid', 'Partial'];
+
+const STATUS_COLORS: Record<string, string> = {
+    pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    'in-progress': 'bg-blue-50 text-blue-700 border-blue-200',
+    completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    cancelled: 'bg-red-50 text-red-700 border-red-200',
+};
+const PAYMENT_COLORS: Record<string, string> = {
+    Unpaid: 'bg-red-50 text-red-600 border-red-200',
+    Paid: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    Partial: 'bg-amber-50 text-amber-700 border-amber-200',
 };
 
-// ─── Order Row (expandable) ───────────────────────────────────────────────────
+const pill = (val: string, map: Record<string, string>) =>
+    `inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium ${map[val] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`;
 
-const OrderRow: React.FC<{ order: ResellerOrder }> = ({ order }) => {
-    const [expanded, setExpanded] = useState(false);
-    const cfg = statusConfig[order.status] || statusConfig.pending;
+// ─── Inline select ─────────────────────────────────────────────────────────────
 
-    return (
-        <>
-            <tr
-                className="border-b border-slate-100 hover:bg-slate-50/70 cursor-pointer transition-colors"
-                onClick={() => setExpanded(v => !v)}
-            >
-                <td className="px-4 py-3 text-sm font-mono text-slate-500">#{order.orderId.substring(0, 8)}…</td>
-                <td className="px-4 py-3 text-sm text-slate-600">
-                    {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
-                </td>
-                <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${cfg.color}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-                        {cfg.label}
-                    </span>
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-600">{order.numberOfIds} ID{order.numberOfIds !== 1 ? 's' : ''}</td>
-                <td className="px-4 py-3 text-sm font-bold text-slate-900">${order.price?.total?.toFixed(2) ?? '—'}</td>
-                <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${order.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {order.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
-                    </span>
-                </td>
-                <td className="px-4 py-3 text-slate-400">{expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</td>
-            </tr>
-            {expanded && (
-                <tr className="bg-slate-50/60">
-                    <td colSpan={7} className="px-6 py-4">
-                        <div className="text-sm text-slate-500 space-y-1">
-                            <p><span className="font-medium text-slate-700">Order ID:</span> {order.orderId}</p>
-                            {order.shipping && <p><span className="font-medium text-slate-700">Ship To:</span> {order.shipping}</p>}
-                            {order.source === 'reseller_portal' && (
-                                <p><span className="font-medium text-slate-700">Source:</span> <span className="text-blue-600">Reseller Portal</span></p>
-                            )}
-                        </div>
-                    </td>
-                </tr>
-            )}
-        </>
-    );
-};
+interface EditSelectProps {
+    value: string;
+    options: string[];
+    colorMap: Record<string, string>;
+    onChange: (v: string) => void;
+    saving: boolean;
+}
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+const EditSelect: React.FC<EditSelectProps> = ({ value, options, colorMap, onChange, saving }) => (
+    <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        disabled={saving}
+        className={`text-xs font-medium rounded-full border px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer disabled:opacity-50 transition-all ${colorMap[value] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}
+    >
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+);
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 
 export const ResellerOrdersSection: React.FC = () => {
-    const { orders, loadOrders } = useResellerData();
+    const { orders, loadOrders, refreshOrders } = useResellerData();
     const [search, setSearch] = useState('');
+    const [expanded, setExpanded] = useState<string | null>(null);
 
-    useEffect(() => { loadOrders(); }, [loadOrders]);
+    // Per-row edit state
+    const [rowStatus, setRowStatus] = useState<Record<string, string>>({});
+    const [rowPayment, setRowPayment] = useState<Record<string, string>>({});
+    const [saving, setSaving] = useState<Record<string, boolean>>({});
+    const [saved, setSaved] = useState<Record<string, boolean>>({});
+    const [rowError, setRowError] = useState<Record<string, string>>({});
 
     const filtered = useMemo(() => {
+        const items = orders.data ?? [];
+        if (!search.trim()) return items;
         const q = search.toLowerCase();
-        return (orders.data ?? []).filter(o =>
-            o.orderId.toLowerCase().includes(q) ||
-            o.status.toLowerCase().includes(q) ||
-            (o.paymentStatus ?? '').toLowerCase().includes(q)
+        return items.filter((o: any) =>
+            o.orderId?.toLowerCase().includes(q) ||
+            o.status?.toLowerCase().includes(q) ||
+            o.paymentStatus?.toLowerCase().includes(q)
         );
     }, [orders.data, search]);
 
+    // Returns the *current edited* value or falls back to DB value
+    const getStatus = (o: any) => rowStatus[o.orderId] ?? o.status ?? 'pending';
+    const getPayment = (o: any) => rowPayment[o.orderId] ?? o.paymentStatus ?? 'Unpaid';
+
+    const isDirty = (o: any) =>
+        (rowStatus[o.orderId] !== undefined && rowStatus[o.orderId] !== o.status) ||
+        (rowPayment[o.orderId] !== undefined && rowPayment[o.orderId] !== o.paymentStatus);
+
+    const handleSave = async (o: any) => {
+        setSaving(s => ({ ...s, [o.orderId]: true }));
+        setRowError(e => ({ ...e, [o.orderId]: '' }));
+        try {
+            await resellerUpdateOrder(o.orderId, {
+                ...(rowStatus[o.orderId] !== undefined ? { status: rowStatus[o.orderId] } : {}),
+                ...(rowPayment[o.orderId] !== undefined ? { paymentStatus: rowPayment[o.orderId] } : {}),
+            });
+            await refreshOrders();
+            // Clear local overrides so the refreshed DB values show
+            setRowStatus(s => { const n = { ...s }; delete n[o.orderId]; return n; });
+            setRowPayment(p => { const n = { ...p }; delete n[o.orderId]; return n; });
+            setSaved(v => ({ ...v, [o.orderId]: true }));
+            setTimeout(() => setSaved(v => ({ ...v, [o.orderId]: false })), 2000);
+        } catch (err: any) {
+            setRowError(e => ({ ...e, [o.orderId]: err.message ?? 'Save failed.' }));
+        } finally {
+            setSaving(s => ({ ...s, [o.orderId]: false }));
+        }
+    };
+
+    if (orders.isLoading) return (
+        <div className="p-12 flex justify-center">
+            <Loader2 size={24} className="animate-spin text-slate-400" />
+        </div>
+    );
+    if (orders.error) return (
+        <div className="p-6 text-center text-red-500">Error: {orders.error}</div>
+    );
+
     return (
-        <div>
-            <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-slate-900">Your Orders</h2>
-                {/* Search */}
+        <div className="p-4 sm:p-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <h2 className="text-lg font-bold text-slate-900">
+                    My Orders <span className="text-slate-400 font-normal text-sm">({filtered.length})</span>
+                </h2>
                 <div className="relative">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
+                        type="text"
+                        placeholder="Search orders..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Search…"
-                        className="bg-white border border-slate-200 rounded-lg pl-8 pr-4 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/30 focus:outline-none w-52"
+                        className="w-full sm:w-52 bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all"
                     />
                 </div>
             </div>
 
-            {orders.isLoading ? (
-                <div className="flex items-center justify-center h-40">
-                    <Spinner size="lg" />
-                </div>
-            ) : orders.error ? (
-                <p className="text-red-500 text-sm">{orders.error}</p>
-            ) : filtered.length === 0 ? (
-                <div className="text-center py-16 text-slate-400">
-                    <p className="font-medium">No orders yet</p>
-                    <p className="text-sm mt-1">Orders from your portal will appear here.</p>
+            {filtered.length === 0 ? (
+                <div className="glass p-10 text-center">
+                    <p className="text-slate-500 mb-1">No orders yet.</p>
+                    <p className="text-slate-400 text-sm">Orders placed through your link will appear here.</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="glass overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-slate-200 bg-slate-50/60">
-                                <tr>
-                                    {['Order', 'Date', 'Status', 'IDs', 'Amount', 'Payment', ''].map(h => (
-                                        <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
-                                    ))}
+                        <table className="min-w-full divide-y divide-slate-200">
+                            <thead>
+                                <tr className="bg-slate-50">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Order</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">IDs</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Save</th>
+                                    <th className="px-4 py-3" />
                                 </tr>
                             </thead>
-                            <tbody>
-                                {filtered.map(order => <OrderRow key={order.orderId} order={order} />)}
+                            <tbody className="divide-y divide-slate-100">
+                                {filtered.map((o: any) => {
+                                    const isExpanded = expanded === o.orderId;
+                                    const isSaving = !!saving[o.orderId];
+                                    const isSaved = !!saved[o.orderId];
+                                    const dirty = isDirty(o);
+                                    const errMsg = rowError[o.orderId];
+
+                                    return (
+                                        <React.Fragment key={o.orderId}>
+                                            <tr className="hover:bg-slate-50 transition-colors">
+                                                {/* Order ID */}
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <p className="text-sm font-mono text-slate-700">{o.orderId.substring(0, 8)}…</p>
+                                                </td>
+
+                                                {/* Date */}
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                                                    {o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}
+                                                </td>
+
+                                                {/* Status — editable */}
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <EditSelect
+                                                        value={getStatus(o)}
+                                                        options={STATUS_OPTIONS}
+                                                        colorMap={STATUS_COLORS}
+                                                        onChange={v => setRowStatus(s => ({ ...s, [o.orderId]: v }))}
+                                                        saving={isSaving}
+                                                    />
+                                                </td>
+
+                                                {/* ID count */}
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                                                    {o.ids?.length ?? o.numberOfIds ?? '—'}
+                                                </td>
+
+                                                {/* Payment — editable */}
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <EditSelect
+                                                        value={getPayment(o)}
+                                                        options={PAYMENT_OPTIONS}
+                                                        colorMap={PAYMENT_COLORS}
+                                                        onChange={v => setRowPayment(p => ({ ...p, [o.orderId]: v }))}
+                                                        saving={isSaving}
+                                                    />
+                                                </td>
+
+                                                {/* Save button */}
+                                                <td className="px-4 py-3 whitespace-nowrap text-right">
+                                                    {isSaved ? (
+                                                        <span className="flex items-center justify-end gap-1 text-xs text-emerald-600 font-medium">
+                                                            <Check size={13} /> Saved
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleSave(o)}
+                                                            disabled={isSaving || !dirty}
+                                                            className="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5 ml-auto"
+                                                        >
+                                                            {isSaving ? <Loader2 size={11} className="animate-spin" /> : null}
+                                                            {isSaving ? 'Saving…' : 'Save'}
+                                                        </button>
+                                                    )}
+                                                </td>
+
+                                                {/* Expand toggle */}
+                                                <td className="px-4 py-3 whitespace-nowrap text-right">
+                                                    <button
+                                                        onClick={() => setExpanded(isExpanded ? null : o.orderId)}
+                                                        className="text-slate-400 hover:text-slate-700 transition-colors"
+                                                    >
+                                                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                    </button>
+                                                </td>
+                                            </tr>
+
+                                            {/* Expanded detail row */}
+                                            {isExpanded && (
+                                                <tr className="bg-slate-50">
+                                                    <td colSpan={7} className="px-4 py-4">
+                                                        {errMsg && (
+                                                            <p className="text-red-500 text-xs mb-2 bg-red-50 px-3 py-1.5 rounded-lg">{errMsg}</p>
+                                                        )}
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs text-slate-600">
+                                                            <div>
+                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Full Order ID</p>
+                                                                <p className="font-mono break-all">{o.orderId}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Shipping</p>
+                                                                <p>{o.shipping ?? '—'}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Source</p>
+                                                                <p>{o.source ?? 'direct'}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Notes</p>
+                                                                <p>{o.notes || '—'}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Payment Method</p>
+                                                                <p>{o.paymentMethod ?? '—'}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Last Updated</p>
+                                                                <p>{o.updatedAt ? new Date(o.updatedAt).toLocaleString() : '—'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
