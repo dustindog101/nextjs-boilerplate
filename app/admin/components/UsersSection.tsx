@@ -67,7 +67,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
           <div className="border-t border-slate-100 pt-4">
             <label className="text-label mb-2 block">User Discount</label>
             <div className="grid grid-cols-2 gap-3">
-              <select value={discountType} onChange={(e) => setDiscountType(e.target.value)} className={inputCls}>
+              <select value={discountType} onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'fixed')} className={inputCls}>
                 <option value="percentage">Percentage (%)</option>
                 <option value="fixed">Fixed ($)</option>
               </select>
