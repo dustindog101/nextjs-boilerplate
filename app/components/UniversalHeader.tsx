@@ -49,6 +49,10 @@ export const UniversalHeader = () => {
   const backButtonHref = pathname === '/checkout' ? '/order/new' : '/order';
   const backButtonText = pathname === '/checkout' ? 'Back to Edit' : 'Back to Gallery';
 
+  // Hide all branding on white-label reseller checkout routes
+  if (pathname.startsWith('/r/')) return null;
+
+
   const handleLogout = () => {
     logout();
     setIsDropdownOpen(false);

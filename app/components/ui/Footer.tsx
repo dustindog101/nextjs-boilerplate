@@ -2,6 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
 
 // --- Payment Method Icons (inline SVGs) ---
 function BitcoinIcon() {
@@ -40,61 +42,68 @@ interface FooterProps {
     className?: string;
 }
 
-export const Footer: React.FC<FooterProps> = ({ className = '' }) => (
-    <footer className={`border-t border-[var(--border)] bg-[var(--bg-secondary)] ${className}`}>
-        {/* Main footer content */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
-                {/* Column 1: Brand */}
-                <div>
-                    <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 font-display">
-                        <span className="text-[var(--accent)]">ID</span> PIRATE
-                    </h3>
-                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                        The premium choice for novelty IDs. Fast turnaround, discreet shipping, and
-                        all security features included on every order.
+export function Footer({ className = '' }: FooterProps) {
+    const pathname = usePathname();
+    // Hide all branding on white-label reseller checkout routes
+    if (pathname.startsWith('/r/')) return null;
+
+    return (
+        <footer className={`border-t border-[var(--border)] bg-[var(--bg-secondary)] ${className}`}>
+
+            {/* Main footer content */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+                    {/* Column 1: Brand */}
+                    <div>
+                        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 font-display">
+                            <span className="text-[var(--accent)]">ID</span> PIRATE
+                        </h3>
+                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                            The premium choice for novelty IDs. Fast turnaround, discreet shipping, and
+                            all security features included on every order.
+                        </p>
+                    </div>
+
+                    {/* Column 2: Quick Links */}
+                    <div>
+                        <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3 font-display">Quick Links</h4>
+                        <nav className="flex flex-col gap-2">
+                            <Link href="/order" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Browse IDs</Link>
+                            <Link href="/track" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Track Order</Link>
+                            <Link href="/news" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">News & Updates</Link>
+                            <Link href="/account" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">My Account</Link>
+                            <Link href="/terms" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Terms of Service</Link>
+                            <Link href="/privacy" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Privacy Policy</Link>
+                        </nav>
+                    </div>
+
+                    {/* Column 3: Payment & Security */}
+                    <div>
+                        <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3 font-display">We Accept</h4>
+                        <div className="flex items-center gap-3 mb-4">
+                            <BitcoinIcon />
+                            <VenmoIcon />
+                            <CashAppIcon />
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                            <ShieldCheckIcon />
+                            <span>Secure & Encrypted Checkout</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom bar */}
+            <div className="border-t border-[var(--border)]">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                        &copy; {new Date().getFullYear()} ID Pirate. All rights reserved.
+                    </p>
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                        All transactions are encrypted and secure.
                     </p>
                 </div>
-
-                {/* Column 2: Quick Links */}
-                <div>
-                    <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3 font-display">Quick Links</h4>
-                    <nav className="flex flex-col gap-2">
-                        <Link href="/order" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Browse IDs</Link>
-                        <Link href="/track" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Track Order</Link>
-                        <Link href="/news" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">News & Updates</Link>
-                        <Link href="/account" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">My Account</Link>
-                        <Link href="/terms" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Terms of Service</Link>
-                        <Link href="/privacy" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Privacy Policy</Link>
-                    </nav>
-                </div>
-
-                {/* Column 3: Payment & Security */}
-                <div>
-                    <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3 font-display">We Accept</h4>
-                    <div className="flex items-center gap-3 mb-4">
-                        <BitcoinIcon />
-                        <VenmoIcon />
-                        <CashAppIcon />
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                        <ShieldCheckIcon />
-                        <span>Secure & Encrypted Checkout</span>
-                    </div>
-                </div>
             </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="border-t border-[var(--border)]">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-                <p className="text-xs text-[var(--text-tertiary)]">
-                    &copy; {new Date().getFullYear()} ID Pirate. All rights reserved.
-                </p>
-                <p className="text-xs text-[var(--text-tertiary)]">
-                    All transactions are encrypted and secure.
-                </p>
-            </div>
-        </div>
-    </footer>
-);
+        </footer>
+    );
+}

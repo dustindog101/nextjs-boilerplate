@@ -86,7 +86,7 @@ function IdCardMockup({ state, className = '' }: { state: string; className?: st
 export default function OrderGalleryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'popular' | 'new'>('all');
-  const [sort, setSort] = useState<'alpha' | 'price-low' | 'price-high'>('popular');
+  const [sort, setSort] = useState<'alpha' | 'price-low' | 'price-high'>('alpha');
 
   // Filter and sort logic
   const filteredStates = useMemo(() => {
@@ -164,8 +164,8 @@ export default function OrderGalleryPage() {
               key={tab.id}
               onClick={() => setFilter(tab.id as 'all' | 'popular' | 'new')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === tab.id
-                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)] shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                ? 'bg-[var(--accent-subtle)] text-[var(--accent)] shadow-sm'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`}
             >
               {tab.label}
