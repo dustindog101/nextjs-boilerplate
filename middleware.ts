@@ -17,10 +17,15 @@ export function middleware(req: NextRequest) {
         // e.g. "manny.idpirate.com" → subdomain = "manny"
         const subdomain = hostname.split('.')[0];
 
-        if (subdomain && subdomain !== 'www' && subdomain !== 'admin' && subdomain !== 'api') {
-            // Silently rewrite to /r/[subdomain] — browser URL stays as subdomain
-            url.pathname = `/r/${subdomain}${url.pathname === '/' ? '' : url.pathname}`;
-            return NextResponse.rewrite(url);
+        if (subdomain) {
+            // Prevent common/dev subdomains from hitting the reseller checkout
+            const reservedSubdomains = ['www', 'admin', 'api', 'dev', 'staging', 'test'];
+
+            if (!reservedSubdomains.includes(subdomain)) {
+                // Silently rewrite to /r/[subdomain] — browser URL stays as subdomain
+                url.pathname = `/r/${subdomain}${url.pathname === '/' ? '' : url.pathname}`;
+                return NextResponse.rewrite(url);
+            }
         }
     }
 
