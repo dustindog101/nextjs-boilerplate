@@ -69,7 +69,7 @@ export const LinkSection: React.FC = () => {
                 </p>
 
                 {/* Link + copy row */}
-                <div className="flex items-center gap-3 mb-5">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
                     <code
                         className="flex-1 text-sm font-mono px-4 py-3 rounded-xl truncate border"
                         style={{
@@ -80,44 +80,46 @@ export const LinkSection: React.FC = () => {
                     >
                         {resellerLink}
                     </code>
-                    <button
-                        onClick={handleCopy}
-                        className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all flex-shrink-0"
-                        style={copied
-                            ? { background: '#10B981', color: '#fff' }
-                            : { background: 'var(--accent)', color: '#0f1520' }
-                        }
-                    >
-                        {copied ? <><Check size={15} /> Copied!</> : <><Copy size={15} /> Copy Link</>}
-                    </button>
-                    <a
-                        href={resellerLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-3 rounded-xl border transition-all"
-                        style={{
-                            background: 'var(--bg-primary)',
-                            borderColor: 'var(--border)',
-                            color: 'var(--text-secondary)',
-                        }}
-                        title="Preview your link"
-                    >
-                        <ExternalLink size={16} />
-                    </a>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleCopy}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all"
+                            style={copied
+                                ? { background: '#10B981', color: '#fff' }
+                                : { background: 'var(--accent)', color: '#0f1520' }
+                            }
+                        >
+                            {copied ? <><Check size={15} /> Copied!</> : <><Copy size={15} /> Copy</>}
+                        </button>
+                        <a
+                            href={resellerLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-3 rounded-xl border transition-all flex items-center justify-center"
+                            style={{
+                                background: 'var(--bg-primary)',
+                                borderColor: 'var(--border)',
+                                color: 'var(--text-secondary)',
+                            }}
+                            title="Preview your link"
+                        >
+                            <ExternalLink size={16} />
+                        </a>
+                    </div>
                 </div>
 
-                {/* QR + preview */}
+                {/* QR + share — stacks vertically on mobile */}
                 <div className="flex flex-col sm:flex-row items-start gap-5">
-                    <div>
+                    <div className="mx-auto sm:mx-0">
                         <p className="text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                             QR Code
                         </p>
                         <QRCode url={resellerLink} />
                         <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
-                            Print or screenshot this for in-person use.
+                            Print or screenshot for in-person use.
                         </p>
                     </div>
-                    <div className="flex-1 space-y-3">
+                    <div className="flex-1 w-full space-y-2">
                         <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                             Quick Share
                         </p>
@@ -126,17 +128,17 @@ export const LinkSection: React.FC = () => {
                             {
                                 label: 'Copy for Instagram Bio',
                                 icon: <Instagram size={14} />,
-                                text: `${resellerLink}`,
+                                text: resellerLink,
                             },
                             {
-                                label: 'WhatsApp Message',
+                                label: 'WhatsApp / iMessage',
                                 icon: <MessageCircle size={14} />,
-                                text: `Order your custom ID here: ${resellerLink}`,
+                                text: `Hey! Place your order with me here — takes 2 min: ${resellerLink}`,
                             },
                             {
                                 label: 'SMS Template',
                                 icon: <Smartphone size={14} />,
-                                text: `Hey! Place your order here: ${resellerLink}`,
+                                text: `Fill out your order here and I'll take care of the rest: ${resellerLink}`,
                             },
                         ].map(({ label, icon, text }) => (
                             <button
