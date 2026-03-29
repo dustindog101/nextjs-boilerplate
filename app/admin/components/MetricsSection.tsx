@@ -13,7 +13,7 @@ export const MetricsSection = () => {
   useEffect(() => { loadMetrics(); }, [loadMetrics]);
 
   if (metrics.isLoading) return <div className="p-12 flex items-center justify-center"><Spinner size="lg" /></div>;
-  if (metrics.error) return <div className="p-6 text-center text-red-500">Error loading metrics: {metrics.error}</div>;
+  if (metrics.error) return <div className="p-6 text-center text-red-400">Error loading metrics: {metrics.error}</div>;
   if (!metrics.data) return null;
 
   const m = metrics.data;
@@ -35,15 +35,15 @@ export const MetricsSection = () => {
         <ChartCard title="Orders by Status">
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={statusData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-              <XAxis dataKey="name" stroke="#94A3B8" fontSize={12} />
-              <YAxis stroke="#94A3B8" fontSize={12} allowDecimals={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <XAxis dataKey="name" stroke="#64748B" fontSize={12} />
+              <YAxis stroke="#64748B" fontSize={12} allowDecimals={false} />
               <Tooltip
-                contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-                labelStyle={{ color: '#0F172A' }}
-                itemStyle={{ color: '#2563EB' }}
+                contentStyle={{ backgroundColor: '#1A2235', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
+                labelStyle={{ color: '#F1F5F9' }}
+                itemStyle={{ color: '#06B6D4' }}
               />
-              <Bar dataKey="orders" fill="#2563EB" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="orders" fill="#06B6D4" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

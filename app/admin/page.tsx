@@ -35,7 +35,7 @@ function AdminDashboardPage() {
   };
 
   return (
-    <div className="font-inter flex flex-col h-screen">
+    <div className="font-inter flex flex-col h-screen admin-dark">
       <AdminDataProvider>
         <AdminLayout
           activeSection={activeSection}

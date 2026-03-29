@@ -38,11 +38,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* Mobile Sidebar Backdrop */}
-      <div onClick={() => setSidebarOpen(false)} className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-20 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}></div>
+      <div onClick={() => setSidebarOpen(false)} className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-20 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}></div>
 
       {/* Full-Height Sidebar */}
-      <aside className={`fixed top-0 left-0 pt-[73px] lg:pt-0 h-full bg-white border-r border-slate-200 z-30 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'w-64' : 'w-20'} ${!isSidebarOpen && '-translate-x-full'}`}>
-        <div className="lg:hidden h-[73px] flex-shrink-0"></div>
+      <aside
+        className={`fixed top-0 left-0 pt-[73px] lg:pt-0 h-full z-30 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'w-64' : 'w-20'} ${!isSidebarOpen && '-translate-x-full lg:translate-x-0'}`}
+        style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)' }}
+      >
+        <div className="lg:hidden h-[73px] flex-shrink-0" />
 
         <nav className="flex-grow px-2 py-4 space-y-1 overflow-y-auto">
           {sidebarLinks.map(link => (
@@ -53,9 +56,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
                 if (window.innerWidth < 1024) { setSidebarOpen(false); }
               }}
               className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${activeSection === link.id
-                ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                ? 'border'
+                : 'border border-transparent'
                 } ${!isSidebarOpen && 'justify-center'}`}
+              style={activeSection === link.id
+                ? { background: 'var(--accent-subtle)', color: 'var(--accent)', borderColor: 'var(--border-accent)' }
+                : { color: 'var(--text-secondary)' }
+              }
+              onMouseEnter={e => {
+                if (activeSection !== link.id) {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)';
+                  (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)';
+                }
+              }}
+              onMouseLeave={e => {
+                if (activeSection !== link.id) {
+                  (e.currentTarget as HTMLButtonElement).style.background = '';
+                  (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
+                }
+              }}
               title={link.name}
             >
               {link.icon}
@@ -64,12 +83,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
           ))}
         </nav>
 
-        <div className="px-2 py-4 border-t border-slate-200 flex-shrink-0">
-          <Link href="/" className={`w-full flex items-center p-3 rounded-lg transition-colors text-slate-500 hover:text-slate-900 hover:bg-slate-50 ${!isSidebarOpen && 'justify-center'}`} title="Back to Main Site">
+        <div className="px-2 py-4 flex-shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
+          <Link
+            href="/"
+            className={`w-full flex items-center p-3 rounded-lg transition-colors ${!isSidebarOpen && 'justify-center'}`}
+            style={{ color: 'var(--text-secondary)' }}
+            title="Back to Main Site"
+          >
             <Home size={20} />
             {isSidebarOpen && <span className="ml-3 font-medium text-sm">Back to Site</span>}
           </Link>
-          <button onClick={logout} className={`w-full flex items-center p-3 mt-1 rounded-lg transition-colors text-red-500 hover:text-red-600 hover:bg-red-50 ${!isSidebarOpen && 'justify-center'}`} title="Logout">
+          <button
+            onClick={logout}
+            className={`w-full flex items-center p-3 mt-1 rounded-lg transition-colors ${!isSidebarOpen && 'justify-center'}`}
+            style={{ color: 'var(--error)' }}
+            title="Logout"
+          >
             <LogOut size={20} />
             {isSidebarOpen && <span className="ml-3 font-medium text-sm">Logout</span>}
           </button>
@@ -77,7 +106,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
       </aside>
 
       {/* Main Content Pane */}
-      <main className="flex-1 overflow-y-auto bg-slate-50">
+      <main className="flex-1 overflow-y-auto" style={{ background: 'var(--bg-primary)' }}>
         {children}
       </main>
     </div>

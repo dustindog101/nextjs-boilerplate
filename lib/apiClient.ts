@@ -217,11 +217,13 @@ export const listAllUsers = async (): Promise<User[]> => {
  */
 export const adminUpdateUser = async (
   userId: string,
+  username: string,
   updateData: Partial<User>
 ): Promise<{ message: string }> => {
   return adminApiFetch<{ message: string }>({
     requestType: 'admin_update_user',
     userId,
+    username,
     updateData,
   });
 };

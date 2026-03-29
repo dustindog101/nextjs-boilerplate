@@ -7,8 +7,8 @@ interface ChartCardProps {
 }
 
 export const ChartCard: React.FC<ChartCardProps> = ({ title, children }) => (
-  <div className="glass p-4 sm:p-6">
-    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">{title}</h3>
+  <div className="card p-4 sm:p-6">
+    <h3 className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: 'var(--text-tertiary)' }}>{title}</h3>
     <div className="h-72 w-full">
       {children}
     </div>
