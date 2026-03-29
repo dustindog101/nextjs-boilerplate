@@ -150,6 +150,11 @@ export const UniversalHeader = () => {
                         Admin Panel
                       </Link>
                     )}
+                    {(user.isReseller || user.role === 'admin') && (
+                      <Link href="/reseller" className="block px-4 py-2 text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-colors">
+                        Reseller Dashboard
+                      </Link>
+                    )}
                     <div className="border-t border-[var(--border)] my-1" />
                     <button
                       onClick={handleLogout}
@@ -219,6 +224,11 @@ export const UniversalHeader = () => {
                   {user.role === 'admin' && (
                     <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-all">
                       Admin Panel
+                    </Link>
+                  )}
+                  {(user.isReseller || user.role === 'admin') && (
+                    <Link href="/reseller" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-all">
+                      Reseller Dashboard
                     </Link>
                   )}
                 </>
