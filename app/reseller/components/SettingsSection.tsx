@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useResellerData } from '../ResellerDataContext';
-import { User, Calendar, ShieldCheck, Package, TrendingUp, Info } from 'lucide-react';
+import { User, ShieldCheck, Package, TrendingUp, Info } from 'lucide-react';
 
 // ─── Info row ─────────────────────────────────────────────────────────────────
 
@@ -62,9 +62,6 @@ export const SettingsSection: React.FC = () => {
 
     const totalOrders = orders.data?.length ?? 0;
     const completedOrders = orders.data?.filter((o: any) => o.status === 'completed').length ?? 0;
-    const memberSince = (user as any)?.createdAt
-        ? new Date((user as any).createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-        : '—';
 
     return (
         <div className="p-4 sm:p-6 space-y-6 max-w-2xl">
@@ -77,7 +74,6 @@ export const SettingsSection: React.FC = () => {
                         Reseller
                     </span>
                 } icon={<ShieldCheck size={15} />} />
-                <Row label="Member Since" value={memberSince} icon={<Calendar size={15} />} />
             </Card>
 
             {/* Performance summary */}
