@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import {
     stateOptions,
     eyeColorOptions,
@@ -287,10 +288,16 @@ export default function ResellerPortalPage() {
                     <CheckCircle2 size={48} className="text-emerald-500 mx-auto mb-5" />
                     <h1 className={`${s.text} text-2xl font-bold mb-2`}>Order Placed!</h1>
                     <p className={`${s.subtext} mb-4 text-sm`}>Your order has been received and is now being processed.</p>
-                    <p className={`text-xs font-mono px-3 py-2 rounded-lg ${dark ? 'bg-white/[0.05] text-zinc-400' : 'bg-slate-100 text-slate-500'}`}>
-                        ID: {successOrderId}
+                    <p className={`text-xs font-mono px-3 py-2 rounded-lg mb-5 ${dark ? 'bg-white/[0.05] text-zinc-400' : 'bg-slate-100 text-slate-500'}`}>
+                        Order ID: {successOrderId}
                     </p>
-                    <p className={`${s.subtext} mt-4 text-xs`}>Your reseller will be in touch with payment details.</p>
+                    <Link
+                        href={`/track?orderId=${successOrderId}`}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-all mb-3"
+                    >
+                        Track Your Order
+                    </Link>
+                    <p className={`${s.subtext} text-xs`}>Your reseller will be in touch with payment details.</p>
                 </div>
             </div>
         );
@@ -305,12 +312,19 @@ export default function ResellerPortalPage() {
             {/* ── Header ──────────────────────────────────────────────── */}
             <header className={`sticky top-0 z-30 ${s.header} backdrop-blur-xl border-b`}>
                 <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+                    {/* Left: neutral branding */}
                     <div className="flex items-center gap-2">
-                        <ShieldCheck size={16} className="text-indigo-500" />
-                        <span className={`${s.text} text-sm font-semibold`}>Secure Checkout</span>
+                        <ShieldCheck size={16} className="text-indigo-500 flex-shrink-0" />
+                        <span className={`${s.text} text-sm font-semibold`}>Order Form</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <span className={`${s.subtext} text-xs`}>{idForms.length} ID{idForms.length !== 1 ? 's' : ''}</span>
+                    {/* Right: track link + theme toggle */}
+                    <div className="flex items-center gap-2">
+                        <Link
+                            href={`/track`}
+                            className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-all ${dark ? 'border-white/[0.08] text-zinc-300 hover:bg-white/[0.06]' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                        >
+                            Track Order
+                        </Link>
                         <button onClick={() => setDark(d => !d)} className={`p-2 rounded-lg ${dark ? 'text-zinc-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'} transition-all`}>
                             {dark ? <Sun size={15} /> : <Moon size={15} />}
                         </button>

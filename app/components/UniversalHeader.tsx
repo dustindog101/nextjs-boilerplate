@@ -21,7 +21,26 @@ export const UniversalHeader = () => {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isResellerSubdomain, setIsResellerSubdomain] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Detect if we're running on a reseller subdomain (e.g. manny.idpirate.com).
+  // usePathname() returns the browser-visible path ('/') not the rewritten path
+  // ('/r/manny'), so checking the hostname is the only reliable way to hide the
+  // header on subdomain-based reseller pages.
+  useEffect(() => {
+    const host = window.location.hostname;
+    const MAIN_HOSTS = ['localhost', 'idpirate.com', 'www.idpirate.com'];
+    const RESERVED_SUBS = ['www', 'admin', 'api', 'dev', 'staging', 'test'];
+    const parts = host.split('.');
+    if (!MAIN_HOSTS.includes(host) && parts.length > 1) {
+      const sub = parts[0];
+      if (!RESERVED_SUBS.includes(sub)) {
+        setIsResellerSubdomain(true);
+      }
+    }
+    // Also treat localhost sub-like paths starting with /r/ as reseller
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -49,8 +68,9 @@ export const UniversalHeader = () => {
   const backButtonHref = pathname === '/checkout' ? '/order/new' : '/order';
   const backButtonText = pathname === '/checkout' ? 'Back to Edit' : 'Back to Gallery';
 
-  // Hide all branding on white-label reseller checkout routes
-  if (pathname.startsWith('/r/')) return null;
+  // Hide all branding on white-label reseller checkout routes.
+  // Two cases: (1) localhost testing via /r/[id] path, (2) live subdomain (manny.idpirate.com)
+  if (pathname.startsWith('/r/') || isResellerSubdomain) return null;
 
 
   const handleLogout = () => {
