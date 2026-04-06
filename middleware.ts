@@ -34,7 +34,9 @@ export function middleware(req: NextRequest) {
 
 export const config = {
     matcher: [
-        // Run on all paths except Next.js internals and static files
-        '/((?!_next/static|_next/image|favicon.ico).*)',
+        // Run on all paths EXCEPT API routes, Next.js internals, and static files.
+        // Excluding 'api' prevents the subdomain rewrite from intercepting fetch()
+        // calls to /api/* on reseller subdomains (which would return HTML 404s).
+        '/((?!api|_next/static|_next/image|favicon.ico).*)',
     ],
 };
