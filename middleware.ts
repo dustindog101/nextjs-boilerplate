@@ -11,7 +11,12 @@ export function middleware(req: NextRequest) {
         'www.idpirate.com',
     ];
 
-    const isMainDomain = mainDomains.some(d => hostname === d) || hostname.endsWith('.vercel.app');
+    const isMainDomain =
+        mainDomains.some(d => hostname === d) ||
+        hostname.endsWith('.vercel.app') ||
+        // Cover localhost on any port (3000, 3001, 3002, …)
+        hostname === 'localhost' ||
+        /^localhost:\d+$/.test(hostname);
 
     if (!isMainDomain) {
         // e.g. "manny.idpirate.com" → subdomain = "manny"
