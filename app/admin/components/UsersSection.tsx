@@ -148,7 +148,7 @@ export const UsersSection = () => {
           User Management <span className="font-normal text-sm" style={{ color: 'var(--text-tertiary)' }}>({filtered.length})</span>
         </h2>
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
+          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} aria-hidden />
           <input
             type="text"
             placeholder="Search users..."

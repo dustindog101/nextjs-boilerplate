@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { withAdminAuth } from '../components/withAdminAuth';
 import { AdminLayout, AdminSection } from './AdminLayout';
+import { AdminTopBar } from './AdminTopBar';
 import { AdminDataProvider } from './AdminDataContext';
 
 // Import the modular section components
@@ -37,6 +38,12 @@ function AdminDashboardPage() {
   return (
     <div className="font-inter flex flex-col h-screen admin-dark">
       <AdminDataProvider>
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <AdminTopBar
+          activeSection={activeSection}
+          isSidebarOpen={isSidebarOpen}
+          onMenuClick={() => setSidebarOpen(o => !o)}
+        />
         <AdminLayout
           activeSection={activeSection}
           setActiveSection={setActiveSection}
@@ -45,6 +52,7 @@ function AdminDashboardPage() {
         >
           {renderContent()}
         </AdminLayout>
+        </div>
       </AdminDataProvider>
     </div>
   );

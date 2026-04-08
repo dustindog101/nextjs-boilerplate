@@ -133,7 +133,7 @@ export const OrdersSection = () => {
                 </h2>
                 <div className="flex gap-2">
                     <div className="relative flex-1 sm:flex-initial">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
+                        <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} aria-hidden />
                         <input
                             type="text"
                             placeholder="Search orders..."

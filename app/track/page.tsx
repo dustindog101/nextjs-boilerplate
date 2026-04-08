@@ -85,10 +85,10 @@ function TrackPageContent() {
     <div className="min-h-screen flex flex-col">
       <div className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 py-12 sm:py-20">
         <main className="w-full max-w-md animate-fade-up">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 text-center mb-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] text-center mb-2">
             Track Your Order
           </h1>
-          <p className="text-sm text-slate-500 text-center mb-8">
+          <p className="text-sm text-[var(--text-secondary)] text-center mb-8">
             Enter your order number to check the latest status.
           </p>
 
@@ -101,7 +101,7 @@ function TrackPageContent() {
                 onChange={(e) => setOrderNumber(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleTrackOrder()}
                 placeholder="Enter order number..."
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 focus:outline-none transition text-sm"
+                className="w-full rounded-xl px-4 py-3 text-sm [color-scheme:dark] bg-white/[0.06] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/35 focus:border-[var(--accent)]/50 focus:outline-none transition"
               />
               <button
                 onClick={() => handleTrackOrder()}
@@ -121,8 +121,8 @@ function TrackPageContent() {
         {/* Loading State */}
         {isLoading && (
           <div className="mt-8 glass p-6 animate-fade-in w-full max-w-md">
-            <p className="text-center text-blue-600 text-sm font-medium flex items-center justify-center gap-2">
-              <Spinner size="sm" className="text-blue-600" />
+            <p className="text-center text-[var(--accent)] text-sm font-medium flex items-center justify-center gap-2">
+              <Spinner size="sm" className="text-[var(--accent)]" />
               Loading order details...
             </p>
           </div>
@@ -130,29 +130,29 @@ function TrackPageContent() {
 
         {/* Error State */}
         {displayError && !isLoading && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl animate-fade-in w-full max-w-md">
-            <p className="text-sm text-red-600 text-center">{displayError}</p>
+          <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-fade-in w-full max-w-md">
+            <p className="text-sm text-red-400 text-center">{displayError}</p>
           </div>
         )}
 
         {/* Order Results */}
         {orderData && !isLoading && !displayError && (
           <div className="mt-8 glass p-6 sm:p-8 animate-fade-up w-full max-w-lg md:max-w-2xl">
-            <h2 className="text-xl font-bold text-slate-900 mb-5">Order Details</h2>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-5">Order Details</h2>
 
             {/* Order Info Grid */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <p className="text-label mb-1">Order ID</p>
-                <p className="text-sm text-slate-900 font-mono">{orderData.orderId}</p>
+                <p className="text-sm text-[var(--text-primary)] font-mono">{orderData.orderId}</p>
               </div>
               <div>
                 <p className="text-label mb-1">Date</p>
-                <p className="text-sm text-slate-900">{new Date(orderData.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-[var(--text-primary)]">{new Date(orderData.createdAt).toLocaleDateString()}</p>
               </div>
               <div>
                 <p className="text-label mb-1">Items</p>
-                <p className="text-sm text-slate-900">{orderData.ids.length}</p>
+                <p className="text-sm text-[var(--text-primary)]">{orderData.ids.length}</p>
               </div>
               <div>
                 <p className="text-label mb-1">Total</p>
@@ -161,26 +161,26 @@ function TrackPageContent() {
             </div>
 
             {/* Payment Info */}
-            <div className="bg-slate-50 rounded-xl p-4 mb-6 flex items-center justify-between">
+            <div className="bg-white/[0.04] border border-[var(--border)] rounded-xl p-4 mb-6 flex items-center justify-between">
               <div>
                 <p className="text-label mb-1">Payment</p>
-                <span className={`text-sm font-medium ${orderData.paymentStatus === 'Paid' ? 'text-emerald-600' : 'text-red-500'}`}>
+                <span className={`text-sm font-medium ${orderData.paymentStatus === 'Paid' ? 'text-emerald-400' : 'text-red-400'}`}>
                   {orderData.paymentStatus || 'N/A'}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-slate-600">
-                <span className="text-lg text-blue-600">{getPaymentMethodIcon(orderData.paymentMethod || '')}</span>
-                <span className="text-sm font-medium">{orderData.paymentMethod || 'N/A'}</span>
+              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                <span className="text-lg text-[var(--accent)]">{getPaymentMethodIcon(orderData.paymentMethod || '')}</span>
+                <span className="text-sm font-medium text-[var(--text-primary)]">{orderData.paymentMethod || 'N/A'}</span>
               </div>
             </div>
 
             {/* Progress Tracker */}
             <div className="relative flex justify-between items-start pt-2 pb-4 px-2">
               {/* Background line */}
-              <div className="absolute top-6 left-6 right-6 h-0.5 bg-slate-200" />
+              <div className="absolute top-6 left-6 right-6 h-0.5 bg-white/10" />
               {/* Active line */}
               <div
-                className="absolute top-6 left-6 h-0.5 bg-blue-600 transition-all duration-500"
+                className="absolute top-6 left-6 h-0.5 bg-[var(--accent)] transition-all duration-500"
                 style={{
                   width: `${(TRACKING_STAGES.findIndex(s => s.key === orderData.status) / (TRACKING_STAGES.length - 1)) * (100 - 10)}%`
                 }}
@@ -194,8 +194,8 @@ function TrackPageContent() {
                 return (
                   <div key={stage.key} className="relative z-10 flex flex-col items-center flex-1">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
-                      ${isCompleted ? 'bg-blue-600 text-white' : 'bg-slate-100 border border-slate-200 text-slate-400'}
-                      ${isCurrent ? 'ring-4 ring-blue-600/30' : ''}
+                      ${isCompleted ? 'bg-[var(--accent)] text-white' : 'bg-white/[0.06] border border-[var(--border)] text-[var(--text-tertiary)]'}
+                      ${isCurrent ? 'ring-4 ring-[var(--accent)]/30' : ''}
                     `}>
                       {isCurrent ? getStageIcon(stage.key) : (
                         isCompleted ? (
@@ -203,11 +203,11 @@ function TrackPageContent() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                           </svg>
                         ) : (
-                          <div className="w-2 h-2 rounded-full bg-slate-300" />
+                          <div className="w-2 h-2 rounded-full bg-[var(--text-tertiary)]" />
                         )
                       )}
                     </div>
-                    <p className={`mt-2 text-xs text-center font-medium ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}>
+                    <p className={`mt-2 text-xs text-center font-medium ${isCompleted ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>
                       {stage.label}
                     </p>
                   </div>

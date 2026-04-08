@@ -36,18 +36,21 @@ export const FormSelect: React.FC<FormSelectProps> = ({
                 value={value}
                 onChange={onChange}
                 disabled={readOnly || disabled}
-                className={`w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 text-sm
-                    focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/60 focus:outline-none transition appearance-none
+                className={`w-full rounded-xl px-4 py-3 text-sm appearance-none [color-scheme:dark]
+                    bg-white/[0.06] border border-[var(--border)] text-[var(--text-primary)]
+                    focus:ring-2 focus:ring-[var(--accent)]/35 focus:border-[var(--accent)]/50 focus:outline-none transition
                     ${readOnly || disabled ? 'cursor-not-allowed opacity-50' : ''}`}
             >
-                <option value="">Select...</option>
+                <option value="" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
+                    Select...
+                </option>
                 {options.map((opt) => (
-                    <option key={opt} value={opt}>
+                    <option key={opt} value={opt} style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>
                         {opt}
                     </option>
                 ))}
             </select>
-            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 pointer-events-none" />
+            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
         </div>
     </div>
 );

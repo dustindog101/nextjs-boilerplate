@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
 import { Home, Users, Package, Tag, BarChart3, Handshake, ShoppingBag, LogOut, Newspaper, Settings } from 'lucide-react';
@@ -36,18 +36,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
   ];
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 min-h-0 overflow-hidden">
       {/* Mobile Sidebar Backdrop */}
-      <div onClick={() => setSidebarOpen(false)} className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-20 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}></div>
+      <div
+        onClick={() => setSidebarOpen(false)}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}
+        aria-hidden={!isSidebarOpen}
+      />
 
-      {/* Full-Height Sidebar */}
+      {/* Full-Height Sidebar — pt clears site header (4rem) + mobile AdminTopBar (65px) */}
       <aside
-        className={`fixed top-0 left-0 pt-[73px] lg:pt-0 h-full z-30 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'w-64' : 'w-20'} ${!isSidebarOpen && '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed top-0 left-0 pt-[calc(4rem+65px)] lg:pt-0 h-full z-50 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'w-64' : 'w-20'} ${!isSidebarOpen && '-translate-x-full lg:translate-x-0'}`}
         style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)' }}
       >
-        <div className="lg:hidden h-[73px] flex-shrink-0" />
-
-        <nav className="flex-grow px-2 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-grow px-2 py-4 space-y-1 overflow-y-auto min-h-0">
           {sidebarLinks.map(link => (
             <button
               key={link.id}

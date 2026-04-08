@@ -1,9 +1,9 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import {
     Copy, Check, ExternalLink, Instagram, MessageCircle,
-    Smartphone, Globe, Zap, TrendingUp, ShieldCheck,
+    Smartphone, Globe, Zap, TrendingUp, ShieldCheck, Share2,
 } from 'lucide-react';
 
 // ─── QR Code via Google Charts (no install needed) ────────────────────────────
@@ -39,11 +39,29 @@ const TipCard: React.FC<{ icon: React.ReactNode; title: string; body: string }> 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+async function shareOrCopyText(text: string, url: string, title: string): Promise<'shared' | 'copied' | 'aborted'> {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        try {
+            await navigator.share({ title, text, url });
+            return 'shared';
+        } catch (e: unknown) {
+            if (e instanceof Error && e.name === 'AbortError') return 'aborted';
+        }
+    }
+    await navigator.clipboard.writeText(text);
+    return 'copied';
+}
+
 export const LinkSection: React.FC = () => {
     const { user } = useAuth();
     const [copied, setCopied] = useState(false);
+    const [canWebShare, setCanWebShare] = useState(false);
     const subdomain = user?.username ?? '';
     const resellerLink = `https://${subdomain}.idpirate.com`;
+
+    useEffect(() => {
+        setCanWebShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+    }, []);
 
     const handleCopy = async () => {
         await navigator.clipboard.writeText(resellerLink);
@@ -129,21 +147,31 @@ export const LinkSection: React.FC = () => {
                                 label: 'Copy for Instagram Bio',
                                 icon: <Instagram size={14} />,
                                 text: resellerLink,
+                                nativeShare: false as const,
                             },
                             {
                                 label: 'WhatsApp / iMessage',
                                 icon: <MessageCircle size={14} />,
                                 text: `Hey! Place your order with me here — takes 2 min: ${resellerLink}`,
+                                nativeShare: true as const,
                             },
                             {
                                 label: 'SMS Template',
                                 icon: <Smartphone size={14} />,
                                 text: `Fill out your order here and I'll take care of the rest: ${resellerLink}`,
+                                nativeShare: false as const,
                             },
-                        ].map(({ label, icon, text }) => (
+                        ].map(({ label, icon, text, nativeShare }) => (
                             <button
                                 key={label}
-                                onClick={() => navigator.clipboard.writeText(text)}
+                                type="button"
+                                onClick={async () => {
+                                    if (nativeShare) {
+                                        await shareOrCopyText(text, resellerLink, 'Order with me');
+                                        return;
+                                    }
+                                    await navigator.clipboard.writeText(text);
+                                }}
                                 className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm transition-all text-left"
                                 style={{
                                     background: 'var(--bg-primary)',
@@ -158,10 +186,15 @@ export const LinkSection: React.FC = () => {
                                     (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)';
                                     (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
                                 }}
+                                title={nativeShare && canWebShare ? 'Open share sheet (or copy if unavailable)' : 'Copy to clipboard'}
                             >
                                 <span style={{ color: 'var(--accent)' }}>{icon}</span>
                                 <span className="font-medium text-xs">{label}</span>
-                                <Copy size={12} className="ml-auto opacity-50" />
+                                {nativeShare && canWebShare ? (
+                                    <Share2 size={12} className="ml-auto opacity-50" aria-hidden />
+                                ) : (
+                                    <Copy size={12} className="ml-auto opacity-50" aria-hidden />
+                                )}
                             </button>
                         ))}
                     </div>

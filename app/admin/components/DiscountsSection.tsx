@@ -226,7 +226,7 @@ export const DiscountsSection = () => {
                 </h2>
                 <div className="flex gap-2">
                     <div className="relative flex-1 sm:flex-initial">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                         <input
                             type="text"
                             placeholder="Search codes..."

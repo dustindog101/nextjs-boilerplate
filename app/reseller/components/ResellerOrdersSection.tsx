@@ -116,7 +116,7 @@ export const ResellerOrdersSection: React.FC = () => {
                     My Orders <span className="text-slate-400 font-normal text-sm">({filtered.length})</span>
                 </h2>
                 <div className="relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                     <input
                         type="text"
                         placeholder="Search orders..."
