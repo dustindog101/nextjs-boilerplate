@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import {
     stateOptions,
@@ -11,9 +11,17 @@ import {
     yearOptions,
     handlingFee as HANDLING_FEE,
     shippingFee as SHIPPING_FEE,
+    R2_MAX_UPLOAD_BYTES,
+    ALLOWED_UPLOAD_IMAGE_TYPES,
 } from '@/lib/constants';
 import { IdFormData } from '@/lib/types';
-import { submitOrder } from '@/lib/apiClient';
+import {
+    submitOrder,
+    createResellerUploadSession,
+    requestUploadPresign,
+    uploadFileToR2,
+} from '@/lib/apiClient';
+import { UploadSlot, type UploadSlotStatus } from '@/app/components/ui';
 import {
     ShieldCheck, Plus, Trash2, CheckCircle2, ChevronRight,
     ChevronLeft, MapPin, Truck, Moon, Sun
@@ -81,14 +89,20 @@ const SelectField: React.FC<{
 // ─── ID Card Form ─────────────────────────────────────────────────────────────
 
 interface IdCardProps {
-    form: IdFormData; index: number; total: number;
-    onChange: (id: number, e: any, isFile?: boolean) => void;
+    form: IdFormData;
+    onChange: (id: number, e: any) => void;
+    getUploadSlot: (formId: number, field: 'photo' | 'signature') => { status: UploadSlotStatus; progress: number; error?: string };
+    onUploadFile: (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => void;
+    onRetryUpload: (formId: number, field: 'photo' | 'signature') => void;
     s: ReturnType<typeof useStyles>;
 }
 
-const IdCard: React.FC<IdCardProps> = ({ form, index, total, onChange, s }) => {
+const IdCard: React.FC<IdCardProps> = ({ form, onChange, getUploadSlot, onUploadFile, onRetryUpload, s }) => {
     const onField = (e: any) => onChange(form.id, e);
-    const onFile = (e: any) => onChange(form.id, e, true);
+    const photoSlot = getUploadSlot(form.id, 'photo');
+    const sigSlot = getUploadSlot(form.id, 'signature');
+    const photoDisplay = form.photoFileName || form.photo?.name;
+    const sigDisplay = form.signatureFileName || form.signature?.name;
 
     return (
         <div className="space-y-5">
@@ -166,14 +180,26 @@ const IdCard: React.FC<IdCardProps> = ({ form, index, total, onChange, s }) => {
             <div>
                 <label className={`${s.label} block mb-2`}>Photo & Signature</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {['photo', 'signature'].map(field => (
-                        <label key={field} className={`flex flex-col items-center justify-center h-24 rounded-xl border-2 border-dashed ${(form as any)[field] ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 hover:border-indigo-500/40'} cursor-pointer transition-all text-center px-4`}>
-                            <input type="file" name={field} accept="image/*" className="hidden" onChange={onFile} />
-                            <span className={`text-xs font-medium capitalize ${(form as any)[field] ? 'text-emerald-400' : s.subtext}`}>
-                                {(form as any)[field] ? `✓ ${(form as any)[field].name}` : `Upload ${field}`}
-                            </span>
-                        </label>
-                    ))}
+                    <UploadSlot
+                        label="Photo"
+                        name="photo"
+                        status={photoSlot.status}
+                        progress={photoSlot.progress}
+                        error={photoSlot.error}
+                        displayName={photoDisplay}
+                        onFileChange={(e) => onUploadFile(form.id, 'photo', e)}
+                        onRetry={() => onRetryUpload(form.id, 'photo')}
+                    />
+                    <UploadSlot
+                        label="Signature"
+                        name="signature"
+                        status={sigSlot.status}
+                        progress={sigSlot.progress}
+                        error={sigSlot.error}
+                        displayName={sigDisplay}
+                        onFileChange={(e) => onUploadFile(form.id, 'signature', e)}
+                        onRetry={() => onRetryUpload(form.id, 'signature')}
+                    />
                 </div>
             </div>
         </div>
@@ -197,6 +223,115 @@ export default function ResellerPortalPage() {
     const [idForms, setIdForms] = useState<IdFormData[]>([createNewIdForm()]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [error, setError] = useState<string | null>(null);
+    const uploadTokenRef = useRef<string | null>(null);
+    const [uploadSessionReady, setUploadSessionReady] = useState(false);
+    const [uploadSessionError, setUploadSessionError] = useState<string | null>(null);
+    const [uploadSlots, setUploadSlots] = useState<
+        Record<string, { status: UploadSlotStatus; progress: number; error?: string }>
+    >({});
+
+    const slotKey = (formId: number, field: 'photo' | 'signature') => `${formId}-${field}`;
+    const getUploadSlot = (formId: number, field: 'photo' | 'signature') =>
+        uploadSlots[slotKey(formId, field)] ?? { status: 'idle' as const, progress: 0 };
+
+    const onRetryUpload = (formId: number, field: 'photo' | 'signature') => {
+        setUploadSlots((s) => {
+            const next = { ...s };
+            delete next[slotKey(formId, field)];
+            return next;
+        });
+    };
+
+    useEffect(() => {
+        if (!resellerId) return;
+        let cancelled = false;
+        setUploadSessionError(null);
+        setUploadSessionReady(false);
+        uploadTokenRef.current = null;
+        (async () => {
+            try {
+                const { token } = await createResellerUploadSession(resellerId);
+                if (!cancelled) {
+                    uploadTokenRef.current = token;
+                    setUploadSessionReady(true);
+                }
+            } catch {
+                if (!cancelled) {
+                    setUploadSessionError('Could not verify reseller link for uploads.');
+                    setUploadSessionReady(false);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [resellerId]);
+
+    const onUploadFile = async (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+
+        const tok = uploadTokenRef.current;
+        if (!tok) {
+            setError('Upload session not ready. Refresh the page.');
+            return;
+        }
+
+        const allowed = ALLOWED_UPLOAD_IMAGE_TYPES as readonly string[];
+        if (!allowed.includes(file.type)) {
+            setUploadSlots((s) => ({
+                ...s,
+                [slotKey(formId, field)]: { status: 'error', progress: 0, error: 'Use JPEG, PNG, or WebP.' },
+            }));
+            return;
+        }
+        if (file.size > R2_MAX_UPLOAD_BYTES) {
+            setUploadSlots((s) => ({
+                ...s,
+                [slotKey(formId, field)]: { status: 'error', progress: 0, error: 'Max file size is 5 MB.' },
+            }));
+            return;
+        }
+
+        const sk = slotKey(formId, field);
+        setUploadSlots((s) => ({ ...s, [sk]: { status: 'presigning', progress: 0 } }));
+
+        try {
+            const presign = await requestUploadPresign(
+                {
+                    contentType: file.type,
+                    kind: field,
+                    idFormClientId: formId,
+                    fileSize: file.size,
+                },
+                { resellerUploadToken: tok }
+            );
+            setUploadSlots((s) => ({ ...s, [sk]: { status: 'uploading', progress: 0 } }));
+            await uploadFileToR2(presign, file, (p) =>
+                setUploadSlots((s) => ({ ...s, [sk]: { ...s[sk], status: 'uploading', progress: p } }))
+            );
+            setIdForms((prev) =>
+                prev.map((f) =>
+                    f.id === formId
+                        ? {
+                              ...f,
+                              photo: field === 'photo' ? undefined : f.photo,
+                              signature: field === 'signature' ? undefined : f.signature,
+                              photoKey: field === 'photo' ? presign.key : f.photoKey,
+                              signatureKey: field === 'signature' ? presign.key : f.signatureKey,
+                              photoFileName: field === 'photo' ? file.name : f.photoFileName,
+                              signatureFileName: field === 'signature' ? file.name : f.signatureFileName,
+                          }
+                        : f
+                )
+            );
+            setUploadSlots((s) => ({ ...s, [sk]: { status: 'done', progress: 100 } }));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Upload failed.';
+            setUploadSlots((s) => ({ ...s, [sk]: { status: 'error', progress: 0, error: message } }));
+        }
+    };
 
     // Shipping
     const [deliveryMode, setDeliveryMode] = useState<'pickup' | 'ship'>('pickup');
@@ -213,6 +348,12 @@ export default function ResellerPortalPage() {
     const shipping = deliveryMode === 'ship' ? SHIPPING_FEE : 0;
     const fees = HANDLING_FEE + shipping;
 
+    const uploadsIncomplete =
+        idForms.length > 0 && idForms.some((f) => !f.photoKey || !f.signatureKey);
+    const uploadBusy = Object.values(uploadSlots).some(
+        (s) => s.status === 'presigning' || s.status === 'uploading'
+    );
+
     // ── ID Actions ──────────────────────────────────────────────────────────
 
     const addForm = () => {
@@ -227,13 +368,9 @@ export default function ResellerPortalPage() {
         setActiveIndex(Math.min(activeIndex, idForms.length - 2));
     };
 
-    const handleChange = (id: number, e: any, isFile = false) => {
+    const handleChange = (id: number, e: any) => {
         setIdForms(prev => prev.map(f => {
             if (f.id !== id) return f;
-            if (isFile) {
-                const t = e.target as HTMLInputElement;
-                return { ...f, [t.name]: t.files?.[0] };
-            }
             return { ...f, [e.target.name]: e.target.value };
         }));
     };
@@ -246,6 +383,24 @@ export default function ResellerPortalPage() {
         if (incomplete !== -1) { setActiveIndex(incomplete); setError(`ID #${incomplete + 1} is missing required fields.`); return; }
         if (deliveryMode === 'ship' && (!shipName || !shipStreet || !shipCity || !shipState || !shipZip)) {
             setError('Please complete your shipping address.'); return;
+        }
+
+        const missingUpload = idForms.findIndex((f) => !f.photoKey || !f.signatureKey);
+        if (missingUpload !== -1) {
+            setActiveIndex(missingUpload);
+            setError(`ID #${missingUpload + 1}: upload both photo and signature.`);
+            return;
+        }
+        const uploadBusy = Object.values(uploadSlots).some(
+            (s) => s.status === 'presigning' || s.status === 'uploading'
+        );
+        if (uploadBusy) {
+            setError('Wait for uploads to finish.');
+            return;
+        }
+        if (!uploadSessionReady || uploadSessionError) {
+            setError('Upload session not ready. Refresh or try again later.');
+            return;
         }
 
         setStatus('loading'); setError(null);
@@ -321,10 +476,10 @@ export default function ResellerPortalPage() {
             <div className="max-w-2xl mx-auto px-4 pb-32 pt-6 space-y-4">
 
                 {/* ── Error Banner ─────────────────────────────────────── */}
-                {error && (
+                {(error || uploadSessionError) && (
                     <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center justify-between">
-                        <span>{error}</span>
-                        <button onClick={() => setError(null)} className="ml-2 opacity-60 hover:opacity-100">✕</button>
+                        <span>{error || uploadSessionError}</span>
+                        <button onClick={() => { setError(null); }} className="ml-2 opacity-60 hover:opacity-100">✕</button>
                     </div>
                 )}
 
@@ -359,7 +514,16 @@ export default function ResellerPortalPage() {
 
                     {/* Form */}
                     <div className="p-4 sm:p-5">
-                        {activeForm && <IdCard form={activeForm} index={activeIndex} total={idForms.length} onChange={handleChange} s={s} />}
+                        {activeForm && (
+                            <IdCard
+                                form={activeForm}
+                                onChange={handleChange}
+                                getUploadSlot={getUploadSlot}
+                                onUploadFile={onUploadFile}
+                                onRetryUpload={onRetryUpload}
+                                s={s}
+                            />
+                        )}
                     </div>
 
                     {/* Prev / Next mobile navigation */}
@@ -454,7 +618,13 @@ export default function ResellerPortalPage() {
                     </div>
                     <button
                         onClick={handleSubmit}
-                        disabled={status === 'loading'}
+                        disabled={
+                            status === 'loading' ||
+                            uploadsIncomplete ||
+                            uploadBusy ||
+                            !!uploadSessionError ||
+                            !uploadSessionReady
+                        }
                         className={`w-full py-4 rounded-xl font-bold text-base text-white transition-all flex items-center justify-center gap-2 disabled:opacity-60 ${dark ? 'bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99]' : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.99]'}`}
                     >
                         {status === 'loading' ? (

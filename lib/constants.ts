@@ -83,3 +83,7 @@ export const defaultIdPrice = 95;
 export const handlingFee = 5;
 export const shippingFee = 15;
 
+/** Matches server-side R2 presign limits */
+export const R2_MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const ALLOWED_UPLOAD_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+

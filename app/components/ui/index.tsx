@@ -4,6 +4,9 @@
 export { FormInput } from './FormInput';
 export { FormSelect } from './FormSelect';
 export { FileInput } from './FileInput';
+export { UploadSlot } from './UploadSlot';
+export type { UploadSlotStatus } from './UploadSlot';
 export { Footer } from './Footer';
 export { Notification } from './Notification';
 export { Spinner, FullPageSpinner } from './Spinner';
+export { SortableTh } from './SortableTh';

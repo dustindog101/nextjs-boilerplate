@@ -1,8 +1,8 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { withAuth } from '../../components/withAuth';
+import { useAuth } from '../../hooks/useAuth';
 import {
     stateOptions,
     eyeColorOptions,
@@ -13,10 +13,13 @@ import {
     yearOptions,
     statePrices,
     defaultIdPrice,
+    R2_MAX_UPLOAD_BYTES,
+    ALLOWED_UPLOAD_IMAGE_TYPES,
 } from '../../../lib/constants';
 import { IdFormData } from '../../../lib/types';
 import { setStorageItem } from '../../../lib/storage';
-import { FormInput, FormSelect, FileInput, Footer } from '../../components/ui';
+import { requestUploadPresign, uploadFileToR2 } from '../../../lib/apiClient';
+import { FormInput, FormSelect, Footer, UploadSlot, UploadSlotStatus } from '../../components/ui';
 import {
     PlusIcon,
     TrashIcon,
@@ -37,11 +40,25 @@ interface IdFormProps {
     index: number;
     total: number;
     onChange: (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, isFile?: boolean) => void;
+    getUploadSlot: (formId: number, field: 'photo' | 'signature') => { status: UploadSlotStatus; progress: number; error?: string };
+    onUploadFile: (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => void;
+    onRetryUpload: (formId: number, field: 'photo' | 'signature') => void;
 }
 
-const IdFormCard: React.FC<IdFormProps> = ({ formData, index, total, onChange }) => {
+const IdFormCard: React.FC<IdFormProps> = ({
+    formData,
+    index,
+    total,
+    onChange,
+    getUploadSlot,
+    onUploadFile,
+    onRetryUpload,
+}) => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => onChange(formData.id, e);
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => onChange(formData.id, e, true);
+    const photoSlot = getUploadSlot(formData.id, 'photo');
+    const sigSlot = getUploadSlot(formData.id, 'signature');
+    const photoDisplay = formData.photoFileName || formData.photo?.name;
+    const sigDisplay = formData.signatureFileName || formData.signature?.name;
 
     return (
         <div className="glass overflow-hidden animate-fade-up">
@@ -131,8 +148,26 @@ const IdFormCard: React.FC<IdFormProps> = ({ formData, index, total, onChange })
                 <section>
                     <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Uploads</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <FileInput label="Photo" name="photo" onChange={handleFileChange} fileName={formData.photo?.name} />
-                        <FileInput label="Signature" name="signature" onChange={handleFileChange} fileName={formData.signature?.name} />
+                        <UploadSlot
+                            label="Photo"
+                            name="photo"
+                            status={photoSlot.status}
+                            progress={photoSlot.progress}
+                            error={photoSlot.error}
+                            displayName={photoDisplay}
+                            onFileChange={(e) => onUploadFile(formData.id, 'photo', e)}
+                            onRetry={() => onRetryUpload(formData.id, 'photo')}
+                        />
+                        <UploadSlot
+                            label="Signature"
+                            name="signature"
+                            status={sigSlot.status}
+                            progress={sigSlot.progress}
+                            error={sigSlot.error}
+                            displayName={sigDisplay}
+                            onFileChange={(e) => onUploadFile(formData.id, 'signature', e)}
+                            onRetry={() => onRetryUpload(formData.id, 'signature')}
+                        />
                     </div>
                 </section>
             </div>
@@ -145,6 +180,85 @@ const IdFormCard: React.FC<IdFormProps> = ({ formData, index, total, onChange })
    ==================================================================== */
 function OrderFormPage() {
     const router = useRouter();
+    const { token } = useAuth();
+
+    const slotKey = (formId: number, field: 'photo' | 'signature') => `${formId}-${field}`;
+
+    const [uploadSlots, setUploadSlots] = useState<
+        Record<string, { status: UploadSlotStatus; progress: number; error?: string }>
+    >({});
+
+    const getUploadSlot = (formId: number, field: 'photo' | 'signature') =>
+        uploadSlots[slotKey(formId, field)] ?? { status: 'idle' as const, progress: 0 };
+
+    const onRetryUpload = (formId: number, field: 'photo' | 'signature') => {
+        setUploadSlots((s) => {
+            const next = { ...s };
+            delete next[slotKey(formId, field)];
+            return next;
+        });
+    };
+
+    const onUploadFile = async (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+
+        if (!token) {
+            setError('Please log in to upload images.');
+            return;
+        }
+        const allowed = ALLOWED_UPLOAD_IMAGE_TYPES as readonly string[];
+        if (!allowed.includes(file.type)) {
+            setUploadSlots((s) => ({
+                ...s,
+                [slotKey(formId, field)]: { status: 'error', progress: 0, error: 'Use JPEG, PNG, or WebP.' },
+            }));
+            return;
+        }
+        if (file.size > R2_MAX_UPLOAD_BYTES) {
+            setUploadSlots((s) => ({
+                ...s,
+                [slotKey(formId, field)]: { status: 'error', progress: 0, error: 'Max file size is 5 MB.' },
+            }));
+            return;
+        }
+
+        const sk = slotKey(formId, field);
+        setUploadSlots((s) => ({ ...s, [sk]: { status: 'presigning', progress: 0 } }));
+
+        try {
+            const presign = await requestUploadPresign({
+                contentType: file.type,
+                kind: field,
+                idFormClientId: formId,
+                fileSize: file.size,
+            });
+            setUploadSlots((s) => ({ ...s, [sk]: { status: 'uploading', progress: 0 } }));
+            await uploadFileToR2(presign, file, (p) =>
+                setUploadSlots((s) => ({ ...s, [sk]: { ...s[sk], status: 'uploading', progress: p } }))
+            );
+            setIdForms((prev) =>
+                prev.map((f) =>
+                    f.id === formId
+                        ? {
+                              ...f,
+                              photo: field === 'photo' ? undefined : f.photo,
+                              signature: field === 'signature' ? undefined : f.signature,
+                              photoKey: field === 'photo' ? presign.key : f.photoKey,
+                              signatureKey: field === 'signature' ? presign.key : f.signatureKey,
+                              photoFileName: field === 'photo' ? file.name : f.photoFileName,
+                              signatureFileName: field === 'signature' ? file.name : f.signatureFileName,
+                          }
+                        : f
+                )
+            );
+            setUploadSlots((s) => ({ ...s, [sk]: { status: 'done', progress: 100 } }));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Upload failed.';
+            setUploadSlots((s) => ({ ...s, [sk]: { status: 'error', progress: 0, error: message } }));
+        }
+    };
 
     const createNewIdForm = (): IdFormData => ({
         id: Date.now(),
@@ -193,6 +307,19 @@ function OrderFormPage() {
         if (incomplete !== -1) {
             setActiveIndex(incomplete);
             setError(`ID #${incomplete + 1} is missing required fields.`);
+            return;
+        }
+        const missingUpload = idForms.findIndex((f) => !f.photoKey || !f.signatureKey);
+        if (missingUpload !== -1) {
+            setActiveIndex(missingUpload);
+            setError(`ID #${missingUpload + 1}: upload both photo and signature.`);
+            return;
+        }
+        const uploadBusy = Object.values(uploadSlots).some(
+            (s) => s.status === 'presigning' || s.status === 'uploading'
+        );
+        if (uploadBusy) {
+            setError('Wait for uploads to finish.');
             return;
         }
         setError(null);
@@ -355,6 +482,9 @@ function OrderFormPage() {
                                 index={activeIndex}
                                 total={idForms.length}
                                 onChange={handleFormChange}
+                                getUploadSlot={getUploadSlot}
+                                onUploadFile={onUploadFile}
+                                onRetryUpload={onRetryUpload}
                             />
                         )}
 

@@ -31,14 +31,17 @@
 
 ### Config
 
+
 | File                 | Lines | Notes                               |
 | -------------------- | ----- | ----------------------------------- |
 | `package.json`       | 28    | Dependencies and npm scripts        |
-| `tsconfig.json`      | 28    | Strict TypeScript, `@/*` path alias |
+| `tsconfig.json`      | 28    | Strict TypeScript, `@/`* path alias |
 | `next.config.ts`     | 33    | Security headers                    |
 | `postcss.config.mjs` | 3     | Tailwind PostCSS plugin             |
 
+
 ### Library (`lib/`)
+
 
 | File                       | Lines | Purpose                                                                                        |
 | -------------------------- | ----- | ---------------------------------------------------------------------------------------------- |
@@ -48,7 +51,9 @@
 | `storage.ts`               | 46    | SSR-safe localStorage: `getStorageItem`, `setStorageItem`, `removeStorageItem`                 |
 | `localStorage-polyfill.ts` | ~30   | Polyfill imported first in `layout.tsx` to fix Next.js dev mode bug                            |
 
+
 ### Pages (`app/`)
+
 
 | Route        | File                 | Lines | Auth Guard      | Notes                                               |
 | ------------ | -------------------- | ----- | --------------- | --------------------------------------------------- |
@@ -67,17 +72,24 @@
 | `/invoices`  | `invoices/page.tsx`  | —     | —               | Stub — purpose TBD                                  |
 | `/za`        | `za/page.tsx`        | —     | —               | Stub — purpose TBD                                  |
 
+
 ### API Route Handlers (`app/api/`)
 
-| Route                    | File                    | Proxies To          |
-| ------------------------ | ----------------------- | ------------------- |
-| `POST /api/auth`         | `auth/route.ts`         | `AUTH_LAMBDA_URL`   |
-| `GET /api/orders`        | `orders/route.ts`       | `ORDER_LAMBDA_URL`  |
-| `POST /api/orders`       | `orders/route.ts`       | `ORDER_LAMBDA_URL`  |
-| `POST /api/orders/track` | `orders/track/route.ts` | `LOOKUP_LAMBDA_URL` |
-| `POST /api/admin`        | `admin/route.ts`        | `ADMIN_LAMBDA_URL`  |
+
+| Route                                | File                                | Proxies To                                                       |
+| ------------------------------------ | ----------------------------------- | ---------------------------------------------------------------- |
+| `POST /api/auth`                     | `auth/route.ts`                     | `AUTH_LAMBDA_URL`                                                |
+| `GET /api/orders`                    | `orders/route.ts`                   | `ORDER_LAMBDA_URL`                                               |
+| `POST /api/orders`                   | `orders/route.ts`                   | `ORDER_LAMBDA_URL`                                               |
+| `POST /api/orders/track`             | `orders/track/route.ts`             | `LOOKUP_LAMBDA_URL`                                              |
+| `POST /api/admin`                    | `admin/route.ts`                    | `ADMIN_LAMBDA_URL`                                               |
+| `POST /api/uploads/presign`          | `uploads/presign/route.ts`          | Presigned PUT to R2 (user JWT or reseller session token)         |
+| `POST /api/uploads/reseller-session` | `uploads/reseller-session/route.ts` | Mints reseller upload token (`LOOKUP_LAMBDA` validates reseller) |
+| `POST /api/uploads/presign-get`      | `uploads/presign-get/route.ts`      | Admin-only presigned GET for R2 keys                             |
+
 
 ### Components (`app/components/`)
+
 
 | File                  | Lines | Purpose                                                     |
 | --------------------- | ----- | ----------------------------------------------------------- |
@@ -90,16 +102,20 @@
 | `ui/FormInput.tsx`    | ~40   | Labeled text input (requires `label` prop)                  |
 | `ui/FormSelect.tsx`   | ~50   | Labeled select dropdown                                     |
 | `ui/FileInput.tsx`    | ~45   | File upload input                                           |
+| `ui/UploadSlot.tsx`   | —     | R2 upload UI: progress, retry, Bold Minimal                 |
 | `ui/Notification.tsx` | ~80   | Toast notification with auto-dismiss                        |
 | `ui/index.tsx`        | ~10   | Barrel exports for `ui/`                                    |
 
+
 ### Contexts & Hooks
+
 
 | File                           | Purpose                                                              |
 | ------------------------------ | -------------------------------------------------------------------- |
 | `app/contexts/AuthContext.tsx` | JWT decode, `login()`, `logout()`, token in localStorage             |
 | `app/hooks/useAuth.ts`         | Convenience hook wrapping `AuthContext`                              |
 | `app/hooks/useOrder.ts`        | Order detail state — currently uses **mock data** (not wired to API) |
+
 
 ---
 
@@ -131,6 +147,7 @@
 
 ### Utility Classes
 
+
 | Class                   | What it does                                                                                       |
 | ----------------------- | -------------------------------------------------------------------------------------------------- |
 | `.glass`                | Card surface: `var(--surface)` bg + `blur(24px)` + `var(--border)` 1px border + `var(--radius-xl)` |
@@ -143,6 +160,7 @@
 | `.animate-fade-up`      | `translateY(16px)→0` entrance                                                                      |
 | `.animate-fade-in`      | `scale(0.97)→1` entrance                                                                           |
 | `.delay-1` – `.delay-6` | 75ms stagger increments                                                                            |
+
 
 ### State Patterns
 
@@ -171,6 +189,7 @@ className="bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
   <Footer />
 </div>
 ```
+
 Max-widths: `max-w-3xl` text pages · `max-w-6xl` dashboards · `max-w-7xl` galleries
 
 ### Page Header
@@ -251,11 +270,19 @@ AUTH_LAMBDA_URL=
 LOOKUP_LAMBDA_URL=
 ORDER_LAMBDA_URL=
 ADMIN_LAMBDA_URL=
+# Cloudflare R2 (presigned uploads)
+R2_ACCOUNT_ID=
+R2_BUCKET_NAME=
+R2_ENDPOINT=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_UPLOAD_TOKEN_SECRET=
 ```
 
 ---
 
 ## Known Technical Debt
+
 
 | #   | Issue                                              | Location                                             |
 | --- | -------------------------------------------------- | ---------------------------------------------------- |
@@ -266,9 +293,11 @@ ADMIN_LAMBDA_URL=
 | 5   | `/za` and `/invoices` pages are undocumented stubs | `app/za/`, `app/invoices/`                           |
 | 6   | No test coverage                                   | entire project                                       |
 
+
 ---
 
 ## Owner Preferences
+
 
 | Preference  | Detail                                                                   |
 | ----------- | ------------------------------------------------------------------------ |
@@ -280,16 +309,18 @@ ADMIN_LAMBDA_URL=
 | Errors      | Toast via `Notification` component — no `alert()` calls                  |
 | Navigation  | Use Next.js `useRouter` — no direct `window.location` assignments        |
 
+
 ---
 
 ## Quick Checklist for New Features
 
-- [ ] Uses `.glass` for card surfaces
-- [ ] Uses design tokens from `app/globals.css` (no hardcoded hex except via tokens)
-- [ ] API calls go through `lib/apiClient.ts`
-- [ ] localStorage access goes through `lib/storage.ts`
-- [ ] Prices displayed with `.text-price`
-- [ ] Page sections have `animate-fade-up` + stagger `delay-*`
-- [ ] Responsive: `sm:` and `lg:` breakpoints
-- [ ] No `alert()` — uses `Notification` component
-- [ ] No `NEXT_PUBLIC_` on Lambda URL env vars
+- Uses `.glass` for card surfaces
+- Uses design tokens from `app/globals.css` (no hardcoded hex except via tokens)
+- API calls go through `lib/apiClient.ts`
+- localStorage access goes through `lib/storage.ts`
+- Prices displayed with `.text-price`
+- Page sections have `animate-fade-up` + stagger `delay-*`
+- Responsive: `sm:` and `lg:` breakpoints
+- No `alert()` — uses `Notification` component
+- No `NEXT_PUBLIC_` on Lambda URL env vars
+

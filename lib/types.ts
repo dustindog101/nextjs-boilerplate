@@ -37,6 +37,12 @@ export interface IdFormData {
     sex: string;
     photo?: File;
     signature?: File;
+    /** R2 object key after successful upload */
+    photoKey?: string;
+    signatureKey?: string;
+    /** Original filename for display when `File` is not kept */
+    photoFileName?: string;
+    signatureFileName?: string;
 }
 
 // --- Order Details ---

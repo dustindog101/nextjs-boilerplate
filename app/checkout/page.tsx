@@ -60,6 +60,10 @@ function CheckoutPage() {
     const discountAmount = discountResult?.discountAmount ?? 0;
     const total = subtotal + HANDLING_FEE + SHIPPING_FEE - discountAmount;
 
+    const uploadsIncomplete =
+        orderItems.length > 0 &&
+        orderItems.some((item) => !item.photoKey || !item.signatureKey);
+
     const handleApplyDiscount = async () => {
         if (!discountCode.trim()) return;
         setDiscountLoading(true);
@@ -86,6 +90,14 @@ function CheckoutPage() {
         if (orderItems.length === 0) { setOrderStatus('error'); setOrderMessage('No items in order.'); setShowModal(true); return; }
         if (deliveryMethod === 'shipping' && (!shippingFullName.trim() || !shippingStreetAddress.trim() || !shippingCity.trim() || !shippingStateProvince.trim() || !shippingZipCode.trim())) {
             setOrderStatus('error'); setOrderMessage('Please fill in all shipping address details.'); setShowModal(true); return;
+        }
+
+        const missingAssets = orderItems.findIndex((item) => !item.photoKey || !item.signatureKey);
+        if (missingAssets !== -1) {
+            setOrderStatus('error');
+            setOrderMessage(`ID #${missingAssets + 1} is missing photo or signature. Use Edit Order to upload.`);
+            setShowModal(true);
+            return;
         }
 
         setLoading(true); setOrderStatus('processing'); setOrderMessage('Submitting your order...'); setShowModal(true);
@@ -336,7 +348,8 @@ function CheckoutPage() {
                             <button
                                 onClick={handleFinalOrderSubmit}
                                 className="btn btn-primary w-full py-3.5 text-base"
-                                disabled={loading || orderItems.length === 0}
+                                disabled={loading || orderItems.length === 0 || uploadsIncomplete}
+                                title={uploadsIncomplete ? 'Upload photo and signature for each ID on the order form' : undefined}
                             >
                                 {loading ? (
                                     <><Spinner size="sm" className="text-white" /> Processing...</>

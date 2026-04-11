@@ -185,6 +185,92 @@ export const validateDiscount = async (
 
 
 // ====================================================================
+// R2 UPLOADS (presigned PUT to Cloudflare R2)
+// ====================================================================
+
+export interface UploadPresignBody {
+  contentType: string;
+  kind: 'photo' | 'signature';
+  idFormClientId: number;
+  fileSize: number;
+}
+
+export interface UploadPresignResponse {
+  url: string;
+  key: string;
+  contentType: string;
+  contentLength: number;
+}
+
+export interface ResellerUploadSessionResponse {
+  token: string;
+  expiresAt: string;
+}
+
+/**
+ * Requests a presigned PUT URL. Pass either logged-in user token (default from storage)
+ * or a reseller upload session token in opts.resellerUploadToken.
+ */
+export const requestUploadPresign = async (
+  body: UploadPresignBody,
+  opts?: { resellerUploadToken?: string | null }
+): Promise<UploadPresignResponse> => {
+  const token =
+    opts?.resellerUploadToken ?? getStorageItem('idPirateAuthToken');
+  if (!token) {
+    throw new Error('Not authenticated for upload.');
+  }
+  return apiFetch<UploadPresignResponse>('/api/uploads/presign', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+};
+
+/**
+ * PUT file bytes to R2 using a presigned URL (XMLHttpRequest for upload progress).
+ */
+export const uploadFileToR2 = (
+  presign: UploadPresignResponse,
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', presign.url);
+    xhr.setRequestHeader('Content-Type', presign.contentType);
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable && onProgress) {
+        onProgress(Math.round((ev.loaded / Math.max(ev.total, 1)) * 100));
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`Upload failed (${xhr.status}).`));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error during upload.'));
+    xhr.send(file);
+  });
+
+/** Anonymous reseller portal: obtain token for /api/uploads/presign (Bearer). */
+export const createResellerUploadSession = async (
+  resellerId: string
+): Promise<ResellerUploadSessionResponse> => {
+  return apiFetch<ResellerUploadSessionResponse>('/api/uploads/reseller-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resellerId }),
+  });
+};
+
+
+// ====================================================================
 // ADMIN-ONLY API FUNCTIONS
 // ====================================================================
 
@@ -322,6 +408,20 @@ export interface ReferralGroup {
 
 export const adminListReferrals = async (): Promise<ReferralGroup[]> => {
   return adminApiFetch<ReferralGroup[]>({ requestType: 'list_referrals' });
+};
+
+/** Short-lived URL to view an object in R2 (admin only). */
+export const adminPresignGetUrl = async (objectKey: string): Promise<string> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) {
+    throw new Error('Admin action requires authentication token.');
+  }
+  const data = await apiFetch<{ url: string }>('/api/uploads/presign-get', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ key: objectKey }),
+  });
+  return data.url;
 };
 
 
