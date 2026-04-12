@@ -424,6 +424,21 @@ export const adminPresignGetUrl = async (objectKey: string): Promise<string> => 
   return data.url;
 };
 
+/**
+ * User (or admin): presigned GET only if `objectKey` belongs to `orderId` for this account.
+ */
+export const presignGetOrderAssetUrl = async (
+  orderId: string,
+  objectKey: string
+): Promise<string> => {
+  const data = await apiFetch<{ url: string }>('/api/uploads/presign-get-own', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ orderId, key: objectKey }),
+  });
+  return data.url;
+};
+
 
 // ====================================================================
 // RESELLER API FUNCTIONS

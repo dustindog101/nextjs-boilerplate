@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { adminUpdateUser, User } from '../../../lib/apiClient';
 import { Edit, X, Search } from 'lucide-react';
-import { Spinner } from '../../components/ui';
+import { Spinner, SortableTh } from '../../components/ui';
 import { useAdminData } from '../AdminDataContext';
+import { sortRows } from '@/lib/tableSort';
+import { useTableSortState } from '@/app/hooks/useTableSort';
 
 /* ── Shared input style (dark) ── */
 const inputCls = "w-full rounded-lg px-4 py-2 text-sm outline-none transition-all focus:ring-2";
@@ -130,6 +132,31 @@ export const UsersSection = () => {
     );
   }, [users.data, search]);
 
+  const { sortKey, direction, toggleSort } = useTableSortState('username', 'asc');
+
+  const sorted = useMemo(() => {
+    const tie = (a: User, b: User) => a.userId.localeCompare(b.userId);
+    return sortRows(
+      filtered,
+      sortKey,
+      direction,
+      {
+        username: u => u.username,
+        role: u => u.role,
+        reseller: u => u.isReseller,
+        referredBy: u => u.referredBy ?? '',
+        discount: u =>
+          u.discount
+            ? u.discount.type === 'percentage'
+              ? u.discount.value
+              : 1000 + u.discount.value
+            : -1,
+        joined: u => (u.createdAt ? new Date(u.createdAt).getTime() : 0),
+      },
+      tie
+    );
+  }, [filtered, sortKey, direction]);
+
   const handleSaveUser = async (userId: string, username: string, updatedData: Partial<User>) => {
     await adminUpdateUser(userId, username, updatedData);
     setEditingUser(null);
@@ -145,7 +172,7 @@ export const UsersSection = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-          User Management <span className="font-normal text-sm" style={{ color: 'var(--text-tertiary)' }}>({filtered.length})</span>
+          User Management <span className="font-normal text-sm" style={{ color: 'var(--text-tertiary)' }}>({sorted.length})</span>
         </h2>
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
@@ -165,15 +192,73 @@ export const UsersSection = () => {
           <table className="min-w-full">
             <thead>
               <tr style={{ background: 'var(--bg-secondary)' }}>
-                {['Username', 'Role', 'Reseller', 'Referred By', 'Discount', 'Joined', 'Actions'].map(h => (
-                  <th key={h} className={`px-4 py-3 text-xs font-semibold uppercase tracking-wider ${h === 'Actions' ? 'text-right' : 'text-left'}`} style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
-                    {h}
-                  </th>
-                ))}
+                <SortableTh
+                  columnKey="username"
+                  sortKey={sortKey}
+                  direction={direction}
+                  onSort={toggleSort}
+                  className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                >
+                  Username
+                </SortableTh>
+                <SortableTh
+                  columnKey="role"
+                  sortKey={sortKey}
+                  direction={direction}
+                  onSort={toggleSort}
+                  className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                >
+                  Role
+                </SortableTh>
+                <SortableTh
+                  columnKey="reseller"
+                  sortKey={sortKey}
+                  direction={direction}
+                  onSort={toggleSort}
+                  className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                >
+                  Reseller
+                </SortableTh>
+                <SortableTh
+                  columnKey="referredBy"
+                  sortKey={sortKey}
+                  direction={direction}
+                  onSort={toggleSort}
+                  className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                >
+                  Referred By
+                </SortableTh>
+                <SortableTh
+                  columnKey="discount"
+                  sortKey={sortKey}
+                  direction={direction}
+                  onSort={toggleSort}
+                  className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                >
+                  Discount
+                </SortableTh>
+                <SortableTh
+                  columnKey="joined"
+                  sortKey={sortKey}
+                  direction={direction}
+                  onSort={toggleSort}
+                  className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                >
+                  Joined
+                </SortableTh>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }} scope="col">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(user => (
+              {sorted.map(user => (
                 <tr key={user.userId} className="transition-colors" style={{ borderBottom: '1px solid var(--border)' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}>
@@ -214,7 +299,7 @@ export const UsersSection = () => {
               ))}
             </tbody>
           </table>
-          {filtered.length === 0 && (
+          {sorted.length === 0 && (
             <div className="p-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No users found.</div>
           )}
         </div>

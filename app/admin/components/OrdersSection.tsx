@@ -1,9 +1,12 @@
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
-import { adminUpdateOrder } from '../../../lib/apiClient';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { adminUpdateOrder, adminPresignGetUrl } from '../../../lib/apiClient';
+import { OrderR2ImageStrip } from '../../components/order/OrderR2ImageStrip';
 import { Search, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { Spinner } from '../../components/ui';
+import { Spinner, SortableTh } from '../../components/ui';
 import { useAdminData } from '../AdminDataContext';
+import { sortRows } from '@/lib/tableSort';
+import { useTableSortState } from '@/app/hooks/useTableSort';
 
 const statusOptions = ['pending', 'processing', 'shipped', 'delivered'] as const;
 const paymentStatusOptions = ['Unpaid', 'Paid'] as const;
@@ -23,6 +26,8 @@ interface EditModalProps {
 }
 
 const EditOrderModal: React.FC<EditModalProps> = ({ order, onClose, onSave }) => {
+    const resolveAssetUrl = useCallback((key: string) => adminPresignGetUrl(key), []);
+
     const [status, setStatus] = useState(order.status || 'pending');
     const [paymentStatus, setPaymentStatus] = useState(order.paymentStatus || 'Unpaid');
     const [notes, setNotes] = useState(order.notes || '');
@@ -47,7 +52,7 @@ const EditOrderModal: React.FC<EditModalProps> = ({ order, onClose, onSave }) =>
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="rounded-2xl shadow-xl p-6 w-full max-w-lg relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+            <div className="rounded-2xl shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
                 <button onClick={onClose} className="absolute top-4 right-4 transition-colors" style={{ color: 'var(--text-tertiary)' }}><X size={20} /></button>
                 <h3 className="text-lg font-bold mb-5" style={{ color: 'var(--text-primary)' }}>
                     Edit Order <span className="font-mono text-sm" style={{ color: 'var(--text-tertiary)' }}>#{order.orderId.substring(0, 8)}</span>
@@ -76,6 +81,27 @@ const EditOrderModal: React.FC<EditModalProps> = ({ order, onClose, onSave }) =>
                         <label className="text-label mb-1 block">Notes</label>
                         <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none" style={fieldStyle} placeholder="Internal notes..." />
                     </div>
+
+                    <div className="border-t pt-4 mt-4" style={{ borderColor: 'var(--border)' }}>
+                        <label className="text-label mb-2 block">Submitted ID images (R2)</label>
+                        {(order.ids || []).length === 0 ? (
+                            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>No line items.</p>
+                        ) : (
+                            (order.ids || []).map((idRow: Record<string, unknown>, idx: number) => (
+                                <div key={idx} className="mb-4 last:mb-0">
+                                    <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>ID #{idx + 1}</p>
+                                    <OrderR2ImageStrip
+                                        slots={[
+                                            { label: 'Photo', objectKey: typeof idRow.photoKey === 'string' ? idRow.photoKey : undefined },
+                                            { label: 'Signature', objectKey: typeof idRow.signatureKey === 'string' ? idRow.signatureKey : undefined },
+                                        ]}
+                                        resolveUrl={resolveAssetUrl}
+                                    />
+                                </div>
+                            ))
+                        )}
+                    </div>
+
                     {error && <p className="text-red-400 text-sm p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)' }}>{error}</p>}
                     <div className="flex justify-end gap-3 pt-2">
                         <button onClick={onClose} className="btn btn-outline px-4 py-2 text-sm" disabled={saving}>Cancel</button>
@@ -113,10 +139,35 @@ export const OrdersSection = () => {
         return result;
     }, [orders.data, search, statusFilter]);
 
+    const { sortKey, direction, toggleSort } = useTableSortState(
+        'createdAt' as const,
+        'desc'
+    );
+
+    const sorted = useMemo(() => {
+        const tie = (a: any, b: any) => String(a.orderId ?? '').localeCompare(String(b.orderId ?? ''));
+        return sortRows(
+            filtered,
+            sortKey,
+            direction,
+            {
+                orderId: (o: any) => o.orderId ?? '',
+                createdAt: (o: any) => (o.createdAt ? new Date(o.createdAt).getTime() : 0),
+                status: (o: any) => o.status ?? '',
+                payment: (o: any) => o.paymentStatus ?? '',
+                total: (o: any) => Number(o.price?.total ?? 0),
+                ids: (o: any) => Number(o.numberOfIds ?? 0),
+            },
+            tie
+        );
+    }, [filtered, sortKey, direction]);
+
     const handleSaveOrder = async (orderId: string, data: Record<string, any>) => {
         await adminUpdateOrder(orderId, data);
         await refreshOrders();
     };
+
+    const resolveAdminAsset = useCallback((key: string) => adminPresignGetUrl(key), []);
 
     if (orders.isLoading) return <div className="p-12 flex items-center justify-center"><Spinner size="lg" /></div>;
     if (orders.error) return <div className="p-6 text-center text-red-400">Error: {orders.error}</div>;
@@ -129,7 +180,7 @@ export const OrdersSection = () => {
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                 <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                    Orders <span className="font-normal text-sm" style={{ color: 'var(--text-tertiary)' }}>({filtered.length})</span>
+                    Orders <span className="font-normal text-sm" style={{ color: 'var(--text-tertiary)' }}>({sorted.length})</span>
                 </h2>
                 <div className="flex gap-2">
                     <div className="relative flex-1 sm:flex-initial">
@@ -160,15 +211,73 @@ export const OrdersSection = () => {
                     <table className="min-w-full">
                         <thead>
                             <tr style={{ background: 'var(--bg-secondary)' }}>
-                                {['Order', 'Date', 'Status', 'Payment', 'Total', 'IDs', ''].map((h, i) => (
-                                    <th key={i} className={`px-4 py-3 text-xs font-semibold uppercase tracking-wider ${i >= 4 ? 'text-right' : 'text-left'}`} style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
-                                        {h}
-                                    </th>
-                                ))}
+                                <SortableTh
+                                    columnKey="orderId"
+                                    sortKey={sortKey}
+                                    direction={direction}
+                                    onSort={toggleSort}
+                                    className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                                    style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                                >
+                                    Order
+                                </SortableTh>
+                                <SortableTh
+                                    columnKey="createdAt"
+                                    sortKey={sortKey}
+                                    direction={direction}
+                                    onSort={toggleSort}
+                                    className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                                    style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                                >
+                                    Date
+                                </SortableTh>
+                                <SortableTh
+                                    columnKey="status"
+                                    sortKey={sortKey}
+                                    direction={direction}
+                                    onSort={toggleSort}
+                                    className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                                    style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                                >
+                                    Status
+                                </SortableTh>
+                                <SortableTh
+                                    columnKey="payment"
+                                    sortKey={sortKey}
+                                    direction={direction}
+                                    onSort={toggleSort}
+                                    className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                                    style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                                >
+                                    Payment
+                                </SortableTh>
+                                <SortableTh
+                                    columnKey="total"
+                                    sortKey={sortKey}
+                                    direction={direction}
+                                    onSort={toggleSort}
+                                    align="right"
+                                    className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                                    style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                                >
+                                    Total
+                                </SortableTh>
+                                <SortableTh
+                                    columnKey="ids"
+                                    sortKey={sortKey}
+                                    direction={direction}
+                                    onSort={toggleSort}
+                                    align="right"
+                                    className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                                    style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                                >
+                                    IDs
+                                </SortableTh>
+                                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider w-10" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }} scope="col" aria-label="Expand" />
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.map((order: any) => {
+                            {sorted.map((order: any) => {
                                 const cfg = statusConfig[order.status] || statusConfig.pending;
                                 const isExpanded = expandedId === order.orderId;
                                 return (
@@ -216,6 +325,27 @@ export const OrdersSection = () => {
                                                         <div><span className="text-label block mb-1">Tracking #</span><span style={{ color: 'var(--text-primary)' }}>{order.trackingNumber || '—'}</span></div>
                                                         <div><span className="text-label block mb-1">Notes</span><span className="text-xs" style={{ color: 'var(--text-primary)' }}>{order.notes || '—'}</span></div>
                                                     </div>
+
+                                                    <div className="mb-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+                                                        <span className="text-label block mb-2">ID images</span>
+                                                        {(order.ids || []).length === 0 ? (
+                                                            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>No ID rows.</p>
+                                                        ) : (
+                                                            (order.ids || []).map((idRow: Record<string, unknown>, idx: number) => (
+                                                                <div key={idx}>
+                                                                    <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>ID #{idx + 1}</p>
+                                                                    <OrderR2ImageStrip
+                                                                        slots={[
+                                                                            { label: 'Photo', objectKey: typeof idRow.photoKey === 'string' ? idRow.photoKey : undefined },
+                                                                            { label: 'Signature', objectKey: typeof idRow.signatureKey === 'string' ? idRow.signatureKey : undefined },
+                                                                        ]}
+                                                                        resolveUrl={resolveAdminAsset}
+                                                                    />
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+
                                                     <button onClick={(e) => { e.stopPropagation(); setEditingOrder(order); }} className="btn btn-outline px-3 py-1.5 text-xs">Edit Order</button>
                                                 </td>
                                             </tr>
@@ -225,7 +355,7 @@ export const OrdersSection = () => {
                             })}
                         </tbody>
                     </table>
-                    {filtered.length === 0 && (
+                    {sorted.length === 0 && (
                         <div className="p-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>No orders found.</div>
                     )}
                 </div>

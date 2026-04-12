@@ -44,6 +44,9 @@ next-env.d.ts
 # dev credentials
 .dev-credentials.md
 
+# Personal / local notes (not for the repo)
+FORME.md
+
 # Backend Lambda source (local copy; not committed — deploy from your machine)
 /lambda functions/
 .vscode/launch.json

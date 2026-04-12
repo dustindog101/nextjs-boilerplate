@@ -1,11 +1,13 @@
 "use client";
-import React, { Suspense } from 'react';
+import React, { Suspense, useCallback } from 'react';
 import Link from 'next/link';
 import { Footer, FormInput, FormSelect, FileInput, Spinner } from '../../components/ui';
 import { BackArrowIcon, EditIcon, SaveIcon, CancelIcon, PlusIcon, TrashIcon } from '../../components/icons';
 import { OrderStatusTracker } from '../../components/order/OrderStatusTracker';
 import { OrderSummaryCard } from '../../components/order/OrderSummaryCard';
 import { useOrder } from '../../hooks/useOrder';
+import { presignGetOrderAssetUrl } from '../../../lib/apiClient';
+import { OrderR2ImageStrip } from '../../components/order/OrderR2ImageStrip';
 import {
   stateOptions,
   eyeColorOptions,
@@ -41,6 +43,16 @@ function OrderViewContent() {
   }
 
   const viewingData = isEditing ? editableOrderData! : orderData;
+
+  const resolveUserAsset = useCallback(
+    (key: string) => {
+      if (!orderData?.orderId) {
+        return Promise.reject(new Error('No order'));
+      }
+      return presignGetOrderAssetUrl(orderData.orderId, key);
+    },
+    [orderData?.orderId]
+  );
 
   /* Shared input classes for inline editing */
   const inputCls = "w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-2 text-white placeholder-zinc-600 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 focus:outline-none transition-all";
@@ -163,6 +175,17 @@ function OrderViewContent() {
                       <FormSelect label="Hair" name="hairColor" value={idForm.hairColor} onChange={(e) => isEditing && updateIdField(index, 'hairColor', e.target.value)} options={hairColorOptions} disabled={!isEditing} />
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-white/[0.06]">
+                  <h5 className="text-label mb-3">Photo &amp; signature</h5>
+                  <OrderR2ImageStrip
+                    slots={[
+                      { label: 'Photo', objectKey: idForm.photoKey },
+                      { label: 'Signature', objectKey: idForm.signatureKey },
+                    ]}
+                    resolveUrl={resolveUserAsset}
+                  />
                 </div>
               </div>
             ))}

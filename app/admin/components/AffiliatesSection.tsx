@@ -1,8 +1,11 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Users, ChevronDown, ChevronUp } from 'lucide-react';
-import { Spinner } from '../../components/ui';
+import { Spinner, SortableTh } from '../../components/ui';
 import { useAdminData } from '../AdminDataContext';
+import { sortRows } from '@/lib/tableSort';
+import { useTableSortState } from '@/app/hooks/useTableSort';
+import type { ReferralGroup } from '@/lib/apiClient';
 
 export const AffiliatesSection = () => {
     const { referrals, loadReferrals } = useAdminData();
@@ -10,8 +13,24 @@ export const AffiliatesSection = () => {
 
     useEffect(() => { loadReferrals(); }, [loadReferrals]);
 
-    const totalReferred = (referrals.data || []).reduce((sum, r) => sum + r.count, 0);
     const groups = referrals.data || [];
+    const totalReferred = groups.reduce((sum, r) => sum + r.count, 0);
+
+    const { sortKey, direction, toggleSort } = useTableSortState('count', 'desc');
+
+    const sorted = useMemo(() => {
+        const tie = (a: ReferralGroup, b: ReferralGroup) => a.referrer.localeCompare(b.referrer);
+        return sortRows(
+            groups,
+            sortKey,
+            direction,
+            {
+                referrer: g => g.referrer,
+                count: g => g.count,
+            },
+            tie
+        );
+    }, [groups, sortKey, direction]);
 
     if (referrals.isLoading) return <div className="p-12 flex items-center justify-center"><Spinner size="lg" /></div>;
     if (referrals.error) return <div className="p-6 text-center text-red-400">Error: {referrals.error}</div>;
@@ -51,15 +70,32 @@ export const AffiliatesSection = () => {
                         <table className="min-w-full">
                             <thead>
                                 <tr style={{ background: 'var(--bg-secondary)' }}>
-                                    {['Referrer', 'Referrals', ''].map((h, i) => (
-                                        <th key={i} className={`px-4 py-3 text-xs font-semibold uppercase tracking-wider ${i > 0 ? 'text-right' : 'text-left'}`} style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
-                                            {h}
-                                        </th>
-                                    ))}
+                                    <SortableTh
+                                        columnKey="referrer"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                                        style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                                    >
+                                        Referrer
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="count"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        align="right"
+                                        className="px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                                        style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}
+                                    >
+                                        Referrals
+                                    </SortableTh>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider w-10" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }} scope="col" aria-label="Expand" />
                                 </tr>
                             </thead>
                             <tbody>
-                                {groups.map(group => {
+                                {sorted.map(group => {
                                     const isExpanded = expandedReferrer === group.referrer;
                                     return (
                                         <React.Fragment key={group.referrer}>

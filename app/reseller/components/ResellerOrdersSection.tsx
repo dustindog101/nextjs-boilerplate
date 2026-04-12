@@ -3,6 +3,9 @@ import React, { useState, useMemo } from 'react';
 import { Search, ChevronDown, ChevronUp, Check, Loader2 } from 'lucide-react';
 import { useResellerData } from '../ResellerDataContext';
 import { resellerUpdateOrder } from '@/lib/apiClient';
+import { sortRows } from '@/lib/tableSort';
+import { useTableSortState } from '@/app/hooks/useTableSort';
+import { SortableTh } from '../../components/ui';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -70,6 +73,27 @@ export const ResellerOrdersSection: React.FC = () => {
         );
     }, [orders.data, search]);
 
+    const { sortKey, direction, toggleSort } = useTableSortState<
+        'orderId' | 'createdAt' | 'status' | 'ids' | 'payment'
+    >('createdAt', 'desc');
+
+    const sorted = useMemo(() => {
+        const tie = (a: any, b: any) => String(a.orderId ?? '').localeCompare(String(b.orderId ?? ''));
+        return sortRows(
+            filtered,
+            sortKey,
+            direction,
+            {
+                orderId: (o: any) => o.orderId ?? '',
+                createdAt: (o: any) => (o.createdAt ? new Date(o.createdAt).getTime() : 0),
+                status: (o: any) => rowStatus[o.orderId] ?? o.status ?? 'pending',
+                ids: (o: any) => Number(o.ids?.length ?? o.numberOfIds ?? 0),
+                payment: (o: any) => rowPayment[o.orderId] ?? o.paymentStatus ?? 'Unpaid',
+            },
+            tie
+        );
+    }, [filtered, sortKey, direction, rowStatus, rowPayment]);
+
     // Returns the *current edited* value or falls back to DB value
     const getStatus = (o: any) => rowStatus[o.orderId] ?? o.status ?? 'pending';
     const getPayment = (o: any) => rowPayment[o.orderId] ?? o.paymentStatus ?? 'Unpaid';
@@ -113,7 +137,7 @@ export const ResellerOrdersSection: React.FC = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                 <h2 className="text-lg font-bold text-slate-900">
-                    My Orders <span className="text-slate-400 font-normal text-sm">({filtered.length})</span>
+                    My Orders <span className="text-slate-400 font-normal text-sm">({sorted.length})</span>
                 </h2>
                 <div className="relative">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -127,7 +151,7 @@ export const ResellerOrdersSection: React.FC = () => {
                 </div>
             </div>
 
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
                 <div className="glass p-10 text-center">
                     <p className="text-slate-500 mb-1">No orders yet.</p>
                     <p className="text-slate-400 text-sm">Orders placed through your link will appear here.</p>
@@ -138,17 +162,59 @@ export const ResellerOrdersSection: React.FC = () => {
                         <table className="min-w-full divide-y divide-slate-200">
                             <thead>
                                 <tr className="bg-slate-50">
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Order</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Date</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">IDs</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment</th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Save</th>
-                                    <th className="px-4 py-3" />
+                                    <SortableTh
+                                        columnKey="orderId"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Order
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="createdAt"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Date
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="status"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Status
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="ids"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        IDs
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="payment"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Payment
+                                    </SortableTh>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                        Save
+                                    </th>
+                                    <th className="px-4 py-3 w-10" scope="col" aria-label="Expand row" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filtered.map((o: any) => {
+                                {sorted.map((o: any) => {
                                     const isExpanded = expanded === o.orderId;
                                     const isSaving = !!saving[o.orderId];
                                     const isSaved = !!saved[o.orderId];

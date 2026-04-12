@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { adminCreateDiscount, adminUpdateDiscount, adminDeleteDiscount, Discount } from '../../../lib/apiClient';
 import { Plus, X, Tag, Trash2, Edit, Search, Users, Calendar, Clock } from 'lucide-react';
-import { Spinner } from '../../components/ui';
+import { Spinner, SortableTh } from '../../components/ui';
 import { useAdminData } from '../AdminDataContext';
+import { sortRows } from '@/lib/tableSort';
+import { useTableSortState } from '@/app/hooks/useTableSort';
 
 const inputCls = "w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none transition-all";
 
@@ -186,6 +188,28 @@ export const DiscountsSection = () => {
         return result;
     }, [discounts.data, search, statusFilter]);
 
+    const { sortKey, direction, toggleSort } = useTableSortState('code', 'asc');
+
+    const sorted = useMemo(() => {
+        const tie = (a: Discount, b: Discount) => a.code.localeCompare(b.code);
+        return sortRows(
+            filtered,
+            sortKey,
+            direction,
+            {
+                code: d => d.code,
+                type: d => d.discountType,
+                value: d =>
+                    d.discountType === 'percentage' ? d.value : 1000 + d.value,
+                uses: d => d.usedCount,
+                status: d => d.isActive,
+                window: d => (d.startsAt ? new Date(d.startsAt).getTime() : 0),
+                users: d => d.allowedUsernames?.length ?? 0,
+            },
+            tie
+        );
+    }, [filtered, sortKey, direction]);
+
     const toggleActive = async (code: string, isActive: boolean) => {
         await adminUpdateDiscount(code, { isActive: !isActive });
         await refreshDiscounts();
@@ -222,7 +246,7 @@ export const DiscountsSection = () => {
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                 <h2 className="text-lg font-bold text-slate-900">
-                    Discount Codes <span className="text-slate-400 font-normal text-sm">({filtered.length})</span>
+                    Discount Codes <span className="text-slate-400 font-normal text-sm">({sorted.length})</span>
                 </h2>
                 <div className="flex gap-2">
                     <div className="relative flex-1 sm:flex-initial">
@@ -250,7 +274,7 @@ export const DiscountsSection = () => {
                 </div>
             </div>
 
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
                 <div className="glass p-8 text-center">
                     <Tag size={32} className="mx-auto text-slate-300 mb-3" />
                     <p className="text-slate-500 mb-1">No discount codes found.</p>
@@ -262,18 +286,78 @@ export const DiscountsSection = () => {
                         <table className="min-w-full divide-y divide-slate-200">
                             <thead>
                                 <tr className="bg-slate-50">
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Code</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Type</th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Value</th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Uses</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Window</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Users</th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
+                                    <SortableTh
+                                        columnKey="code"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Code
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="type"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Type
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="value"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        align="right"
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Value
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="uses"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        align="right"
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Uses
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="status"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Status
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="window"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Window
+                                    </SortableTh>
+                                    <SortableTh
+                                        columnKey="users"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Users
+                                    </SortableTh>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                        Actions
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filtered.map(d => {
+                                {sorted.map(d => {
                                     const timeStatus = getTimeStatus(d);
                                     return (
                                         <tr key={d.code} className="hover:bg-slate-50 transition-colors">

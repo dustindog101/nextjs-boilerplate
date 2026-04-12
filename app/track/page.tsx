@@ -152,7 +152,7 @@ function TrackPageContent() {
               </div>
               <div>
                 <p className="text-label mb-1">Items</p>
-                <p className="text-sm text-slate-900">{orderData.ids.length}</p>
+                <p className="text-sm text-slate-900">{orderData.numberOfIds ?? orderData.ids?.length ?? 0}</p>
               </div>
               <div>
                 <p className="text-label mb-1">Total</p>
