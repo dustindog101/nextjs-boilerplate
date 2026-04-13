@@ -49,4 +49,14 @@ FORME.md
 
 # Backend Lambda source (local copy; not committed — deploy from your machine)
 /lambda functions/
+
+# Ad-hoc local Lambda / backend copies (keep repo Next.js–only)
+/ID-Pirate-CreateOrder-Function/
+/admin_handler/
+/idPirateOrderLookup/
+/idPirate_auth/
+idpirate.com.txt
+
+# Lambda layer build output (see scripts/build-pyjwt-lambda-layer.sh)
+/pyjwt-layer.zip
 .vscode/launch.json

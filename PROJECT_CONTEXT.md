@@ -2,14 +2,16 @@
 
 > **Purpose**: This document is a comprehensive reference for any AI agent or developer picking up this project. It describes every part of the codebase, the design system, coding conventions, architecture decisions, and the owner's preferences. Copy-paste this into a new AI chat to resume work seamlessly.
 
+> **Maintenance note (2026):** For **up-to-date** routing, env vars, Lambda names, and API tables, prefer **[AGENTS.md](./AGENTS.md)** and **[ARCHITECTURE.md](./ARCHITECTURE.md)**. This file is long and may lag on minor details (e.g. new routes, reseller Lambda).
+
 ---
 
 ## 1. Project Overview
 
-**ID Pirate** is a novelty ID ordering platform built as a **Next.js 15** web application (App Router). Users can browse state IDs, fill out custom per-ID forms, checkout with multiple payment options, track orders, and manage their account. An admin panel provides metrics and user management.
+**ID Pirate** is a novelty ID ordering platform built as a **Next.js 16** web application (App Router). Users can browse state IDs, fill out custom per-ID forms, checkout with multiple payment options, track orders, and manage their account. An admin panel provides metrics and user management. Resellers get a white-label checkout and **`/reseller`** dashboard.
 
 - **Repo**: `nextjs-boilerplate` (local path: `/Users/king/coding/web/idpirate/nextjs-boilerplate`)
-- **Framework**: Next.js 15.3.4 (App Router, `"use client"` pages — no RSC data fetching yet)
+- **Framework**: Next.js 16 (App Router, `"use client"` pages — check `package.json` for exact version)
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS v4 + custom CSS design system in `app/globals.css`
 - **Runtime**: Node.js, runs via `npm run dev` (port 3000)

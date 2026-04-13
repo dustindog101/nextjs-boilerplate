@@ -1,22 +1,20 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
+import { R2_MAX_UPLOAD_BYTES, STORAGE_UPLOAD_CONTENT_TYPE } from './constants';
 
-const MAX_BYTES = 5 * 1024 * 1024;
 const PRESIGN_PUT_TTL = 900;
 const PRESIGN_GET_TTL = 900;
 
-const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-
 export function assertAllowedImageType(contentType: string): void {
-  if (!ALLOWED_TYPES.has(contentType)) {
-    throw new Error('Invalid content type. Use JPEG, PNG, or WebP.');
+  if (contentType !== STORAGE_UPLOAD_CONTENT_TYPE) {
+    throw new Error('Invalid content type. Uploads must be WebP.');
   }
 }
 
 export function assertFileSize(fileSize: number): void {
-  if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > MAX_BYTES) {
-    throw new Error('File must be between 1 byte and 5 MB.');
+  if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > R2_MAX_UPLOAD_BYTES) {
+    throw new Error(`File must be between 1 byte and ${R2_MAX_UPLOAD_BYTES / (1024 * 1024)} MB.`);
   }
 }
 
@@ -42,9 +40,7 @@ function bucket(): string {
 }
 
 function extForContentType(ct: string): string {
-  if (ct === 'image/jpeg') return 'jpg';
-  if (ct === 'image/png') return 'png';
-  if (ct === 'image/webp') return 'webp';
+  if (ct === STORAGE_UPLOAD_CONTENT_TYPE) return 'webp';
   return 'bin';
 }
 
@@ -61,11 +57,12 @@ export async function getPresignedPutUrl(params: {
   const key = `${params.keyPrefix}${id}-${params.kind}.${ext}`;
 
   const client = getClient();
+  // Do not sign Content-Length: browsers must send the exact byte length; binding it into
+  // SigV4 often causes 403 / opaque XHR failures. Size is still enforced server-side below.
   const command = new PutObjectCommand({
     Bucket: bucket(),
     Key: key,
     ContentType: params.contentType,
-    ContentLength: params.contentLength,
   });
   const url = await getSignedUrl(client, command, { expiresIn: PRESIGN_PUT_TTL });
   return { url, key };
@@ -80,4 +77,15 @@ export async function getPresignedGetUrl(objectKey: string): Promise<string> {
   return getSignedUrl(client, command, { expiresIn: PRESIGN_GET_TTL });
 }
 
-export { MAX_BYTES as R2_MAX_UPLOAD_BYTES };
+export async function deleteObjectFromR2(objectKey: string): Promise<void> {
+  if (!objectKey || objectKey.includes('..') || objectKey.startsWith('/')) {
+    throw new Error('Invalid key.');
+  }
+  const client = getClient();
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: bucket(),
+      Key: objectKey,
+    })
+  );
+}

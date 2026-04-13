@@ -10,3 +10,5 @@ export { Footer } from './Footer';
 export { Notification } from './Notification';
 export { Spinner, FullPageSpinner } from './Spinner';
 export { SortableTh } from './SortableTh';
+export { ImageLightbox } from './ImageLightbox';
+export { SignaturePad } from './SignaturePad';

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, ChevronDown, ChevronUp, Check, Loader2 } from 'lucide-react';
 import { useResellerData } from '../ResellerDataContext';
 import { resellerUpdateOrder } from '@/lib/apiClient';
@@ -52,6 +52,9 @@ const EditSelect: React.FC<EditSelectProps> = ({ value, options, colorMap, onCha
 
 export const ResellerOrdersSection: React.FC = () => {
     const { orders, loadOrders, refreshOrders } = useResellerData();
+    useEffect(() => {
+        void loadOrders();
+    }, [loadOrders]);
     const [search, setSearch] = useState('');
     const [expanded, setExpanded] = useState<string | null>(null);
 

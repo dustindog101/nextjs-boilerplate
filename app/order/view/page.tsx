@@ -25,6 +25,17 @@ function OrderViewContent() {
     startEditing, cancelEditing, saveChanges, updateGeneralField, updateIdField
   } = useOrder();
 
+  // Must run before any early return — hooks count must be stable across loading / empty / ready.
+  const resolveUserAsset = useCallback(
+    (key: string) => {
+      if (!orderData?.orderId) {
+        return Promise.reject(new Error('No order'));
+      }
+      return presignGetOrderAssetUrl(orderData.orderId, key);
+    },
+    [orderData?.orderId]
+  );
+
   if (isAuthChecking || isLoadingInitialData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -43,16 +54,6 @@ function OrderViewContent() {
   }
 
   const viewingData = isEditing ? editableOrderData! : orderData;
-
-  const resolveUserAsset = useCallback(
-    (key: string) => {
-      if (!orderData?.orderId) {
-        return Promise.reject(new Error('No order'));
-      }
-      return presignGetOrderAssetUrl(orderData.orderId, key);
-    },
-    [orderData?.orderId]
-  );
 
   /* Shared input classes for inline editing */
   const inputCls = "w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-2 text-white placeholder-zinc-600 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 focus:outline-none transition-all";

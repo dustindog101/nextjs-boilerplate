@@ -5,6 +5,7 @@ import "../lib/localStorage-polyfill";
 
 import type { Metadata } from "next";
 import { Space_Grotesk, DM_Sans } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UniversalHeader } from "./components/UniversalHeader";
@@ -28,17 +29,21 @@ export const metadata: Metadata = {
   description: "The #1 source for premium novelty IDs. Scannable barcodes, UV holograms, microprint. Fast turnaround, discreet shipping, and all security features included.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headerList = await headers();
+  const hideHeaderForResellerHost =
+    headerList.get("x-idpirate-reseller-host") === "1";
+
   return (
     <html lang="en">
       <body className={`${spaceGrotesk.variable} ${dmSans.variable} antialiased`}>
         <AuthProvider>
           <div className="bg-[var(--bg-primary)] text-[var(--text-primary)] min-h-screen flex flex-col">
-            <UniversalHeader />
+            <UniversalHeader hideHeaderForResellerHost={hideHeaderForResellerHost} />
             <main className="flex-grow flex-1">
               {children}
             </main>

@@ -18,24 +18,9 @@ export const stateOptions = [
 ];
 
 // --- Physical Attribute Options ---
-export const eyeColorOptions = [
-    'Brown',
-    'Blue',
-    'Green',
-    'Hazel',
-    'Gray',
-    'Amber',
-];
+export const eyeColorOptions = ['Black', 'Blue', 'Brown', 'Gray', 'Green', 'Hazel'];
 
-export const hairColorOptions = [
-    'Black',
-    'Brown',
-    'Blonde',
-    'Red',
-    'Gray',
-    'White',
-    'Auburn',
-];
+export const hairColorOptions = ['Bald', 'Black', 'Blond', 'Brown', 'Gray', 'Red', 'White'];
 
 export const sexOptions = ['Male', 'Female'];
 
@@ -83,7 +68,15 @@ export const defaultIdPrice = 95;
 export const handlingFee = 5;
 export const shippingFee = 15;
 
-/** Matches server-side R2 presign limits */
-export const R2_MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
-export const ALLOWED_UPLOAD_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+/** Matches server-side R2 presign limits (final WebP size after client processing). */
+export const R2_MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+
+/** Stored in R2 — all uploads are normalized to WebP client-side. */
+export const STORAGE_UPLOAD_CONTENT_TYPE = 'image/webp' as const;
+
+/**
+ * `<input accept>` — broad list; `prepareImageForUpload` sniffs bytes and rejects unsupported types.
+ */
+export const ACCEPTED_IMAGE_INPUT_ACCEPT =
+  'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/heic,image/heif,image/svg+xml,image/tiff,.heic,.heif';
 

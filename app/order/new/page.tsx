@@ -14,12 +14,15 @@ import {
     statePrices,
     defaultIdPrice,
     R2_MAX_UPLOAD_BYTES,
-    ALLOWED_UPLOAD_IMAGE_TYPES,
+    STORAGE_UPLOAD_CONTENT_TYPE,
 } from '../../../lib/constants';
+import { prepareImageForUpload } from '../../../lib/imagePrepare';
+import { invalidateViewCacheForKey } from '../../../lib/viewImageCache';
 import { IdFormData } from '../../../lib/types';
 import { setStorageItem } from '../../../lib/storage';
-import { requestUploadPresign, uploadFileToR2 } from '../../../lib/apiClient';
-import { FormInput, FormSelect, Footer, UploadSlot, UploadSlotStatus } from '../../components/ui';
+import { deleteUploadedObject, requestUploadPresign, uploadFileToR2 } from '../../../lib/apiClient';
+import { userFacingUploadError } from '../../../lib/uploadUserMessage';
+import { FormInput, FormSelect, Footer, ImageLightbox, UploadSlot, UploadSlotStatus } from '../../components/ui';
 import {
     PlusIcon,
     TrashIcon,
@@ -41,8 +44,11 @@ interface IdFormProps {
     total: number;
     onChange: (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, isFile?: boolean) => void;
     getUploadSlot: (formId: number, field: 'photo' | 'signature') => { status: UploadSlotStatus; progress: number; error?: string };
+    getPreviewUrl: (formId: number, field: 'photo' | 'signature') => string | undefined;
+    onOpenPreview: (formId: number, field: 'photo' | 'signature') => void;
     onUploadFile: (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => void;
-    onRetryUpload: (formId: number, field: 'photo' | 'signature') => void;
+    onRetryUpload: (formId: number, field: 'photo' | 'signature') => void | Promise<void>;
+    onSignatureFile: (formId: number, file: File) => void | Promise<void>;
 }
 
 const IdFormCard: React.FC<IdFormProps> = ({
@@ -51,8 +57,11 @@ const IdFormCard: React.FC<IdFormProps> = ({
     total,
     onChange,
     getUploadSlot,
+    getPreviewUrl,
+    onOpenPreview,
     onUploadFile,
     onRetryUpload,
+    onSignatureFile,
 }) => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => onChange(formData.id, e);
     const photoSlot = getUploadSlot(formData.id, 'photo');
@@ -155,8 +164,10 @@ const IdFormCard: React.FC<IdFormProps> = ({
                             progress={photoSlot.progress}
                             error={photoSlot.error}
                             displayName={photoDisplay}
+                            previewUrl={getPreviewUrl(formData.id, 'photo')}
+                            onPreviewOpen={() => onOpenPreview(formData.id, 'photo')}
                             onFileChange={(e) => onUploadFile(formData.id, 'photo', e)}
-                            onRetry={() => onRetryUpload(formData.id, 'photo')}
+                            onRetry={() => void onRetryUpload(formData.id, 'photo')}
                         />
                         <UploadSlot
                             label="Signature"
@@ -165,8 +176,11 @@ const IdFormCard: React.FC<IdFormProps> = ({
                             progress={sigSlot.progress}
                             error={sigSlot.error}
                             displayName={sigDisplay}
+                            previewUrl={getPreviewUrl(formData.id, 'signature')}
+                            onPreviewOpen={() => onOpenPreview(formData.id, 'signature')}
                             onFileChange={(e) => onUploadFile(formData.id, 'signature', e)}
-                            onRetry={() => onRetryUpload(formData.id, 'signature')}
+                            onRetry={() => void onRetryUpload(formData.id, 'signature')}
+                            onSignatureFile={(file) => void onSignatureFile(formData.id, file)}
                         />
                     </div>
                 </section>
@@ -188,77 +202,9 @@ function OrderFormPage() {
         Record<string, { status: UploadSlotStatus; progress: number; error?: string }>
     >({});
 
-    const getUploadSlot = (formId: number, field: 'photo' | 'signature') =>
-        uploadSlots[slotKey(formId, field)] ?? { status: 'idle' as const, progress: 0 };
-
-    const onRetryUpload = (formId: number, field: 'photo' | 'signature') => {
-        setUploadSlots((s) => {
-            const next = { ...s };
-            delete next[slotKey(formId, field)];
-            return next;
-        });
-    };
-
-    const onUploadFile = async (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        e.target.value = '';
-        if (!file) return;
-
-        if (!token) {
-            setError('Please log in to upload images.');
-            return;
-        }
-        const allowed = ALLOWED_UPLOAD_IMAGE_TYPES as readonly string[];
-        if (!allowed.includes(file.type)) {
-            setUploadSlots((s) => ({
-                ...s,
-                [slotKey(formId, field)]: { status: 'error', progress: 0, error: 'Use JPEG, PNG, or WebP.' },
-            }));
-            return;
-        }
-        if (file.size > R2_MAX_UPLOAD_BYTES) {
-            setUploadSlots((s) => ({
-                ...s,
-                [slotKey(formId, field)]: { status: 'error', progress: 0, error: 'Max file size is 5 MB.' },
-            }));
-            return;
-        }
-
-        const sk = slotKey(formId, field);
-        setUploadSlots((s) => ({ ...s, [sk]: { status: 'presigning', progress: 0 } }));
-
-        try {
-            const presign = await requestUploadPresign({
-                contentType: file.type,
-                kind: field,
-                idFormClientId: formId,
-                fileSize: file.size,
-            });
-            setUploadSlots((s) => ({ ...s, [sk]: { status: 'uploading', progress: 0 } }));
-            await uploadFileToR2(presign, file, (p) =>
-                setUploadSlots((s) => ({ ...s, [sk]: { ...s[sk], status: 'uploading', progress: p } }))
-            );
-            setIdForms((prev) =>
-                prev.map((f) =>
-                    f.id === formId
-                        ? {
-                              ...f,
-                              photo: field === 'photo' ? undefined : f.photo,
-                              signature: field === 'signature' ? undefined : f.signature,
-                              photoKey: field === 'photo' ? presign.key : f.photoKey,
-                              signatureKey: field === 'signature' ? presign.key : f.signatureKey,
-                              photoFileName: field === 'photo' ? file.name : f.photoFileName,
-                              signatureFileName: field === 'signature' ? file.name : f.signatureFileName,
-                          }
-                        : f
-                )
-            );
-            setUploadSlots((s) => ({ ...s, [sk]: { status: 'done', progress: 100 } }));
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Upload failed.';
-            setUploadSlots((s) => ({ ...s, [sk]: { status: 'error', progress: 0, error: message } }));
-        }
-    };
+    /** Local blob URLs for upload preview (same-origin; safe for right-click). */
+    const [slotPreviewUrls, setSlotPreviewUrls] = useState<Record<string, string>>({});
+    const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
 
     const createNewIdForm = (): IdFormData => ({
         id: Date.now(),
@@ -275,6 +221,133 @@ function OrderFormPage() {
     const [activeIndex, setActiveIndex] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
+    const getUploadSlot = (formId: number, field: 'photo' | 'signature') =>
+        uploadSlots[slotKey(formId, field)] ?? { status: 'idle' as const, progress: 0 };
+
+    const getPreviewUrl = (formId: number, field: 'photo' | 'signature') =>
+        slotPreviewUrls[slotKey(formId, field)];
+
+    const onOpenPreview = (formId: number, field: 'photo' | 'signature') => {
+        const u = slotPreviewUrls[slotKey(formId, field)];
+        if (u) setLightbox({ url: u, label: field === 'photo' ? 'Photo' : 'Signature' });
+    };
+
+    const onRetryUpload = async (formId: number, field: 'photo' | 'signature') => {
+        const sk = slotKey(formId, field);
+        const form = idForms.find((f) => f.id === formId);
+        const objectKey = field === 'photo' ? form?.photoKey : form?.signatureKey;
+        if (objectKey) {
+            try {
+                await deleteUploadedObject(objectKey);
+                invalidateViewCacheForKey(objectKey);
+            } catch {
+                /* clear local state even if delete fails */
+            }
+        }
+        setSlotPreviewUrls((p) => {
+            const prev = p[sk];
+            if (prev) URL.revokeObjectURL(prev);
+            const n = { ...p };
+            delete n[sk];
+            return n;
+        });
+        setUploadSlots((s) => {
+            const next = { ...s };
+            delete next[sk];
+            return next;
+        });
+        setIdForms((prev) =>
+            prev.map((f) => {
+                if (f.id !== formId) return f;
+                return {
+                    ...f,
+                    photoKey: field === 'photo' ? undefined : f.photoKey,
+                    signatureKey: field === 'signature' ? undefined : f.signatureKey,
+                    photoFileName: field === 'photo' ? undefined : f.photoFileName,
+                    signatureFileName: field === 'signature' ? undefined : f.signatureFileName,
+                };
+            })
+        );
+    };
+
+    const uploadFromFile = async (formId: number, field: 'photo' | 'signature', file: File) => {
+        if (!token) {
+            setError('Please log in to upload images.');
+            return;
+        }
+        if (file.size > R2_MAX_UPLOAD_BYTES) {
+            setUploadSlots((s) => ({
+                ...s,
+                [slotKey(formId, field)]: {
+                    status: 'error',
+                    progress: 0,
+                    error: userFacingUploadError(new Error('FILE_RAW_TOO_LARGE')),
+                },
+            }));
+            return;
+        }
+
+        const sk = slotKey(formId, field);
+        setUploadSlots((s) => ({ ...s, [sk]: { status: 'presigning', progress: 0 } }));
+
+        try {
+            const prepared = await prepareImageForUpload(file);
+            const preview = URL.createObjectURL(prepared);
+            setSlotPreviewUrls((p) => {
+                const n = { ...p };
+                const old = n[sk];
+                if (old) URL.revokeObjectURL(old);
+                n[sk] = preview;
+                return n;
+            });
+            const presign = await requestUploadPresign({
+                contentType: STORAGE_UPLOAD_CONTENT_TYPE,
+                kind: field,
+                idFormClientId: formId,
+                fileSize: prepared.size,
+            });
+            setUploadSlots((s) => ({ ...s, [sk]: { status: 'uploading', progress: 0 } }));
+            await uploadFileToR2(presign, prepared, (p) =>
+                setUploadSlots((s) => ({ ...s, [sk]: { ...s[sk], status: 'uploading', progress: p } }))
+            );
+            setIdForms((prev) =>
+                prev.map((f) =>
+                    f.id === formId
+                        ? {
+                              ...f,
+                              photo: field === 'photo' ? undefined : f.photo,
+                              signature: field === 'signature' ? undefined : f.signature,
+                              photoKey: field === 'photo' ? presign.key : f.photoKey,
+                              signatureKey: field === 'signature' ? presign.key : f.signatureKey,
+                              photoFileName: field === 'photo' ? prepared.name : f.photoFileName,
+                              signatureFileName: field === 'signature' ? prepared.name : f.signatureFileName,
+                          }
+                        : f
+                )
+            );
+            setUploadSlots((s) => ({ ...s, [sk]: { status: 'done', progress: 100 } }));
+        } catch (err: unknown) {
+            setSlotPreviewUrls((p) => {
+                const u = p[sk];
+                if (u) URL.revokeObjectURL(u);
+                const n = { ...p };
+                delete n[sk];
+                return n;
+            });
+            setUploadSlots((s) => ({
+                ...s,
+                [sk]: { status: 'error', progress: 0, error: userFacingUploadError(err) },
+            }));
+        }
+    };
+
+    const onUploadFile = async (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        await uploadFromFile(formId, field, file);
+    };
+
     /* ── Actions ── */
     const addIdForm = () => {
         const newForm = createNewIdForm();
@@ -284,8 +357,21 @@ function OrderFormPage() {
 
     const removeIdForm = (idx: number) => {
         if (idForms.length <= 1) return;
-        setIdForms(prev => prev.filter((_, i) => i !== idx));
-        setActiveIndex(prev => Math.min(prev, idForms.length - 2));
+        const removed = idForms[idx];
+        if (removed) {
+            setSlotPreviewUrls((p) => {
+                const n = { ...p };
+                for (const field of ['photo', 'signature'] as const) {
+                    const k = slotKey(removed.id, field);
+                    const u = n[k];
+                    if (u) URL.revokeObjectURL(u);
+                    delete n[k];
+                }
+                return n;
+            });
+        }
+        setIdForms((prev) => prev.filter((_, i) => i !== idx));
+        setActiveIndex((prev) => Math.min(prev, idForms.length - 2));
     };
 
     const handleFormChange = (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, isFile = false) => {
@@ -483,8 +569,11 @@ function OrderFormPage() {
                                 total={idForms.length}
                                 onChange={handleFormChange}
                                 getUploadSlot={getUploadSlot}
+                                getPreviewUrl={getPreviewUrl}
+                                onOpenPreview={onOpenPreview}
                                 onUploadFile={onUploadFile}
                                 onRetryUpload={onRetryUpload}
+                                onSignatureFile={(formId, file) => void uploadFromFile(formId, 'signature', file)}
                             />
                         )}
 
@@ -525,6 +614,10 @@ function OrderFormPage() {
 
             {/* Bottom spacer so content isn't hidden behind fixed bar on mobile */}
             <div className="lg:hidden h-16" />
+
+            {lightbox && (
+                <ImageLightbox url={lightbox.url} label={lightbox.label} onClose={() => setLightbox(null)} />
+            )}
         </div>
     );
 }

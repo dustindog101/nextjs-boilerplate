@@ -40,71 +40,95 @@
 | `postcss.config.mjs` | 3     | Tailwind PostCSS plugin             |
 
 
+### Lambda sources (`lambda functions/`)
+
+Python Lambda code lives in `**lambda functions/`** at the repo root (folder name includes a space). Deploy these to AWS and point Vercel env vars at the Function URLs.
+
+
+| Folder                           | Role                                                                                                                                                           |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ID-Pirate-CreateOrder-Function` | `ORDER_LAMBDA_URL` — create order                                                                                                                              |
+| `idPirateOrderLookup`            | `LOOKUP_LAMBDA_URL` — track, discounts, `list_user_orders`, `validate_reseller`, etc.                                                                          |
+| `admin_handler`                  | `ADMIN_LAMBDA_URL` — admin CRUD; keep `**admin_update_order`** for the admin UI                                                                                |
+| `reseller_handler`               | `RESELLER_LAMBDA_URL` — reseller-only: list/get/update orders; **PyJWT** via layer or zip (`scripts/build-pyjwt-lambda-layer.sh` for 3.13+3.14 — see SETUP.md) |
+| `idPirate_auth`                  | `AUTH_LAMBDA_URL`                                                                                                                                              |
+
+
 ### Library (`lib/`)
 
 
-| File                       | Lines | Purpose                                                                                        |
-| -------------------------- | ----- | ---------------------------------------------------------------------------------------------- |
-| `apiClient.ts`             | ~192  | All API functions — `apiFetch` wrapper, `authHeaders` helper                                   |
-| `types.ts`                 | 86    | `JwtPayload`, `IdFormData`, `OrderDetails`, `TrackingStage`, `PaymentMethod`                   |
-| `constants.ts`             | 86    | `stateOptions`, `statePrices`, `defaultIdPrice`, `handlingFee`, `shippingFee`, dropdown arrays |
-| `storage.ts`               | 46    | SSR-safe localStorage: `getStorageItem`, `setStorageItem`, `removeStorageItem`                 |
-| `localStorage-polyfill.ts` | ~30   | Polyfill imported first in `layout.tsx` to fix Next.js dev mode bug                            |
+| File                                                 | Lines | Purpose                                                                                        |
+| ---------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------- |
+| `apiClient.ts`                                       | ~500  | All API functions — `apiFetch`, `fetchResellerOrders`, `resellerUpdateOrder`, etc.             |
+| `types.ts`                                           | 86    | `JwtPayload`, `IdFormData`, `OrderDetails`, `TrackingStage`, `PaymentMethod`                   |
+| `constants.ts`                                       | 86    | `stateOptions`, `statePrices`, `defaultIdPrice`, `handlingFee`, `shippingFee`, dropdown arrays |
+| `storage.ts`                                         | 46    | SSR-safe localStorage: `getStorageItem`, `setStorageItem`, `removeStorageItem`                 |
+| `localStorage-polyfill.ts`                           | ~30   | Polyfill imported first in `layout.tsx` to fix Next.js dev mode bug                            |
+| `validateReseller.ts`                                | —     | Reseller upload session: LOOKUP validation + dev slug allowlist (`RESELLER_UPLOAD_DEV_SLUGS`)  |
+| `r2.ts` / `imagePrepare.ts` / `uploadUserMessage.ts` | —     | R2 presign helpers, image pipeline, upload error copy                                          |
 
 
 ### Pages (`app/`)
 
 
-| Route        | File                 | Lines | Auth Guard      | Notes                                               |
-| ------------ | -------------------- | ----- | --------------- | --------------------------------------------------- |
-| `/`          | `page.tsx`           | 219   | None            | Hero, feature grid, state cards, FAQ accordion      |
-| `/account`   | `account/page.tsx`   | 199   | None            | Login/Register tabbed form                          |
-| `/order`     | `order/page.tsx`     | 93    | None            | State ID gallery grid                               |
-| `/order/new` | `order/new/page.tsx` | 407   | `withAuth`      | Multi-ID form, sidebar, mobile nav, completion dots |
-| `/checkout`  | `checkout/page.tsx`  | 289   | `withAuth`      | Order review, shipping, payment, submit modal       |
-| `/dashboard` | `dashboard/page.tsx` | 180   | `withAuth`      | Stat cards, order list                              |
-| `/orders`    | `orders/page.tsx`    | —     | `withAuth`      | All orders list                                     |
-| `/track`     | `track/page.tsx`     | ~143  | None            | Order search, auto-fill from URL params             |
-| `/news`      | `news/page.tsx`      | 82    | None            | News feed                                           |
-| `/terms`     | `terms/page.tsx`     | ~85   | None            | Simple text page                                    |
-| `/privacy`   | `privacy/page.tsx`   | ~85   | None            | Simple text page                                    |
-| `/admin`     | `admin/page.tsx`     | 49    | `withAdminAuth` | Metrics + user management                           |
-| `/invoices`  | `invoices/page.tsx`  | —     | —               | Stub — purpose TBD                                  |
-| `/za`        | `za/page.tsx`        | —     | —               | Stub — purpose TBD                                  |
+| Route             | File                      | Lines | Auth Guard         | Notes                                                                        |
+| ----------------- | ------------------------- | ----- | ------------------ | ---------------------------------------------------------------------------- |
+| `/`               | `page.tsx`                | 219   | None               | Hero, feature grid, state cards, FAQ accordion                               |
+| `/account`        | `account/page.tsx`        | 199   | None               | Login/Register tabbed form                                                   |
+| `/order`          | `order/page.tsx`          | 93    | None               | State ID gallery grid                                                        |
+| `/order/new`      | `order/new/page.tsx`      | 407   | `withAuth`         | Multi-ID form, sidebar, mobile nav, completion dots                          |
+| `/checkout`       | `checkout/page.tsx`       | 289   | `withAuth`         | Order review, shipping, payment, submit modal                                |
+| `/dashboard`      | `dashboard/page.tsx`      | 180   | `withAuth`         | Stat cards, order list                                                       |
+| `/orders`         | `orders/page.tsx`         | —     | `withAuth`         | All orders list                                                              |
+| `/track`          | `track/page.tsx`          | ~143  | None               | Order search, auto-fill from URL params                                      |
+| `/news`           | `news/page.tsx`           | 82    | None               | News feed                                                                    |
+| `/terms`          | `terms/page.tsx`          | ~85   | None               | Simple text page                                                             |
+| `/privacy`        | `privacy/page.tsx`        | ~85   | None               | Simple text page                                                             |
+| `/admin`          | `admin/page.tsx`          | 49    | `withAdminAuth`    | Metrics + user management                                                    |
+| `/reseller`       | `reseller/page.tsx`       | —     | `withResellerAuth` | Reseller dashboard (orders, link, analytics)                                 |
+| `/invoices`       | `invoices/page.tsx`       | —     | —                  | Stub — purpose TBD                                                           |
+| `/za`             | `za/page.tsx`             | —     | —                  | Stub — purpose TBD                                                           |
+| `/r/[resellerId]` | `r/[resellerId]/page.tsx` | —     | None (public)      | White-label checkout (subdomain → middleware rewrite); light/dark appearance |
 
 
 ### API Route Handlers (`app/api/`)
 
 
-| Route                                | File                                | Proxies To                                                       |
-| ------------------------------------ | ----------------------------------- | ---------------------------------------------------------------- |
-| `POST /api/auth`                     | `auth/route.ts`                     | `AUTH_LAMBDA_URL`                                                |
-| `GET /api/orders`                    | `orders/route.ts`                   | `ORDER_LAMBDA_URL`                                               |
-| `POST /api/orders`                   | `orders/route.ts`                   | `ORDER_LAMBDA_URL`                                               |
-| `POST /api/orders/track`             | `orders/track/route.ts`             | `LOOKUP_LAMBDA_URL`                                              |
-| `POST /api/admin`                    | `admin/route.ts`                    | `ADMIN_LAMBDA_URL`                                               |
-| `POST /api/uploads/presign`          | `uploads/presign/route.ts`          | Presigned PUT to R2 (user JWT or reseller session token)         |
-| `POST /api/uploads/reseller-session` | `uploads/reseller-session/route.ts` | Mints reseller upload token (`LOOKUP_LAMBDA` validates reseller) |
-| `POST /api/uploads/presign-get`      | `uploads/presign-get/route.ts`      | Admin-only presigned GET for R2 keys                             |
+| Route                                | File                                 | Proxies To                                                       |
+| ------------------------------------ | ------------------------------------ | ---------------------------------------------------------------- |
+| `POST /api/auth`                     | `auth/route.ts`                      | `AUTH_LAMBDA_URL`                                                |
+| `GET /api/orders`                    | `orders/route.ts`                    | `LOOKUP_LAMBDA_URL` (`list_user_orders`)                         |
+| `POST /api/orders`                   | `orders/route.ts`                    | `ORDER_LAMBDA_URL` (create order)                                |
+| `GET /api/reseller/orders`           | `reseller/orders/route.ts`           | `RESELLER_LAMBDA_URL` (`list_reseller_orders`)                   |
+| `GET /api/reseller/orders/[id]`      | `reseller/orders/[orderId]/route.ts` | `RESELLER_LAMBDA_URL` (`get_reseller_order`)                     |
+| `POST /api/reseller/update-order`    | `reseller/update-order/route.ts`     | `RESELLER_LAMBDA_URL` (`update_reseller_order`)                  |
+| `POST /api/orders/track`             | `orders/track/route.ts`              | `LOOKUP_LAMBDA_URL`                                              |
+| `POST /api/admin`                    | `admin/route.ts`                     | `ADMIN_LAMBDA_URL`                                               |
+| `POST /api/uploads/presign`          | `uploads/presign/route.ts`           | Presigned PUT to R2 (user JWT or reseller session token)         |
+| `POST /api/uploads/reseller-session` | `uploads/reseller-session/route.ts`  | Mints reseller upload token (`LOOKUP_LAMBDA` validates reseller) |
+| `POST /api/uploads/presign-get`      | `uploads/presign-get/route.ts`       | Admin-only presigned GET for R2 keys                             |
+| `POST /api/uploads/presign-get-own`  | `uploads/presign-get-own/route.ts`   | User: presigned GET for own order assets                         |
+| `POST /api/uploads/delete`           | `uploads/delete/route.ts`            | Delete R2 object (auth + key ownership rules)                    |
 
 
 ### Components (`app/components/`)
 
 
-| File                  | Lines | Purpose                                                     |
-| --------------------- | ----- | ----------------------------------------------------------- |
-| `UniversalHeader.tsx` | 249   | Sticky header, desktop nav, user dropdown, mobile slide-out |
-| `withAuth.tsx`        | 29    | HOC: redirects unauthenticated users to `/account`          |
-| `withAdminAuth.tsx`   | 33    | HOC: redirects non-admins to `/dashboard`                   |
-| `icons/index.tsx`     | 199   | 20+ custom SVG icon components                              |
-| `ui/Footer.tsx`       | 36    | Site footer with nav links                                  |
-| `ui/Spinner.tsx`      | ~40   | Loading spinner (sm/md/lg) + `FullPageSpinner`              |
-| `ui/FormInput.tsx`    | ~40   | Labeled text input (requires `label` prop)                  |
-| `ui/FormSelect.tsx`   | ~50   | Labeled select dropdown                                     |
-| `ui/FileInput.tsx`    | ~45   | File upload input                                           |
-| `ui/UploadSlot.tsx`   | —     | R2 upload UI: progress, retry, Bold Minimal                 |
-| `ui/Notification.tsx` | ~80   | Toast notification with auto-dismiss                        |
-| `ui/index.tsx`        | ~10   | Barrel exports for `ui/`                                    |
+| File                   | Lines | Purpose                                                     |
+| ---------------------- | ----- | ----------------------------------------------------------- |
+| `UniversalHeader.tsx`  | 249   | Sticky header, desktop nav, user dropdown, mobile slide-out |
+| `withAuth.tsx`         | 29    | HOC: redirects unauthenticated users to `/account`          |
+| `withAdminAuth.tsx`    | 33    | HOC: redirects non-admins to `/dashboard`                   |
+| `withResellerAuth.tsx` | —     | HOC: `/reseller` — requires `isReseller` or admin           |
+| `icons/index.tsx`      | 199   | 20+ custom SVG icon components                              |
+| `ui/Footer.tsx`        | 36    | Site footer with nav links                                  |
+| `ui/Spinner.tsx`       | ~40   | Loading spinner (sm/md/lg) + `FullPageSpinner`              |
+| `ui/FormInput.tsx`     | ~40   | Labeled text input (requires `label` prop)                  |
+| `ui/FormSelect.tsx`    | ~50   | Labeled select dropdown                                     |
+| `ui/FileInput.tsx`     | ~45   | File upload input                                           |
+| `ui/UploadSlot.tsx`    | —     | R2 upload UI: progress, retry, Bold Minimal                 |
+| `ui/Notification.tsx`  | ~80   | Toast notification with auto-dismiss                        |
+| `ui/index.tsx`         | ~10   | Barrel exports for `ui/`                                    |
 
 
 ### Contexts & Hooks
@@ -221,6 +245,9 @@ export default withAuth(MyPage);
 
 // Admin-only pages
 export default withAdminAuth(AdminPage);
+
+// Reseller dashboard (`isReseller` or admin)
+export default withResellerAuth(ResellerPage);
 ```
 
 ### API Call Pattern
@@ -270,6 +297,7 @@ AUTH_LAMBDA_URL=
 LOOKUP_LAMBDA_URL=
 ORDER_LAMBDA_URL=
 ADMIN_LAMBDA_URL=
+RESELLER_LAMBDA_URL=
 # Cloudflare R2 (presigned uploads)
 R2_ACCOUNT_ID=
 R2_BUCKET_NAME=
@@ -277,21 +305,49 @@ R2_ENDPOINT=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_UPLOAD_TOKEN_SECRET=
+# Local dev: comma-separated slugs allowed for reseller upload when LOOKUP does not know them (development only)
+# RESELLER_UPLOAD_DEV_SLUGS=manny
 ```
+
+---
+
+## Cost, free tier, and scale (owner intent)
+
+The project aims to **stay within free tiers** of the services in use (e.g. **Vercel** hosting, **AWS** Lambda/DynamoDB where applicable, **Cloudflare R2** storage) **when possible**, and to **avoid patterns that explode cost** as usage grows.
+
+**When writing or reviewing code, keep in mind:**
+
+- **Today and tomorrow:** Prefer designs that stay efficient at **low volume** *and* remain reasonable if **customers, orders, uploads, or API traffic grow** (avoid unnecessary full-table scans, unbounded polling, chatty N+1 Lambdas, huge payloads, or features that require expensive tiers by default).
+- **Backend:** Favor **keys and queries** that match DynamoDB access patterns; add **pagination** before large lists become hot paths; be cautious with **scan**-heavy admin metrics at scale.
+- **Uploads / R2:** Lifecycle and prefix rules (see `integration/r2/R2-LIFECYCLE.md`) support controlling storage growth; CORS and presign patterns should stay lean.
+- **New dependencies or services:** Consider **free-tier limits and billing surprises** before adding third-party APIs, heavy image processing on serverless, or always-on workers.
+
+This is a **product constraint**, not a ban on ever paying for scale—when growth demands it, the owner may upgrade plans deliberately. Agents should **default to frugal, scalable patterns** unless the owner specifies otherwise.
+
+---
+
+## Middleware and multi-host behavior
+
+- `**/api` and `/api/*`** are **never** rewritten by `middleware.ts` — API routes always hit `app/api/`** on the same host (fixes JSON/HTML mix-ups on reseller subdomains).
+- **Reseller subdomains** (hosts not in the main-domain list) rewrite to `**/r/[subdomain]/...`** and set header `**x-idpirate-reseller-host`** for layout/header hiding.
+- **White-label orders** store `**userId` = subdomain slug** and optional `**resellerId`**; the reseller dashboard uses `**fetchResellerOrders`** → `**RESELLER_LAMBDA_URL**`, not `GET /api/orders`.
+- **R2 browser uploads** require bucket **CORS** to include the **exact** page origin (e.g. `http://manny.localhost:3000`). See `integration/r2/R2-LIFECYCLE.md`.
 
 ---
 
 ## Known Technical Debt
 
 
-| #   | Issue                                              | Location                                             |
-| --- | -------------------------------------------------- | ---------------------------------------------------- |
-| 1   | `useOrder` hook uses hardcoded mock data           | `app/hooks/useOrder.ts`                              |
-| 2   | `/order/view` uses mock data, not real API         | `app/order/view/page.tsx`                            |
-| 3   | `submitOrder` sends client `id` field to backend   | `lib/apiClient.ts` + `app/order/new/page.tsx`        |
-| 4   | Direct `localStorage.setItem` in order form        | `app/order/new/page.tsx` → `handleProceedToCheckout` |
-| 5   | `/za` and `/invoices` pages are undocumented stubs | `app/za/`, `app/invoices/`                           |
-| 6   | No test coverage                                   | entire project                                       |
+| #   | Issue                                                                                                | Location                                             |
+| --- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 1   | `useOrder` hook uses hardcoded mock data                                                             | `app/hooks/useOrder.ts`                              |
+| 2   | `/order/view` uses mock data, not real API                                                           | `app/order/view/page.tsx`                            |
+| 3   | `submitOrder` sends client `id` field to backend                                                     | `lib/apiClient.ts` + `app/order/new/page.tsx`        |
+| 4   | Direct `localStorage.setItem` in order form                                                          | `app/order/new/page.tsx` → `handleProceedToCheckout` |
+| 5   | `/za` and `/invoices` pages are undocumented stubs                                                   | `app/za/`, `app/invoices/`                           |
+| 6   | No test coverage                                                                                     | entire project                                       |
+| 7   | `ARCHITECTURE.md` / `PROJECT_CONTEXT.md` may lag AGENTS; treat **AGENTS.md** as canonical for agents | docs                                                 |
+| 8   | Reseller metrics/analytics UI may not match live order fields until aligned                          | `app/reseller/components/AnalyticsSection.tsx`       |
 
 
 ---
@@ -299,15 +355,16 @@ R2_UPLOAD_TOKEN_SECRET=
 ## Owner Preferences
 
 
-| Preference  | Detail                                                                   |
-| ----------- | ------------------------------------------------------------------------ |
-| Design      | "Bold Minimal" dark glassmorphic — no light themes, ever                 |
-| Legal pages | Plain headings + paragraphs. No cards, tags, or grid layouts             |
-| Complexity  | Clean functional code over over-engineered solutions                     |
-| Animations  | `animate-fade-up` with stagger — subtle, not flashy                      |
-| Icons       | Use `app/components/icons/index.tsx` first; `lucide-react` only in admin |
-| Errors      | Toast via `Notification` component — no `alert()` calls                  |
-| Navigation  | Use Next.js `useRouter` — no direct `window.location` assignments        |
+| Preference   | Detail                                                                       |
+| ------------ | ---------------------------------------------------------------------------- |
+| Design       | "Bold Minimal" dark glassmorphic — no light themes, ever                     |
+| Legal pages  | Plain headings + paragraphs. No cards, tags, or grid layouts                 |
+| Complexity   | Clean functional code over over-engineered solutions                         |
+| Animations   | `animate-fade-up` with stagger — subtle, not flashy                          |
+| Icons        | Use `app/components/icons/index.tsx` first; `lucide-react` only in admin     |
+| Errors       | Toast via `Notification` component — no `alert()` calls                      |
+| Navigation   | Use Next.js `useRouter` — no direct `window.location` assignments            |
+| Cost / scale | Prefer free-tier–friendly patterns; see **Cost, free tier, and scale** above |
 
 
 ---
@@ -323,4 +380,13 @@ R2_UPLOAD_TOKEN_SECRET=
 - Responsive: `sm:` and `lg:` breakpoints
 - No `alert()` — uses `Notification` component
 - No `NEXT_PUBLIC_` on Lambda URL env vars
+- New features: consider **Cost, free tier, and scale** (pagination, avoid scans, bounded payloads)
+
+---
+
+## Deploy and backend checklist (human or agent)
+
+- **Vercel:** Set all Lambda Function URLs + `**RESELLER_LAMBDA_URL`** after deploying `lambda functions/reseller_handler` (same `**JWT_SECRET`** and DynamoDB access as other handlers).
+- **Repo vs AWS:** Source of truth for Python handlers is `**lambda functions/`** (not `aws/handlers/` — that path may be absent or legacy in this repo).
+- **Admin vs reseller:** Admin order tools use `**POST /api/admin`**; reseller dashboard uses `**/api/reseller/*`** only.
 

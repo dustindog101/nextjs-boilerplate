@@ -15,7 +15,14 @@ import {
   NewsIcon,
 } from './icons';
 
-export const UniversalHeader = () => {
+type UniversalHeaderProps = {
+  /** Set by middleware + root layout (no flash); true on reseller subdomains that rewrite to /r/[id]. */
+  hideHeaderForResellerHost?: boolean;
+};
+
+export const UniversalHeader = ({
+  hideHeaderForResellerHost = false,
+}: UniversalHeaderProps) => {
   const { user, logout, isLoading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -49,8 +56,8 @@ export const UniversalHeader = () => {
   const backButtonHref = pathname === '/checkout' ? '/order/new' : '/order';
   const backButtonText = pathname === '/checkout' ? 'Back to Edit' : 'Back to Gallery';
 
-  // Hide all branding on white-label reseller checkout routes
-  if (pathname.startsWith('/r/')) return null;
+  // Hide main-site branding: path-based /r/..., or reseller subdomain (see middleware + layout prop).
+  if (pathname.startsWith('/r/') || hideHeaderForResellerHost) return null;
 
 
   const handleLogout = () => {

@@ -129,6 +129,35 @@ export const fetchUserOrders = async (): Promise<{ orders: any[] }> => {
 };
 
 /**
+ * Fetches orders for the logged-in reseller (whitelabel attribution). (Protected)
+ */
+export const fetchResellerOrders = async (): Promise<{ orders: any[] }> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) {
+    throw new Error('No authentication token found for protected route.');
+  }
+  return apiFetch<{ orders: any[] }>('/api/reseller/orders', {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+};
+
+/**
+ * Fetches a single order for the reseller dashboard if the caller owns it.
+ */
+export const fetchResellerOrderById = async (orderId: string): Promise<any> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) {
+    throw new Error('No authentication token found for protected route.');
+  }
+  const enc = encodeURIComponent(orderId);
+  return apiFetch<any>(`/api/reseller/orders/${enc}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+};
+
+/**
  * Submits a new order.
  */
 export const submitOrder = async (payload: any): Promise<{ orderId: string }> => {
@@ -250,11 +279,11 @@ export const uploadFileToR2 = (
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve();
-      } else {
-        reject(new Error(`Upload failed (${xhr.status}).`));
+        return;
       }
+      reject(new Error('__upload_network__'));
     };
-    xhr.onerror = () => reject(new Error('Network error during upload.'));
+    xhr.onerror = () => reject(new Error('__upload_network__'));
     xhr.send(file);
   });
 
@@ -266,6 +295,28 @@ export const createResellerUploadSession = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ resellerId }),
+  });
+};
+
+/**
+ * Deletes an object from R2 if the caller owns the key prefix (user, reseller, or admin).
+ */
+export const deleteUploadedObject = async (
+  objectKey: string,
+  opts?: { resellerUploadToken?: string | null }
+): Promise<void> => {
+  const token =
+    opts?.resellerUploadToken ?? getStorageItem('idPirateAuthToken');
+  if (!token) {
+    throw new Error('Not authenticated for upload.');
+  }
+  await apiFetch<{ ok: boolean }>('/api/uploads/delete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ key: objectKey }),
   });
 };
 

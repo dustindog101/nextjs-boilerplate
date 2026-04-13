@@ -1,28 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Proxy route for reseller order updates.
-// Forwards requests to the admin_handler Lambda using requestType: 'reseller_update_order'.
-// The Lambda performs its own JWT validation and ownership check — only the owning
-// reseller (or an admin) can update status/paymentStatus on an order.
+// Forwards to RESELLER_LAMBDA_URL with requestType: update_reseller_order.
+// Admin panel order updates remain POST /api/admin → admin_handler (admin_update_order).
 
-const LAMBDA_URL = process.env.ADMIN_LAMBDA_URL;
+const RESELLER_LAMBDA_URL = process.env.RESELLER_LAMBDA_URL;
 
 export async function POST(req: NextRequest) {
-    if (!LAMBDA_URL) {
-        return NextResponse.json({ error: 'Server configuration error.' }, { status: 500 });
+    if (!RESELLER_LAMBDA_URL) {
+        return NextResponse.json(
+            { error: 'Reseller service is not configured.' },
+            { status: 503 }
+        );
     }
 
     const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
     const body = await req.json();
 
-    const lambdaResp = await fetch(LAMBDA_URL, {
+    const lambdaResp = await fetch(RESELLER_LAMBDA_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             ...(authHeader ? { Authorization: authHeader } : {}),
         },
-        // Inject the requestType so the Lambda knows which handler to run
-        body: JSON.stringify({ ...body, requestType: 'reseller_update_order' }),
+        body: JSON.stringify({ ...body, requestType: 'update_reseller_order' }),
     });
 
     const data = await lambdaResp.json();

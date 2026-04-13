@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
     stateOptions,
@@ -12,16 +13,31 @@ import {
     handlingFee as HANDLING_FEE,
     shippingFee as SHIPPING_FEE,
     R2_MAX_UPLOAD_BYTES,
-    ALLOWED_UPLOAD_IMAGE_TYPES,
+    STORAGE_UPLOAD_CONTENT_TYPE,
 } from '@/lib/constants';
+import { prepareImageForUpload } from '@/lib/imagePrepare';
+import { invalidateViewCacheForKey } from '@/lib/viewImageCache';
 import { IdFormData } from '@/lib/types';
 import {
     submitOrder,
     createResellerUploadSession,
     requestUploadPresign,
     uploadFileToR2,
+    deleteUploadedObject,
 } from '@/lib/apiClient';
-import { UploadSlot, type UploadSlotStatus } from '@/app/components/ui';
+import { userFacingUploadError } from '@/lib/uploadUserMessage';
+import {
+    readResellerTheme,
+    writeResellerTheme,
+    loadResellerDraft,
+    saveResellerDraft,
+    clearResellerDraft,
+    serializeIdForms,
+    reviveIdForm,
+    buildUploadSlotsFromForms,
+    RESELLER_DRAFT_MAX_AGE_MS,
+} from '@/lib/resellerPortalStorage';
+import { UploadSlot, ImageLightbox, type UploadSlotStatus } from '@/app/components/ui';
 import {
     ShieldCheck, Plus, Trash2, CheckCircle2, ChevronRight,
     ChevronLeft, MapPin, Truck, Moon, Sun
@@ -29,8 +45,9 @@ import {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const createNewIdForm = (): IdFormData => ({
-    id: Date.now(),
+/** Pass explicit `id` so SSR and client hydration match (avoid Date.now() in initial state). */
+const createNewIdForm = (id: number): IdFormData => ({
+    id,
     state: stateOptions[0],
     dobMonth: '01', dobDay: '01', dobYear: '2000',
     issueMonth: '01', issueDay: '01', issueYear: String(new Date().getFullYear()),
@@ -92,12 +109,27 @@ interface IdCardProps {
     form: IdFormData;
     onChange: (id: number, e: any) => void;
     getUploadSlot: (formId: number, field: 'photo' | 'signature') => { status: UploadSlotStatus; progress: number; error?: string };
+    getPreviewUrl: (formId: number, field: 'photo' | 'signature') => string | undefined;
+    onOpenPreview: (formId: number, field: 'photo' | 'signature') => void;
     onUploadFile: (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => void;
-    onRetryUpload: (formId: number, field: 'photo' | 'signature') => void;
+    onRetryUpload: (formId: number, field: 'photo' | 'signature') => void | Promise<void>;
+    onSignatureFile: (formId: number, file: File) => void | Promise<void>;
     s: ReturnType<typeof useStyles>;
+    uploadAppearance: 'dark' | 'light';
 }
 
-const IdCard: React.FC<IdCardProps> = ({ form, onChange, getUploadSlot, onUploadFile, onRetryUpload, s }) => {
+const IdCard: React.FC<IdCardProps> = ({
+    form,
+    onChange,
+    getUploadSlot,
+    getPreviewUrl,
+    onOpenPreview,
+    onUploadFile,
+    onRetryUpload,
+    onSignatureFile,
+    s,
+    uploadAppearance,
+}) => {
     const onField = (e: any) => onChange(form.id, e);
     const photoSlot = getUploadSlot(form.id, 'photo');
     const sigSlot = getUploadSlot(form.id, 'signature');
@@ -187,8 +219,11 @@ const IdCard: React.FC<IdCardProps> = ({ form, onChange, getUploadSlot, onUpload
                         progress={photoSlot.progress}
                         error={photoSlot.error}
                         displayName={photoDisplay}
+                        previewUrl={getPreviewUrl(form.id, 'photo')}
+                        onPreviewOpen={() => onOpenPreview(form.id, 'photo')}
                         onFileChange={(e) => onUploadFile(form.id, 'photo', e)}
-                        onRetry={() => onRetryUpload(form.id, 'photo')}
+                        onRetry={() => void onRetryUpload(form.id, 'photo')}
+                        appearance={uploadAppearance}
                     />
                     <UploadSlot
                         label="Signature"
@@ -197,8 +232,12 @@ const IdCard: React.FC<IdCardProps> = ({ form, onChange, getUploadSlot, onUpload
                         progress={sigSlot.progress}
                         error={sigSlot.error}
                         displayName={sigDisplay}
+                        previewUrl={getPreviewUrl(form.id, 'signature')}
+                        onPreviewOpen={() => onOpenPreview(form.id, 'signature')}
                         onFileChange={(e) => onUploadFile(form.id, 'signature', e)}
-                        onRetry={() => onRetryUpload(form.id, 'signature')}
+                        onRetry={() => void onRetryUpload(form.id, 'signature')}
+                        onSignatureFile={(file) => void onSignatureFile(form.id, file)}
+                        appearance={uploadAppearance}
                     />
                 </div>
             </div>
@@ -212,15 +251,27 @@ export default function ResellerPortalPage() {
     const params = useParams();
     const resellerId = params?.resellerId as string;
 
-    // Theme
+    // Theme — default false on server + first client paint; persist across reseller pages via storage.
     const [dark, setDark] = useState(false);
+    const themeHydratedRef = useRef(false);
     useEffect(() => {
-        setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+        const stored = readResellerTheme();
+        if (stored === 'dark') setDark(true);
+        else if (stored === 'light') setDark(false);
+        else setDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
     }, []);
+    useEffect(() => {
+        if (!themeHydratedRef.current) {
+            themeHydratedRef.current = true;
+            return;
+        }
+        writeResellerTheme(dark ? 'dark' : 'light');
+    }, [dark]);
     const s = useStyles(dark);
 
-    // IDs state
-    const [idForms, setIdForms] = useState<IdFormData[]>([createNewIdForm()]);
+    // IDs: stable id=1 for initial row so server HTML matches hydrated client (no Date.now in useState).
+    const nextFormIdRef = useRef(2);
+    const [idForms, setIdForms] = useState<IdFormData[]>(() => [createNewIdForm(1)]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const uploadTokenRef = useRef<string | null>(null);
@@ -229,17 +280,58 @@ export default function ResellerPortalPage() {
     const [uploadSlots, setUploadSlots] = useState<
         Record<string, { status: UploadSlotStatus; progress: number; error?: string }>
     >({});
+    const [slotPreviewUrls, setSlotPreviewUrls] = useState<Record<string, string>>({});
+    const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
 
     const slotKey = (formId: number, field: 'photo' | 'signature') => `${formId}-${field}`;
     const getUploadSlot = (formId: number, field: 'photo' | 'signature') =>
         uploadSlots[slotKey(formId, field)] ?? { status: 'idle' as const, progress: 0 };
 
-    const onRetryUpload = (formId: number, field: 'photo' | 'signature') => {
+    const getPreviewUrl = (formId: number, field: 'photo' | 'signature') =>
+        slotPreviewUrls[slotKey(formId, field)];
+
+    const onOpenPreview = (formId: number, field: 'photo' | 'signature') => {
+        const u = slotPreviewUrls[slotKey(formId, field)];
+        if (u) setLightbox({ url: u, label: field === 'photo' ? 'Photo' : 'Signature' });
+    };
+
+    const onRetryUpload = async (formId: number, field: 'photo' | 'signature') => {
+        const sk = slotKey(formId, field);
+        const form = idForms.find((f) => f.id === formId);
+        const objectKey = field === 'photo' ? form?.photoKey : form?.signatureKey;
+        const tok = uploadTokenRef.current;
+        if (objectKey && tok) {
+            try {
+                await deleteUploadedObject(objectKey, { resellerUploadToken: tok });
+                invalidateViewCacheForKey(objectKey);
+            } catch {
+                /* clear local state even if delete fails */
+            }
+        }
+        setSlotPreviewUrls((p) => {
+            const prev = p[sk];
+            if (prev) URL.revokeObjectURL(prev);
+            const n = { ...p };
+            delete n[sk];
+            return n;
+        });
         setUploadSlots((s) => {
             const next = { ...s };
-            delete next[slotKey(formId, field)];
+            delete next[sk];
             return next;
         });
+        setIdForms((prev) =>
+            prev.map((f) => {
+                if (f.id !== formId) return f;
+                return {
+                    ...f,
+                    photoKey: field === 'photo' ? undefined : f.photoKey,
+                    signatureKey: field === 'signature' ? undefined : f.signatureKey,
+                    photoFileName: field === 'photo' ? undefined : f.photoFileName,
+                    signatureFileName: field === 'signature' ? undefined : f.signatureFileName,
+                };
+            })
+        );
     };
 
     useEffect(() => {
@@ -255,9 +347,11 @@ export default function ResellerPortalPage() {
                     uploadTokenRef.current = token;
                     setUploadSessionReady(true);
                 }
-            } catch {
+            } catch (e) {
                 if (!cancelled) {
-                    setUploadSessionError('Could not verify reseller link for uploads.');
+                    setUploadSessionError(
+                        e instanceof Error ? e.message : 'Could not verify reseller link for uploads.'
+                    );
                     setUploadSessionReady(false);
                 }
             }
@@ -267,29 +361,21 @@ export default function ResellerPortalPage() {
         };
     }, [resellerId]);
 
-    const onUploadFile = async (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        e.target.value = '';
-        if (!file) return;
-
+    const uploadFromFile = async (formId: number, field: 'photo' | 'signature', file: File) => {
         const tok = uploadTokenRef.current;
         if (!tok) {
             setError('Upload session not ready. Refresh the page.');
             return;
         }
 
-        const allowed = ALLOWED_UPLOAD_IMAGE_TYPES as readonly string[];
-        if (!allowed.includes(file.type)) {
-            setUploadSlots((s) => ({
-                ...s,
-                [slotKey(formId, field)]: { status: 'error', progress: 0, error: 'Use JPEG, PNG, or WebP.' },
-            }));
-            return;
-        }
         if (file.size > R2_MAX_UPLOAD_BYTES) {
             setUploadSlots((s) => ({
                 ...s,
-                [slotKey(formId, field)]: { status: 'error', progress: 0, error: 'Max file size is 5 MB.' },
+                [slotKey(formId, field)]: {
+                    status: 'error',
+                    progress: 0,
+                    error: userFacingUploadError(new Error('FILE_RAW_TOO_LARGE')),
+                },
             }));
             return;
         }
@@ -298,17 +384,26 @@ export default function ResellerPortalPage() {
         setUploadSlots((s) => ({ ...s, [sk]: { status: 'presigning', progress: 0 } }));
 
         try {
+            const prepared = await prepareImageForUpload(file);
+            const preview = URL.createObjectURL(prepared);
+            setSlotPreviewUrls((p) => {
+                const n = { ...p };
+                const old = n[sk];
+                if (old) URL.revokeObjectURL(old);
+                n[sk] = preview;
+                return n;
+            });
             const presign = await requestUploadPresign(
                 {
-                    contentType: file.type,
+                    contentType: STORAGE_UPLOAD_CONTENT_TYPE,
                     kind: field,
                     idFormClientId: formId,
-                    fileSize: file.size,
+                    fileSize: prepared.size,
                 },
                 { resellerUploadToken: tok }
             );
             setUploadSlots((s) => ({ ...s, [sk]: { status: 'uploading', progress: 0 } }));
-            await uploadFileToR2(presign, file, (p) =>
+            await uploadFileToR2(presign, prepared, (p) =>
                 setUploadSlots((s) => ({ ...s, [sk]: { ...s[sk], status: 'uploading', progress: p } }))
             );
             setIdForms((prev) =>
@@ -320,17 +415,33 @@ export default function ResellerPortalPage() {
                               signature: field === 'signature' ? undefined : f.signature,
                               photoKey: field === 'photo' ? presign.key : f.photoKey,
                               signatureKey: field === 'signature' ? presign.key : f.signatureKey,
-                              photoFileName: field === 'photo' ? file.name : f.photoFileName,
-                              signatureFileName: field === 'signature' ? file.name : f.signatureFileName,
+                              photoFileName: field === 'photo' ? prepared.name : f.photoFileName,
+                              signatureFileName: field === 'signature' ? prepared.name : f.signatureFileName,
                           }
                         : f
                 )
             );
             setUploadSlots((s) => ({ ...s, [sk]: { status: 'done', progress: 100 } }));
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Upload failed.';
-            setUploadSlots((s) => ({ ...s, [sk]: { status: 'error', progress: 0, error: message } }));
+            setSlotPreviewUrls((p) => {
+                const u = p[sk];
+                if (u) URL.revokeObjectURL(u);
+                const n = { ...p };
+                delete n[sk];
+                return n;
+            });
+            setUploadSlots((s) => ({
+                ...s,
+                [sk]: { status: 'error', progress: 0, error: userFacingUploadError(err) },
+            }));
         }
+    };
+
+    const onUploadFile = async (formId: number, field: 'photo' | 'signature', e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        await uploadFromFile(formId, field, file);
     };
 
     // Shipping
@@ -344,6 +455,7 @@ export default function ResellerPortalPage() {
     const [notes, setNotes] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [successOrderId, setSuccessOrderId] = useState('');
+    const [portalHydrated, setPortalHydrated] = useState(false);
 
     const shipping = deliveryMode === 'ship' ? SHIPPING_FEE : 0;
     const fees = HANDLING_FEE + shipping;
@@ -354,17 +466,85 @@ export default function ResellerPortalPage() {
         (s) => s.status === 'presigning' || s.status === 'uploading'
     );
 
+    // Restore in-progress draft (same reseller link, within TTL). Cleared on successful submit.
+    useEffect(() => {
+        if (!resellerId) return;
+        const d = loadResellerDraft(resellerId);
+        if (d && Date.now() - d.savedAt < RESELLER_DRAFT_MAX_AGE_MS && d.idForms.length > 0) {
+            const forms = d.idForms.map(reviveIdForm);
+            setIdForms(forms);
+            setActiveIndex(Math.min(d.activeIndex, Math.max(0, forms.length - 1)));
+            const maxId = Math.max(...forms.map((f) => f.id));
+            nextFormIdRef.current = Math.max(d.nextFormId, maxId + 1);
+            setDeliveryMode(d.deliveryMode);
+            setShipName(d.shipName);
+            setShipStreet(d.shipStreet);
+            setShipCity(d.shipCity);
+            setShipState(d.shipState);
+            setShipZip(d.shipZip);
+            setNotes(d.notes);
+            setUploadSlots(buildUploadSlotsFromForms(forms));
+        }
+        setPortalHydrated(true);
+    }, [resellerId]);
+
+    useEffect(() => {
+        if (!resellerId || !portalHydrated) return;
+        if (status === 'success') return;
+        const t = window.setTimeout(() => {
+            saveResellerDraft(resellerId, {
+                idForms: serializeIdForms(idForms),
+                activeIndex,
+                nextFormId: nextFormIdRef.current,
+                deliveryMode,
+                shipName,
+                shipStreet,
+                shipCity,
+                shipState,
+                shipZip,
+                notes,
+            });
+        }, 450);
+        return () => window.clearTimeout(t);
+    }, [
+        resellerId,
+        portalHydrated,
+        idForms,
+        activeIndex,
+        deliveryMode,
+        shipName,
+        shipStreet,
+        shipCity,
+        shipState,
+        shipZip,
+        notes,
+        status,
+    ]);
+
     // ── ID Actions ──────────────────────────────────────────────────────────
 
     const addForm = () => {
-        const next = createNewIdForm();
+        const next = createNewIdForm(nextFormIdRef.current++);
         setIdForms(prev => [...prev, next]);
         setActiveIndex(idForms.length);
     };
 
     const removeForm = (idx: number) => {
         if (idForms.length <= 1) return;
-        setIdForms(prev => prev.filter((_, i) => i !== idx));
+        const removed = idForms[idx];
+        if (removed) {
+            setSlotPreviewUrls((p) => {
+                const n = { ...p };
+                for (const field of ['photo', 'signature'] as const) {
+                    const k = slotKey(removed.id, field);
+                    const u = n[k];
+                    if (u) URL.revokeObjectURL(u);
+                    delete n[k];
+                }
+                return n;
+            });
+        }
+        setIdForms((prev) => prev.filter((_, i) => i !== idx));
         setActiveIndex(Math.min(activeIndex, idForms.length - 2));
     };
 
@@ -418,6 +598,7 @@ export default function ResellerPortalPage() {
         try {
             const data = await submitOrder({
                 userId: resellerId,
+                resellerId,
                 source: 'reseller_portal',
                 shipping: shippingAddress,
                 paymentMethod: 'Pay Later',
@@ -427,8 +608,9 @@ export default function ResellerPortalPage() {
             });
             setSuccessOrderId(data.orderId);
             setStatus('success');
-        } catch (err: any) {
-            setError(err.message || 'Submission failed. Please try again.');
+            clearResellerDraft(resellerId);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Submission failed. Please try again.');
             setStatus('error');
         }
     };
@@ -442,10 +624,22 @@ export default function ResellerPortalPage() {
                     <CheckCircle2 size={48} className="text-emerald-500 mx-auto mb-5" />
                     <h1 className={`${s.text} text-2xl font-bold mb-2`}>Order Placed!</h1>
                     <p className={`${s.subtext} mb-4 text-sm`}>Your order has been received and is now being processed.</p>
-                    <p className={`text-xs font-mono px-3 py-2 rounded-lg ${dark ? 'bg-white/[0.05] text-zinc-400' : 'bg-slate-100 text-slate-500'}`}>
-                        ID: {successOrderId}
+                    <p className={`text-xs font-mono px-3 py-2 rounded-lg mb-5 ${dark ? 'bg-white/[0.05] text-zinc-400' : 'bg-slate-100 text-slate-500'}`}>
+                        Order ID: {successOrderId}
                     </p>
-                    <p className={`${s.subtext} mt-4 text-xs`}>Your reseller will be in touch with payment details.</p>
+                    <Link
+                        href={`/track?orderId=${encodeURIComponent(successOrderId)}`}
+                        className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-white transition-all mb-4 ${dark ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                    >
+                        Track Your Order
+                    </Link>
+                    <p className={`${s.subtext} text-xs mb-5`}>Your reseller will be in touch with payment details.</p>
+                    <Link
+                        href="/"
+                        className={`w-full py-3 rounded-xl font-medium text-sm text-center transition-all border ${dark ? 'border-white/[0.12] text-zinc-200 hover:bg-white/[0.06]' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                    >
+                        Back to checkout
+                    </Link>
                 </div>
             </div>
         );
@@ -464,7 +658,13 @@ export default function ResellerPortalPage() {
                         <ShieldCheck size={16} className="text-indigo-500" />
                         <span className={`${s.text} text-sm font-semibold`}>Secure Checkout</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Link
+                            href="/track"
+                            className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap ${dark ? 'border-white/[0.08] text-zinc-300 hover:bg-white/[0.06]' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                        >
+                            Track Order
+                        </Link>
                         <span className={`${s.subtext} text-xs`}>{idForms.length} ID{idForms.length !== 1 ? 's' : ''}</span>
                         <button onClick={() => setDark(d => !d)} className={`p-2 rounded-lg ${dark ? 'text-zinc-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'} transition-all`}>
                             {dark ? <Sun size={15} /> : <Moon size={15} />}
@@ -477,9 +677,20 @@ export default function ResellerPortalPage() {
 
                 {/* ── Error Banner ─────────────────────────────────────── */}
                 {(error || uploadSessionError) && (
-                    <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center justify-between">
-                        <span>{error || uploadSessionError}</span>
-                        <button onClick={() => { setError(null); }} className="ml-2 opacity-60 hover:opacity-100">✕</button>
+                    <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex flex-col sm:flex-row sm:items-start gap-2 justify-between">
+                        <span className="text-left flex-1 min-w-0 whitespace-pre-wrap break-words">
+                            {error || uploadSessionError}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setError(null);
+                                setUploadSessionError(null);
+                            }}
+                            className="flex-shrink-0 opacity-60 hover:opacity-100 self-end sm:self-start"
+                        >
+                            ✕
+                        </button>
                     </div>
                 )}
 
@@ -519,9 +730,13 @@ export default function ResellerPortalPage() {
                                 form={activeForm}
                                 onChange={handleChange}
                                 getUploadSlot={getUploadSlot}
+                                getPreviewUrl={getPreviewUrl}
+                                onOpenPreview={onOpenPreview}
                                 onUploadFile={onUploadFile}
                                 onRetryUpload={onRetryUpload}
+                                onSignatureFile={(formId, file) => void uploadFromFile(formId, 'signature', file)}
                                 s={s}
+                                uploadAppearance={dark ? 'dark' : 'light'}
                             />
                         )}
                     </div>
@@ -635,6 +850,10 @@ export default function ResellerPortalPage() {
                     </button>
                 </div>
             </div>
+
+            {lightbox && (
+                <ImageLightbox url={lightbox.url} label={lightbox.label} onClose={() => setLightbox(null)} />
+            )}
         </div>
     );
 }

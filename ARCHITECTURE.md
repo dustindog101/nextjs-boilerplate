@@ -1,135 +1,141 @@
 # ID Pirate Architecture
 
 ## Scope and Method
+
 This document is based on direct code inspection of:
+
 - `app/` (App Router pages, route handlers, components, contexts)
 - `lib/` (API client, storage wrappers, constants, shared types)
-- `aws/handlers/` (Lambda handlers for auth, admin, order lookup)
+- `lambda functions/` (Python Lambda sources — **authoritative** backend copy in this repo)
 - root runtime config (`next.config.ts`, `middleware.ts`, `package.json`)
 
 Excluded intentionally: `node_modules`, `.git`, `.next`, lockfiles, minified assets.
 
+> **Canonical agent context:** [AGENTS.md](./AGENTS.md) is updated more often for AI coding assistants. If this file disagrees, prefer AGENTS for routing and env rules.
+
 ## High-Level System Design
+
 ID Pirate is a Next.js 16 application that uses:
+
 - Client-rendered React pages for UX
 - Next.js Route Handlers (`app/api/*`) as a server-side proxy boundary
 - AWS Lambda Function URLs for backend business logic
 - DynamoDB as persistence for users, orders, discounts, and batches
+- Cloudflare R2 for presigned uploads (photos/signatures)
 
 ```text
 Browser (React client components)
   -> lib/apiClient.ts (single frontend API gateway)
-  -> Next.js Route Handlers (/api/auth, /api/orders, /api/orders/track, /api/admin)
-  -> AWS Lambda handlers (auth_handler, order_lookup, admin_handler, order-create handler URL)
-  -> DynamoDB tables
+  -> Next.js Route Handlers (/api/auth, /api/orders, /api/orders/track, /api/admin, /api/reseller/*, /api/uploads/*)
+  -> AWS Lambda handlers + R2 presign routes
+  -> DynamoDB tables + R2 bucket
 ```
 
+## Cost, free tier, and scale
+
+The owner aims to **stay within free tiers** (Vercel, AWS Lambda/DynamoDB, Cloudflare R2, etc.) **when possible** and to avoid architectures that **break the bank as usage grows**. Implementation choices should favor **efficient access patterns** (queries over scans, pagination for large lists), **bounded uploads**, and **minimal redundant Lambda invocations**. See [AGENTS.md](./AGENTS.md) (*Cost, free tier, and scale*) for coding-agent guidance.
+
 ## Runtime Boundaries
+
 ### 1) Frontend/UI Layer
+
 - Primary code: `app/**/*.tsx`
-- Global shell in `app/layout.tsx` wraps all pages with:
-  - `AuthProvider` (`app/contexts/AuthContext.tsx`)
-  - `UniversalHeader`
+- Global shell in `app/layout.tsx` wraps pages with `AuthProvider` and `UniversalHeader` (header can be hidden on reseller hosts via `middleware` + `x-idpirate-reseller-host`).
 - Route protection:
-  - `withAuth` for authenticated routes
-  - `withAdminAuth` for admin-only routes
+  - `withAuth` — authenticated user routes
+  - `withAdminAuth` — admin-only routes
+  - `withResellerAuth` — `/reseller` (reseller or admin)
 
 ### 2) Frontend Service Layer
+
 - `lib/apiClient.ts` is the central API facade.
-- Components/pages should not call `/api/*` directly; they call typed functions like:
-  - `loginUser`, `registerUser`
-  - `fetchUserOrders`, `submitOrder`, `trackOrder`
-  - admin functions (`adminGetMetrics`, `adminUpdateOrder`, etc.)
+- Examples: `loginUser`, `registerUser`, `fetchUserOrders`, `fetchResellerOrders`, `submitOrder`, `trackOrder`, admin helpers, `resellerUpdateOrder`, upload helpers.
 
 ### 3) Server Proxy Layer (BFF Pattern)
-- Route handlers in `app/api/*` keep Lambda URLs server-only and forward requests.
-- Env vars used:
-  - `AUTH_LAMBDA_URL`
-  - `ORDER_LAMBDA_URL`
-  - `LOOKUP_LAMBDA_URL`
-  - `ADMIN_LAMBDA_URL`
+
+- Route handlers in `app/api/*` keep Lambda URLs server-only.
+- Env vars: `AUTH_LAMBDA_URL`, `ORDER_LAMBDA_URL`, `LOOKUP_LAMBDA_URL`, `ADMIN_LAMBDA_URL`, `RESELLER_LAMBDA_URL`, plus R2-related vars for upload routes.
+
+**Reseller traffic** uses `app/api/reseller/*` → `RESELLER_LAMBDA_URL` (`reseller_handler`: list/get/update whitelabel orders). **End-user** order listing (`GET /api/orders`, `list_user_orders`) uses `LOOKUP_LAMBDA_URL`. **Admin** uses `POST /api/admin` → `ADMIN_LAMBDA_URL` (including `admin_update_order` for the admin UI).
 
 ### 4) Backend Layer (AWS Lambda)
-- `aws/handlers/auth_handler.py`:
-  - Handles `requestType: login | register`
-  - Reads/writes users in `idPirate_users`
-  - Issues JWT with `userId`, `username`, `role`, `isReseller`, `exp`
-- `aws/handlers/order_lookup.py`:
-  - Public: `track/summary`, `validate_discount`
-  - Protected: `list_user_orders`, `get_order` (JWT required)
-  - Reads orders from `idPirate_orders`, discounts from `idPirate_discounts`
-- `aws/handlers/admin_handler.py`:
-  - Admin JWT required for all operations
-  - User/order/discount/referral/metrics operations
-  - Touches `idPirate_users`, `idPirate_orders`, `idPirate_discounts`, `idPirate_batches`
 
-### 5) Data Layer (DynamoDB)
+Source in repo: `lambda functions/` (use these filenames when deploying).
+
+| Folder | Env var | Notes |
+| ------ | ------- | ----- |
+| `idPirate_auth` | `AUTH_LAMBDA_URL` | Login/register, JWT |
+| `ID-Pirate-CreateOrder-Function` | `ORDER_LAMBDA_URL` | Create order; stores `userId`, `source`, `resellerId`, `ids` with `photoKey`/`signatureKey` |
+| `idPirateOrderLookup` | `LOOKUP_LAMBDA_URL` | Public track/summary, `validate_discount`, `validate_reseller`, `list_user_orders`, `get_order` |
+| `admin_handler` | `ADMIN_LAMBDA_URL` | Admin-only ops; `admin_update_order`, `list_all_orders`, users, discounts, metrics |
+| `reseller_handler` | `RESELLER_LAMBDA_URL` | `list_reseller_orders`, `get_reseller_order`, `update_reseller_order` — ownership by JWT `username` vs order slug (see AGENTS) |
+
+Legacy references to `aws/handlers/` in older docs should be treated as superseded by `lambda functions/` in this repository.
+
+### 5) Data Layer (DynamoDB + R2)
+
 Inferred from handler code:
-- `idPirate_users` (uses `UsernameIndex` GSI)
-- `idPirate_orders` (uses `UserIdIndex` GSI)
+
+- `idPirate_users`
+- `idPirate_orders` (`UserIdIndex` GSI on `userId`)
 - `idPirate_discounts`
 - `idPirate_batches`
+- R2 bucket for upload keys under `u/` and `r/` prefixes
 
 ## Core Data Flows
-## Authentication Flow
+
+### Authentication Flow
+
 1. User submits login/register on `/account`.
-2. Page calls `loginUser`/`registerUser` in `lib/apiClient.ts`.
-3. API client calls `/api/auth` (route handler).
-4. Route handler forwards payload to `AUTH_LAMBDA_URL`.
-5. Lambda validates credentials and returns JWT (login).
-6. `AuthContext.login()` stores token using `setStorageItem('idPirateAuthToken', token)`.
-7. Auth state drives redirects and role checks in guards.
+2. `loginUser`/`registerUser` → `POST /api/auth` → `AUTH_LAMBDA_URL`.
+3. JWT stored via `setStorageItem('idPirateAuthToken', token)`.
 
-## Order Creation Flow
-1. `/order/new` collects one or more ID forms.
-2. Forms are saved to local storage key `idPirateOrderForms`.
-3. `/checkout` loads forms from storage, computes totals, allows discount validation.
-4. Submit action calls `submitOrder()` -> `POST /api/orders`.
-5. `/api/orders` forwards to `ORDER_LAMBDA_URL`.
-6. On success, local storage order forms are cleared.
+### Order Creation Flow
 
-## Order Listing / Dashboard Flow
-1. `/dashboard` calls `fetchUserOrders()`.
-2. API client sends `GET /api/orders` with Bearer token.
-3. Route handler forwards token + `requestType: list_user_orders` to `LOOKUP_LAMBDA_URL`.
-4. Lambda verifies JWT and returns user-scoped orders.
+1. `/order/new` → storage → `/checkout` (authenticated) **or** whitelabel `/r/[resellerId]` (anonymous).
+2. `submitOrder()` → `POST /api/orders` → `ORDER_LAMBDA_URL`.
+3. Whitelabel payload includes `userId` = slug, `resellerId` = slug, `source: 'reseller_portal'`.
 
-## Public Tracking Flow
-1. `/track` submits an order ID.
-2. API client calls `/api/orders/track`.
-3. Route handler forwards as `requestType: summary`.
-4. Lookup Lambda returns non-auth order summary.
+### Order Listing / Dashboard Flow
 
-## Admin Flow
-1. `/admin` UI and components call admin APIs from `lib/apiClient.ts`.
-2. API client sends `POST /api/admin` with Bearer token.
-3. Route handler proxies to `ADMIN_LAMBDA_URL`.
-4. Admin Lambda validates `role === 'admin'`, dispatches by `requestType`.
+1. `/dashboard` / `/orders`: `fetchUserOrders()` → `GET /api/orders` → LOOKUP `list_user_orders` (JWT `userId`).
+2. `/reseller`: `fetchResellerOrders()` → `GET /api/reseller/orders` → `RESELLER_LAMBDA_URL` `list_reseller_orders` (slug + optional UUID merge).
 
-## Cross-Cutting Design and Architecture Rules
-- Token storage/read is centralized via `lib/storage.ts`.
-- Pricing constants come from `lib/constants.ts`.
-- Shared data contracts live in `lib/types.ts`.
-- Security headers are applied globally in `next.config.ts`.
-- Middleware rewrites reseller subdomains to `/r/[subdomain]...` (when host is not main domain).
+### Reseller Update Flow
 
-## Notable Inconsistencies / Risks Found
-1. `lib/apiClient.ts` sends multiple `requestType`s (`get_order`, `validate_discount`) to `/api/orders/track`, but `app/api/orders/track/route.ts` currently rewrites every request to `requestType: summary`. This can break protected order fetch and discount validation behavior.
-2. Styling conventions in AGENTS guidance and current `app/globals.css` differ (color tokens and visual system naming drift). Team should treat AGENTS rules as canonical intent unless explicitly superseded.
-3. There are duplicate/legacy Lambda files in `aws/lambda_function*.py`; `aws/handlers/*` appears to be the more complete source set.
+- `resellerUpdateOrder()` → `POST /api/reseller/update-order` → `reseller_handler` `update_reseller_order`.
+- Admin panel order edits → `POST /api/admin` with `admin_update_order` (unchanged).
 
-## Reasoning and Justification
-- I modelled this as a BFF-proxy architecture because all frontend network calls terminate at Next Route Handlers first, not directly at Lambda URLs.
-- I separated frontend service layer (`lib/apiClient.ts`) from UI layer because code already enforces this abstraction and it is the key seam for maintainability and future feature work.
-- I documented DynamoDB entities from backend handler code instead of frontend guesses, because backend handlers are the authoritative source for table names and requestType dispatch behavior.
+### Public Tracking Flow
+
+1. `/track` → `POST /api/orders/track` → LOOKUP.
+2. Route handler **forwards the JSON body as-is** (including `requestType` from the client). *Older docs that claimed `requestType` was forced to `summary` are outdated.*
+
+### Admin Flow
+
+1. `/admin` → `POST /api/admin` → `ADMIN_LAMBDA_URL`, `verify_admin_jwt`.
+
+## Middleware
+
+- `/api` and `/api/*` are excluded from reseller subdomain rewrites so API calls always hit Next Route Handlers.
+- Non-main hosts rewrite to `/r/[subdomain]...` for white-label pages.
+
+## Cross-Cutting Rules
+
+- Token storage: `lib/storage.ts`.
+- Pricing: `lib/constants.ts`.
+- Types: `lib/types.ts`.
+- Security headers: `next.config.ts`.
+
+## Risks / Follow-Ups
+
+1. `validate_reseller` in LOOKUP uses `users_table.get_item(Key={'userId': reseller_id})` — if users use a composite key in production, this may need alignment with `admin_handler` patterns.
+2. **Reseller** `list_reseller_orders` has no pagination yet — add `LastEvaluatedKey` if order volume grows.
+3. **Styling:** `ResellerOrdersSection` uses light-theme pills; main site uses Bold Minimal dark tokens — cosmetic drift.
+4. **Tests:** No automated integration tests in repo.
 
 ## Assumptions
-1. The active backend code is `aws/handlers/*.py` (not the duplicate root lambda files).
-2. Lambda URLs in `.env.local` point to deployed handlers that match current request payload shapes.
-3. The order creation Lambda behind `ORDER_LAMBDA_URL` exists and is operational, even though its source is not clearly represented in `aws/handlers/`.
 
-## Current Blind Spots / Limitations
-- No tests were available to verify end-to-end behavior.
-- No infrastructure-as-code files were validated for DynamoDB schema/index guarantees.
-- Could not confirm which Lambda source files are actually deployed in AWS today.
-- I did not inspect every page/component line-by-line; this architecture prioritizes runtime-critical paths.
+1. Lambda code deployed to AWS matches `lambda functions/` in this repo (or document drift).
+2. `JWT_SECRET` matches across auth, lookup, admin, and reseller Lambdas.
+3. `RESELLER_LAMBDA_URL` is set wherever `/reseller` is used in production.

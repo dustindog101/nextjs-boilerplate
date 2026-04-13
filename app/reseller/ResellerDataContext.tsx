@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { fetchUserOrders } from '../../lib/apiClient';
+import { fetchResellerOrders } from '../../lib/apiClient';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,7 +44,7 @@ export const ResellerDataProvider: React.FC<{ children: ReactNode }> = ({ childr
     const fetchAndSetOrders = useCallback(async () => {
         setOrders(prev => ({ ...prev, isLoading: true, error: null }));
         try {
-            const data = await fetchUserOrders();
+            const data = await fetchResellerOrders();
             const sorted = (data.orders || []).sort(
                 (a: ResellerOrder, b: ResellerOrder) =>
                     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
