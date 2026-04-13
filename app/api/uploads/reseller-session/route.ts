@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { lookupValidateReseller } from '@/lib/validateReseller';
+import {
+  lookupValidateResellerResult,
+  normalizeResellerIdForPortal,
+} from '@/lib/validateReseller';
 import { signResellerUploadToken } from '@/lib/uploadToken';
 
 export const runtime = 'nodejs';
@@ -19,14 +22,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  const resellerId = typeof body.resellerId === 'string' ? body.resellerId.trim() : '';
+  const resellerId =
+    typeof body.resellerId === 'string' ? normalizeResellerIdForPortal(body.resellerId) : '';
   if (!resellerId) {
     return NextResponse.json({ error: 'resellerId is required.' }, { status: 400 });
   }
 
-  const valid = await lookupValidateReseller(resellerId);
-  if (!valid) {
-    return NextResponse.json({ error: 'Invalid reseller.' }, { status: 403 });
+  const vr = await lookupValidateResellerResult(resellerId);
+  if (!vr.ok) {
+    return NextResponse.json(
+      {
+        error: 'Invalid reseller.',
+        code: vr.code,
+        ...(vr.lambdaHttpStatus != null && { lambdaHttpStatus: vr.lambdaHttpStatus }),
+      },
+      { status: 403 }
+    );
   }
 
   const token = signResellerUploadToken(resellerId, uploadSecret, TTL_SECONDS);

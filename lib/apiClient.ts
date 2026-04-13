@@ -32,6 +32,8 @@ interface RegisterResponse {
 
 interface ErrorResponse {
   error: string;
+  code?: string;
+  lambdaHttpStatus?: number;
 }
 
 export interface User {
@@ -62,7 +64,12 @@ async function apiFetch<T>(url: string, options: RequestInit): Promise<T> {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error((data as ErrorResponse).error || 'An unknown API error occurred.');
+    const d = data as ErrorResponse;
+    const msg = d.error || 'An unknown API error occurred.';
+    const parts = [msg];
+    if (d.code) parts.push(`[${d.code}]`);
+    if (d.lambdaHttpStatus != null) parts.push(`(HTTP ${d.lambdaHttpStatus})`);
+    throw new Error(parts.join(' '));
   }
   return data as T;
 }

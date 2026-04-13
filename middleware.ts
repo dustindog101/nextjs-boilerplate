@@ -25,8 +25,8 @@ export function middleware(req: NextRequest) {
         /^localhost:\d+$/.test(hostname);
 
     if (!isMainDomain) {
-        // e.g. "manny.idpirate.com" → subdomain = "manny"
-        const subdomain = hostname.split('.')[0];
+        // e.g. "manny.idpirate.com" → subdomain = "manny" (hostnames are case-insensitive; normalize for DB)
+        const subdomain = hostname.split('.')[0]?.toLowerCase();
 
         if (subdomain) {
             // Prevent common/dev subdomains from hitting the reseller checkout
