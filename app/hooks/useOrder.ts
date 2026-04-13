@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { OrderDetails, JwtPayload } from '../../lib/types';
 import { getStorageItem, removeStorageItem } from '../../lib/storage';
-import { fetchOrderById } from '../../lib/apiClient';
+import { fetchOrderById, fetchResellerOrderById } from '../../lib/apiClient';
 
 export const useOrder = () => {
     const router = useRouter();
@@ -29,15 +29,20 @@ export const useOrder = () => {
             return;
         }
 
+        let payload: JwtPayload | null = null;
         try {
             // Decode JWT payload (base64url)
             const payloadStr = atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'));
-            const payload: JwtPayload = JSON.parse(payloadStr);
+            payload = JSON.parse(payloadStr) as JwtPayload;
             setLoggedInUser(payload);
         } catch {
             setFetchError('Invalid auth token.');
         }
         setIsAuthChecking(false);
+        if (!payload) {
+            setIsLoadingInitialData(false);
+            return;
+        }
 
         // Fetch order from real API
         const orderId = searchParams.get('orderId');
@@ -47,9 +52,12 @@ export const useOrder = () => {
             return;
         }
 
+        const isResellerUser = payload.isReseller;
         const loadOrder = async () => {
             try {
-                const data = await fetchOrderById(orderId);
+                const data = isResellerUser
+                    ? await fetchResellerOrderById(orderId)
+                    : await fetchOrderById(orderId);
                 setOrderData(data);
                 setEditableOrderData(JSON.parse(JSON.stringify(data)));
             } catch (err: any) {

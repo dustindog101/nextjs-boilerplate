@@ -130,7 +130,7 @@ function DashboardPage() {
                 return (
                   <Link
                     key={order.orderId}
-                    href={`/order/view?orderId=${order.orderId}`}
+                    href={`/order/view?orderId=${order.orderId}${user?.isReseller ? '&from=reseller' : ''}`}
                     className="glass p-5 flex flex-col justify-between hover:border-[var(--accent)]/30 transition-all group animate-fade-up"
                     style={{ animationDelay: `${50 * (i + 1)}ms` }}
                   >

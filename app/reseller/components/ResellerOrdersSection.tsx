@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ChevronDown, ChevronUp, Check, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { Search, MoreVertical, Check, Loader2, Eye, PanelBottom } from 'lucide-react';
 import { useResellerData } from '../ResellerDataContext';
 import { resellerUpdateOrder } from '@/lib/apiClient';
 import { sortRows } from '@/lib/tableSort';
@@ -42,7 +43,7 @@ const EditSelect: React.FC<EditSelectProps> = ({ value, options, colorMap, onCha
         value={value}
         onChange={e => onChange(e.target.value)}
         disabled={saving}
-        className={`text-xs font-medium rounded-full border px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer disabled:opacity-50 transition-all ${colorMap[value] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}
+        className={`text-xs font-medium rounded-full border px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0 cursor-pointer disabled:opacity-50 transition-all ${colorMap[value] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}
     >
         {options.map(o => <option key={o} value={o}>{o}</option>)}
     </select>
@@ -57,6 +58,19 @@ export const ResellerOrdersSection: React.FC = () => {
     }, [loadOrders]);
     const [search, setSearch] = useState('');
     const [expanded, setExpanded] = useState<string | null>(null);
+    const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const close = (e: MouseEvent) => {
+            if (!menuOpenId) return;
+            const el = document.querySelector(`[data-reseller-order-menu="${menuOpenId}"]`);
+            if (el && !el.contains(e.target as Node)) {
+                setMenuOpenId(null);
+            }
+        };
+        document.addEventListener('mousedown', close);
+        return () => document.removeEventListener('mousedown', close);
+    }, [menuOpenId]);
 
     // Per-row edit state
     const [rowStatus, setRowStatus] = useState<Record<string, string>>({});
@@ -162,9 +176,9 @@ export const ResellerOrdersSection: React.FC = () => {
             ) : (
                 <div className="glass overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-slate-200">
+                        <table className="min-w-full border-collapse">
                             <thead>
-                                <tr className="bg-slate-50">
+                                <tr className="bg-slate-50 border-b border-slate-200">
                                     <SortableTh
                                         columnKey="orderId"
                                         sortKey={sortKey}
@@ -213,10 +227,10 @@ export const ResellerOrdersSection: React.FC = () => {
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
                                         Save
                                     </th>
-                                    <th className="px-4 py-3 w-10" scope="col" aria-label="Expand row" />
+                                    <th className="px-4 py-3 w-12" scope="col" aria-label="Actions" />
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-200">
                                 {sorted.map((o: any) => {
                                     const isExpanded = expanded === o.orderId;
                                     const isSaving = !!saving[o.orderId];
@@ -282,14 +296,53 @@ export const ResellerOrdersSection: React.FC = () => {
                                                     )}
                                                 </td>
 
-                                                {/* Expand toggle */}
+                                                {/* Row actions */}
                                                 <td className="px-4 py-3 whitespace-nowrap text-right">
-                                                    <button
-                                                        onClick={() => setExpanded(isExpanded ? null : o.orderId)}
-                                                        className="text-slate-400 hover:text-slate-700 transition-colors"
+                                                    <div
+                                                        className="relative inline-flex"
+                                                        data-reseller-order-menu={o.orderId}
                                                     >
-                                                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                                    </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setMenuOpenId(menuOpenId === o.orderId ? null : o.orderId)
+                                                            }
+                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                                                            aria-expanded={menuOpenId === o.orderId}
+                                                            aria-haspopup="menu"
+                                                            aria-label={`Actions for order ${o.orderId.slice(0, 8)}`}
+                                                        >
+                                                            <MoreVertical size={18} />
+                                                        </button>
+                                                        {menuOpenId === o.orderId && (
+                                                            <div
+                                                                className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+                                                                role="menu"
+                                                            >
+                                                                <Link
+                                                                    href={`/order/view?orderId=${encodeURIComponent(o.orderId)}&from=reseller&section=orders`}
+                                                                    className="flex items-center gap-2 px-3 py-2.5 text-sm text-slate-900 hover:bg-slate-50"
+                                                                    role="menuitem"
+                                                                    onClick={() => setMenuOpenId(null)}
+                                                                >
+                                                                    <Eye size={16} className="text-slate-400" />
+                                                                    View full order
+                                                                </Link>
+                                                                <button
+                                                                    type="button"
+                                                                    role="menuitem"
+                                                                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-900 hover:bg-slate-50"
+                                                                    onClick={() => {
+                                                                        setExpanded(isExpanded ? null : o.orderId);
+                                                                        setMenuOpenId(null);
+                                                                    }}
+                                                                >
+                                                                    <PanelBottom size={16} className="text-slate-400" />
+                                                                    {isExpanded ? 'Hide quick summary' : 'Show quick summary'}
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
 

@@ -47,8 +47,10 @@ async function freshPresignedUrl(
 }
 
 /**
- * Returns a same-origin `blob:` URL for display (right-click "open in new tab" shows
- * blob:… not the R2 host). Reuses cached blob URL while fresh.
+ * Returns a URL suitable for `<img src>`: prefers a same-origin `blob:` URL (right-click
+ * shows blob:… not R2). If `fetch(presigned)` fails (common when R2 CORS allows browser
+ * `<img>` loads but not cross-origin `fetch`), falls back to the presigned HTTPS URL —
+ * images do not require CORS for display, unlike `fetch()`.
  */
 export async function getBlobDisplayUrlForKey(
   objectKey: string,
@@ -60,27 +62,36 @@ export async function getBlobDisplayUrlForKey(
   }
 
   const presigned = await freshPresignedUrl(objectKey, resolvePresigned);
-  const res = await fetch(presigned);
-  if (!res.ok) {
-    throw new Error('Could not load image.');
-  }
-  const blob = await res.blob();
-  const blobUrl = URL.createObjectURL(blob);
 
-  const prev = blobMemo.get(objectKey);
-  if (prev) {
-    URL.revokeObjectURL(prev.url);
+  try {
+    const res = await fetch(presigned, { mode: 'cors' });
+    if (!res.ok) {
+      throw new Error('Could not load image.');
+    }
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    const prev = blobMemo.get(objectKey);
+    if (prev?.url.startsWith('blob:')) {
+      URL.revokeObjectURL(prev.url);
+    }
+    blobMemo.set(objectKey, { url: blobUrl, at: Date.now() });
+    evictOldest(blobMemo, true);
+    return blobUrl;
+  } catch {
+    blobMemo.set(objectKey, { url: presigned, at: Date.now() });
+    evictOldest(blobMemo, true);
+    return presigned;
   }
-  blobMemo.set(objectKey, { url: blobUrl, at: Date.now() });
-  evictOldest(blobMemo, true);
-  return blobUrl;
 }
 
 /** Clear one key (e.g. after delete). */
 export function invalidateViewCacheForKey(objectKey: string): void {
   const b = blobMemo.get(objectKey);
   if (b) {
-    URL.revokeObjectURL(b.url);
+    if (b.url.startsWith('blob:')) {
+      URL.revokeObjectURL(b.url);
+    }
     blobMemo.delete(objectKey);
   }
   presignedMemo.delete(objectKey);

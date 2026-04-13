@@ -23,6 +23,7 @@ export function OrderR2ImageStrip({ slots, resolveUrl, className = '' }: OrderR2
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imgBroken, setImgBroken] = useState<Record<string, boolean>>({});
   const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
 
   const keysSig = slots.map((s) => s.objectKey || '').join('|');
@@ -41,6 +42,7 @@ export function OrderR2ImageStrip({ slots, resolveUrl, className = '' }: OrderR2
 
     setLoading(true);
     setError(null);
+    setImgBroken({});
 
     (async () => {
       try {
@@ -103,16 +105,25 @@ export function OrderR2ImageStrip({ slots, resolveUrl, className = '' }: OrderR2
                 type="button"
                 onClick={() => setLightbox({ url: href, label: slot.label })}
                 aria-label={`View ${slot.label} full size`}
-                className={`block rounded-xl overflow-hidden border border-[var(--border)] max-w-[200px] text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
+                className={`block min-h-[10rem] w-full max-w-[200px] rounded-xl overflow-hidden border border-[var(--border)] text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
                   isSig ? 'bg-white/[0.08]' : 'bg-[var(--bg-secondary)]'
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={href}
-                  alt=""
-                  className={`max-h-40 w-full object-contain ${isSig ? 'brightness-110 contrast-105 saturate-50' : ''}`}
-                />
+                {imgBroken[slot.objectKey] ? (
+                  <div className="flex min-h-[10rem] items-center justify-center px-2 py-4 text-center text-xs text-red-400/90">
+                    Image failed to load.
+                  </div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={href}
+                    alt=""
+                    className={`max-h-48 min-h-[8rem] w-full object-contain ${isSig ? 'brightness-110 contrast-105 saturate-50' : ''}`}
+                    onError={() =>
+                      setImgBroken((prev) => ({ ...prev, [slot.objectKey!]: true }))
+                    }
+                  />
+                )}
               </button>
             </div>
           );

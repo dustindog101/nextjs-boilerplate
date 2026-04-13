@@ -1,7 +1,7 @@
 // --- app/contexts/AuthContext.tsx ---
 
 "use client";
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useLayoutEffect, ReactNode } from 'react';
 import { getStorageItem, setStorageItem, removeStorageItem } from '../../lib/storage';
 import type { JwtPayload } from '../../lib/types';
 
@@ -38,8 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // This runs only in the browser after mount
+  // useLayoutEffect so session is applied before the browser paints — avoids a flash of
+  // loading spinners (e.g. withAuth / withResellerAuth) on every navigation.
+  useLayoutEffect(() => {
     const storedToken = getStorageItem('idPirateAuthToken');
     if (storedToken) {
       const decodedUser = decodeJwt(storedToken);

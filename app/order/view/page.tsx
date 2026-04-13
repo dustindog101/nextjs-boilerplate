@@ -1,6 +1,7 @@
 "use client";
 import React, { Suspense, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Footer, FormInput, FormSelect, FileInput, Spinner } from '../../components/ui';
 import { BackArrowIcon, EditIcon, SaveIcon, CancelIcon, PlusIcon, TrashIcon } from '../../components/icons';
 import { OrderStatusTracker } from '../../components/order/OrderStatusTracker';
@@ -19,11 +20,28 @@ import {
 } from '../../../lib/constants';
 
 function OrderViewContent() {
+  const searchParams = useSearchParams();
   const {
     loggedInUser, isAuthChecking, isLoadingInitialData, fetchError,
     orderData, editableOrderData, isEditing, isSavingChanges, saveFeedback,
     startEditing, cancelEditing, saveChanges, updateGeneralField, updateIdField
   } = useOrder();
+
+  /** JWT may omit isReseller; reseller links add ?from=reseller; orders table adds &section=orders */
+  const from = searchParams.get('from');
+  const section = searchParams.get('section');
+  const resellerContext = loggedInUser?.isReseller === true || from === 'reseller';
+  const backToResellerOrders = resellerContext && section === 'orders';
+  const backHref = backToResellerOrders
+    ? '/reseller?section=orders'
+    : resellerContext
+      ? '/reseller'
+      : '/dashboard';
+  const backLabel = backToResellerOrders
+    ? 'Back to orders'
+    : resellerContext
+      ? 'Back to reseller dashboard'
+      : 'Back to Dashboard';
 
   // Must run before any early return — hooks count must be stable across loading / empty / ready.
   const resolveUserAsset = useCallback(
@@ -47,8 +65,12 @@ function OrderViewContent() {
   if (!orderData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <p className="text-lg font-bold text-white mb-4">Order not found.</p>
-        <Link href="/dashboard" className="text-indigo-400 hover:text-indigo-300 transition-colors">Back to Dashboard</Link>
+        <p className="text-lg font-bold text-white mb-4 text-center max-w-md">
+          {fetchError || 'Order not found.'}
+        </p>
+        <Link href={backHref} className="text-indigo-400 hover:text-indigo-300 transition-colors">
+          {backLabel}
+        </Link>
       </div>
     );
   }
@@ -63,8 +85,11 @@ function OrderViewContent() {
       <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow">
 
         {/* Back link */}
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors mb-6">
-          <BackArrowIcon className="h-4 w-4" /> Back to Dashboard
+        <Link
+          href={backHref}
+          className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors mb-6"
+        >
+          <BackArrowIcon className="h-4 w-4" /> {backLabel}
         </Link>
 
         {/* Summary Card */}

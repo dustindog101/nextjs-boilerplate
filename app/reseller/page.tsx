@@ -1,8 +1,10 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect, useCallback, Suspense } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { withResellerAuth } from '../components/withResellerAuth';
 import { ResellerDataProvider } from './ResellerDataContext';
 import { ResellerLayout, ResellerSection } from './ResellerLayout';
+import { Spinner } from '../components/ui/Spinner';
 import { AnalyticsSection } from './components/AnalyticsSection';
 import { ResellerOrdersSection } from './components/ResellerOrdersSection';
 import { LinkSection } from './components/LinkSection';
@@ -47,11 +49,37 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
     );
 }
 
+const VALID_SECTIONS: ResellerSection[] = ['analytics', 'orders', 'link', 'settings'];
+
+function isValidSection(s: string | null): s is ResellerSection {
+    return s !== null && VALID_SECTIONS.includes(s as ResellerSection);
+}
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 function ResellerDashboard() {
-    const [activeSection, setActiveSection] = useState<ResellerSection>('analytics');
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
+    const [activeSection, setActiveSectionState] = useState<ResellerSection>('analytics');
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+    useLayoutEffect(() => {
+        const s = searchParams.get('section');
+        if (isValidSection(s)) {
+            setActiveSectionState(s);
+        }
+    }, [searchParams]);
+
+    const setActiveSection = useCallback(
+        (s: ResellerSection) => {
+            setActiveSectionState(s);
+            const q = new URLSearchParams();
+            q.set('section', s);
+            router.replace(`${pathname}?${q.toString()}`, { scroll: false });
+        },
+        [pathname, router]
+    );
 
     const renderSection = () => {
         switch (activeSection) {
@@ -80,4 +108,21 @@ function ResellerDashboard() {
     );
 }
 
-export default withResellerAuth(ResellerDashboard);
+function ResellerPageWithSuspense() {
+    return (
+        <Suspense
+            fallback={
+                <div
+                    className="min-h-screen flex items-center justify-center admin-dark"
+                    style={{ background: 'var(--bg-primary)' }}
+                >
+                    <Spinner size="lg" />
+                </div>
+            }
+        >
+            <ResellerDashboard />
+        </Suspense>
+    );
+}
+
+export default withResellerAuth(ResellerPageWithSuspense);

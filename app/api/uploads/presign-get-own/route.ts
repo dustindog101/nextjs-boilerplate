@@ -6,15 +6,12 @@ import { orderContainsR2Key } from '@/lib/orderR2Keys';
 export const runtime = 'nodejs';
 
 const LOOKUP_LAMBDA_URL = process.env.LOOKUP_LAMBDA_URL;
+const RESELLER_LAMBDA_URL = process.env.RESELLER_LAMBDA_URL;
 
 /**
  * Authenticated user: presigned GET for an R2 key that belongs to their order (or admin).
  */
 export async function POST(request: NextRequest) {
-  if (!LOOKUP_LAMBDA_URL) {
-    return NextResponse.json({ error: 'Lookup service is not configured.' }, { status: 503 });
-  }
-
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
@@ -40,25 +37,56 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const lambdaResponse = await fetch(LOOKUP_LAMBDA_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authHeader,
-      },
-      body: JSON.stringify({ requestType: 'get_order', orderId }),
-    });
+    let order: { userId?: string; resellerId?: string; ids?: unknown[] };
+    let verifiedViaResellerLambda = false;
 
-    const order = await lambdaResponse.json();
-    if (!lambdaResponse.ok) {
-      return NextResponse.json(
-        { error: (order as { error?: string }).error || 'Order not found.' },
-        { status: lambdaResponse.status === 404 ? 404 : 403 }
-      );
+    if (user.isReseller && RESELLER_LAMBDA_URL) {
+      const res = await fetch(RESELLER_LAMBDA_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: authHeader,
+        },
+        body: JSON.stringify({ requestType: 'get_reseller_order', orderId }),
+      });
+      order = await res.json();
+      if (!res.ok) {
+        return NextResponse.json(
+          { error: (order as { error?: string }).error || 'Order not found.' },
+          { status: res.status === 404 ? 404 : 403 }
+        );
+      }
+      verifiedViaResellerLambda = true;
+    } else if (LOOKUP_LAMBDA_URL) {
+      const lambdaResponse = await fetch(LOOKUP_LAMBDA_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: authHeader,
+        },
+        body: JSON.stringify({ requestType: 'get_order', orderId }),
+      });
+      order = await lambdaResponse.json();
+      if (!lambdaResponse.ok) {
+        return NextResponse.json(
+          { error: (order as { error?: string }).error || 'Order not found.' },
+          { status: lambdaResponse.status === 404 ? 404 : 403 }
+        );
+      }
+    } else {
+      return NextResponse.json({ error: 'Order service is not configured.' }, { status: 503 });
     }
 
-    if (user.role !== 'admin' && order.userId !== user.userId) {
-      return NextResponse.json({ error: 'Access denied.' }, { status: 403 });
+    if (user.role !== 'admin') {
+      const ownsByRetailId = order.userId === user.userId;
+      const ownsWhitelabel =
+        user.isReseller &&
+        (order.userId === user.username ||
+          order.resellerId === user.username ||
+          order.userId === user.userId);
+      if (!verifiedViaResellerLambda && !ownsByRetailId && !ownsWhitelabel) {
+        return NextResponse.json({ error: 'Access denied.' }, { status: 403 });
+      }
     }
 
     if (!orderContainsR2Key(order, key)) {

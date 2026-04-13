@@ -557,6 +557,7 @@ body {
 .admin-dark .bg-slate-100               { background: var(--bg-hover) !important; }
 
 .admin-dark .text-slate-900             { color: var(--text-primary) !important; }
+.admin-dark .text-slate-800             { color: var(--text-primary) !important; }
 .admin-dark .text-slate-700             { color: var(--text-secondary) !important; }
 .admin-dark .text-slate-600             { color: var(--text-secondary) !important; }
 .admin-dark .text-slate-500             { color: var(--text-secondary) !important; }
@@ -612,5 +613,38 @@ body {
 .admin-dark .bg-red-50                  { background: rgba(239,68,68,0.1) !important; }
 .admin-dark .text-red-500               { color: #F87171 !important; }
 
+/*
+ * Reseller orders (and similar): status/payment pills use Tailwind *-200 borders.
+ * Those tokens are nearly white on dark backgrounds unless remapped here.
+ */
+.admin-dark .border-yellow-200          { border-color: rgba(234, 179, 8, 0.38) !important; }
+.admin-dark .border-emerald-200         { border-color: rgba(16, 185, 129, 0.38) !important; }
+.admin-dark .border-red-200             { border-color: rgba(248, 113, 113, 0.4) !important; }
+.admin-dark .border-amber-200           { border-color: rgba(245, 158, 11, 0.4) !important; }
+
+/* Native select: WebKit / macOS can draw a light focus halo on top of our ring */
+.admin-dark select:focus,
+.admin-dark select:focus-visible {
+  outline: none !important;
+}
+
 /* Main content area */
 .admin-dark main.bg-slate-50            { background: var(--bg-primary) !important; }
+
+/*
+ * Glass in admin/reseller: default .glass uses blur + translucent fill; against --bg-primary
+ * it reads as a faint “light box” / cyan edge. Use flat elevated surfaces instead.
+ */
+.admin-dark .glass {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+/* Scroll regions shouldn’t show a focus ring around the whole table block */
+.admin-dark .overflow-x-auto:focus,
+.admin-dark .overflow-x-auto:focus-visible {
+  outline: none !important;
+}

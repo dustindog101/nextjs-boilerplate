@@ -2,13 +2,12 @@
 
 import React, { useEffect } from 'react';
 
-interface ImageLightboxProps {
-  url: string;
-  label: string;
-  onClose: () => void;
-}
+export type ImageLightboxProps =
+  | { url: string; label: string; onClose: () => void; children?: never }
+  | { children: React.ReactNode; label: string; onClose: () => void; url?: never };
 
-export function ImageLightbox({ url, label, onClose }: ImageLightboxProps) {
+export function ImageLightbox(props: ImageLightboxProps) {
+  const { label, onClose } = props;
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -21,6 +20,24 @@ export function ImageLightbox({ url, label, onClose }: ImageLightboxProps) {
       window.removeEventListener('keydown', onKey);
     };
   }, [onClose]);
+
+  const content =
+    "url" in props ? (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src={props.url}
+        alt={label}
+        className="max-w-[min(94vw,1200px)] max-h-[min(85dvh,900px)] w-auto h-auto object-contain rounded-lg shadow-2xl mx-auto px-2"
+        onClick={(e) => e.stopPropagation()}
+      />
+    ) : (
+      <div
+        className="max-w-[min(94vw,1200px)] max-h-[min(85dvh,900px)] w-auto h-auto object-contain rounded-lg shadow-2xl mx-auto px-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {props.children}
+      </div>
+    );
 
   return (
     <div
@@ -41,13 +58,7 @@ export function ImageLightbox({ url, label, onClose }: ImageLightboxProps) {
       >
         Close
       </button>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={url}
-        alt={label}
-        className="max-w-[min(94vw,1200px)] max-h-[min(85dvh,900px)] w-auto h-auto object-contain rounded-lg shadow-2xl mx-auto px-2"
-        onClick={(e) => e.stopPropagation()}
-      />
+      {content}
     </div>
   );
 }

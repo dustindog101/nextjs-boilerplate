@@ -38,7 +38,7 @@ export const SortableTh: React.FC<SortableThProps> = ({
       <button
         type="button"
         onClick={() => onSort(columnKey)}
-        className="inline-flex items-center gap-1.5 max-w-full uppercase tracking-wider font-semibold text-xs text-inherit hover:opacity-90 transition-opacity w-full min-w-0"
+        className="inline-flex items-center gap-1.5 max-w-full uppercase tracking-wider font-semibold text-xs text-inherit hover:opacity-90 transition-opacity w-full min-w-0 rounded-md focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-accent)] focus-visible:ring-offset-0"
         style={align === 'right' ? { justifyContent: 'flex-end' } : align === 'center' ? { justifyContent: 'center' } : { justifyContent: 'flex-start' }}
       >
         <span className="truncate">{children}</span>

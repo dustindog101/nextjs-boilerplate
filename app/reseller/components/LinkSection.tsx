@@ -1,24 +1,70 @@
 "use client";
 import React, { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../hooks/useAuth';
+import { ImageLightbox } from '@/app/components/ui';
 import {
     Copy, Check, ExternalLink, Instagram, MessageCircle,
     Smartphone, Globe, Zap, TrendingUp, ShieldCheck,
+    Maximize2,
 } from 'lucide-react';
 
-// ─── QR Code via Google Charts (no install needed) ────────────────────────────
+const QR_THUMB_PX = 140;
+const QR_LIGHTBOX_PX = 480;
 
 const QRCode: React.FC<{ url: string }> = ({ url }) => {
-    const encoded = encodeURIComponent(url);
-    const src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encoded}&color=06B6D4&bgcolor=0f1520&margin=12`;
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+
     return (
-        <img
-            src={src}
-            alt="QR Code"
-            width={140} height={140}
-            className="rounded-xl"
-            style={{ border: '1px solid var(--border)' }}
-        />
+        <>
+            <button
+                type="button"
+                onClick={() => setLightboxOpen(true)}
+                className="group relative rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-secondary)]"
+                aria-label="Open full-screen QR code for scanning"
+            >
+                <QRCodeSVG
+                    value={url}
+                    size={QR_THUMB_PX}
+                    level="M"
+                    marginSize={4}
+                    bgColor="#FFFFFF"
+                    fgColor="#000000"
+                    title="QR code for your reseller link"
+                    className="rounded-xl pointer-events-none shadow-sm transition-transform duration-200 group-active:scale-[0.98]"
+                    style={{ border: '1px solid var(--border)' }}
+                />
+                <span
+                    className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-lg sm:h-8 sm:w-8"
+                    style={{
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-secondary)',
+                    }}
+                    aria-hidden
+                >
+                    <Maximize2 size={15} strokeWidth={2.25} />
+                </span>
+            </button>
+            {lightboxOpen && (
+                <ImageLightbox
+                    label="QR code — scan to open your link"
+                    onClose={() => setLightboxOpen(false)}
+                >
+                    <div className="rounded-xl bg-white p-4 shadow-inner">
+                        <QRCodeSVG
+                            value={url}
+                            size={QR_LIGHTBOX_PX}
+                            level="M"
+                            marginSize={4}
+                            bgColor="#FFFFFF"
+                            fgColor="#000000"
+                            title="Enlarged QR code"
+                        />
+                    </div>
+                </ImageLightbox>
+            )}
+        </>
     );
 };
 
@@ -115,8 +161,8 @@ export const LinkSection: React.FC = () => {
                             QR Code
                         </p>
                         <QRCode url={resellerLink} />
-                        <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
-                            Print or screenshot for in-person use.
+                        <p className="text-xs mt-2 max-w-[200px] mx-auto sm:mx-0 text-center sm:text-left" style={{ color: 'var(--text-secondary)' }}>
+                            Tap to enlarge — let people scan from your phone.
                         </p>
                     </div>
                     <div className="flex-1 w-full space-y-2">

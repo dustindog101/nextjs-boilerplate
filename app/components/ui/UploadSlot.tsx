@@ -40,7 +40,7 @@ export const UploadSlot: React.FC<UploadSlotProps> = ({
   appearance = 'dark',
 }) => {
   const busy = status === 'presigning' || status === 'uploading';
-  const [sigMode, setSigMode] = useState<'draw' | 'upload'>('draw');
+  const [sigMode, setSigMode] = useState<'draw' | 'upload'>('upload');
   const light = appearance === 'light';
 
   const idleLabel =

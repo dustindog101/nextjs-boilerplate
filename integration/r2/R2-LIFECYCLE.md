@@ -36,19 +36,21 @@ Use `adminPresignGetUrl` from `lib/apiClient.ts` (calls `POST /api/uploads/presi
 
 ## Browser uploads — CORS (required)
 
-The browser **PUT**s directly to the presigned R2 URL. If the bucket CORS policy does not allow your origin, the request fails with an **opaque “network error”** (XHR `onerror`).
+The browser **PUT**s directly to the presigned URL on `*.r2.cloudflarestorage.com` (a **different origin** than `https://yourslug.idpirate.com`). Cloudflare must return `Access-Control-Allow-Origin` on that host or the browser blocks the request.
 
-In Cloudflare Dashboard → R2 → your bucket → **Settings → CORS policy**, add rules that include **every origin** you use (dev + production), for example:
+**Why preflight fails:** Uploads use `Content-Type: image/webp`, which is **not** a [simple request](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#what_requests_use_cors) content type, so the browser sends an **OPTIONS** preflight before PUT. Your CORS rule must allow **OPTIONS** (not only PUT). If OPTIONS is missing, DevTools shows: *“Response to preflight request doesn’t pass access control check”* and *No `Access-Control-Allow-Origin` header*.
+
+**Origins must match exactly:** `https://idpirate.com` does **not** cover `https://shaygocray123.idpirate.com`. Each reseller subdomain is its own origin. Either list them explicitly or use a single permissive origin (below).
+
+In Cloudflare Dashboard → R2 → your bucket → **Settings → CORS policy** → JSON:
+
+**Option A — all app origins (good for white-label):** one rule with a wildcard origin. Access is still gated by **presigned URLs** (opaque tokens), not public bucket listing.
 
 ```json
 [
   {
-    "AllowedOrigins": [
-      "http://localhost:3000",
-      "http://manny.localhost:3000",
-      "https://YOUR-APP.vercel.app"
-    ],
-    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedOrigins": ["*"],
+    "AllowedMethods": ["GET", "PUT", "HEAD", "OPTIONS"],
     "AllowedHeaders": ["*"],
     "ExposeHeaders": ["ETag", "Content-Length"],
     "MaxAgeSeconds": 3600
@@ -56,4 +58,25 @@ In Cloudflare Dashboard → R2 → your bucket → **Settings → CORS policy**,
 ]
 ```
 
-Replace `YOUR-APP.vercel.app` with your real hostname. After saving, hard-refresh the app and retry the upload.
+**Option B — explicit origins only:** include apex, `www`, Vercel preview, localhost, and **each** reseller host you need (example):
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "http://manny.localhost:3000",
+      "https://idpirate.com",
+      "https://www.idpirate.com",
+      "https://YOUR-APP.vercel.app",
+      "https://shaygocray123.idpirate.com"
+    ],
+    "AllowedMethods": ["GET", "PUT", "HEAD", "OPTIONS"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag", "Content-Length"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Save, wait a short time for propagation, then hard-refresh and retry. See Cloudflare’s [R2 CORS](https://developers.cloudflare.com/r2/buckets/cors/) if anything still fails.
