@@ -648,3 +648,17 @@ body {
 .admin-dark .overflow-x-auto:focus-visible {
   outline: none !important;
 }
+
+/*
+ * Reseller orders table: border-collapse + divide-y made the first row divider
+ * resolve brighter than later rows in WebKit. Use separate model + one explicit
+ * top border per body row (not the first).
+ */
+.admin-dark table.reseller-orders-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-dark table.reseller-orders-table > tbody > tr:not(:first-child) {
+  border-top: 1px solid var(--border);
+}

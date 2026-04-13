@@ -176,7 +176,7 @@ export const ResellerOrdersSection: React.FC = () => {
             ) : (
                 <div className="glass overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full border-collapse">
+                        <table className="min-w-full reseller-orders-table">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200">
                                     <SortableTh
@@ -230,7 +230,7 @@ export const ResellerOrdersSection: React.FC = () => {
                                     <th className="px-4 py-3 w-12" scope="col" aria-label="Actions" />
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-200">
+                            <tbody>
                                 {sorted.map((o: any) => {
                                     const isExpanded = expanded === o.orderId;
                                     const isSaving = !!saving[o.orderId];
