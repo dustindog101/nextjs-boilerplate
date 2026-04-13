@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
 import { Home, Users, Package, Tag, BarChart3, Handshake, ShoppingBag, LogOut, Newspaper, Settings } from 'lucide-react';
@@ -23,6 +23,29 @@ interface AdminLayoutProps {
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSection, setActiveSection, isSidebarOpen, setSidebarOpen }) => {
   const { logout } = useAuth();
 
+  // Lock scroll when mobile drawer is open; close on Escape
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)');
+    const applyLock = () => {
+      if (mq.matches && isSidebarOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    };
+    applyLock();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mq.matches && isSidebarOpen) setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    mq.addEventListener('change', applyLock);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKey);
+      mq.removeEventListener('change', applyLock);
+    };
+  }, [isSidebarOpen, setSidebarOpen]);
+
   const sidebarLinks: SidebarLink[] = [
     { id: 'metrics', name: 'Metrics', icon: <BarChart3 size={20} /> },
     { id: 'users', name: 'Users', icon: <Users size={20} /> },
@@ -36,18 +59,23 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
   ];
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {/* Mobile Sidebar Backdrop */}
-      <div onClick={() => setSidebarOpen(false)} className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-20 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}></div>
+    <div className="flex flex-1 min-h-0 w-full overflow-hidden">
+      {/* Mobile: tap outside to close; below top bar (65px) */}
+      <div
+        role="presentation"
+        aria-hidden={!isSidebarOpen}
+        onClick={() => setSidebarOpen(false)}
+        className={`fixed inset-0 top-[65px] bg-black/60 backdrop-blur-sm z-20 lg:hidden transition-opacity ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+      />
 
-      {/* Full-Height Sidebar */}
+      {/* Sidebar: mobile drawer under AdminTopBar; desktop always visible */}
       <aside
-        className={`fixed top-0 left-0 pt-[73px] lg:pt-0 h-full z-30 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'w-64' : 'w-20'} ${!isSidebarOpen && '-translate-x-full lg:translate-x-0'}`}
-        style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)' }}
+        id="admin-sidebar"
+        aria-label="Admin navigation"
+        className={`fixed left-0 top-[65px] h-[calc(100dvh-65px)] z-40 flex flex-col border-r border-[var(--border)] transition-[transform,width] duration-300 ease-in-out lg:top-0 lg:z-auto lg:h-full lg:min-h-0 lg:relative lg:translate-x-0 ${isSidebarOpen ? 'w-64' : 'w-20'} ${!isSidebarOpen ? '-translate-x-full lg:translate-x-0' : 'translate-x-0'}`}
+        style={{ background: 'var(--bg-secondary)' }}
       >
-        <div className="lg:hidden h-[73px] flex-shrink-0" />
-
-        <nav className="flex-grow px-2 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-grow px-2 py-4 space-y-1 overflow-y-auto min-h-0">
           {sidebarLinks.map(link => (
             <button
               key={link.id}

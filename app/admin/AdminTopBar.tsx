@@ -32,16 +32,17 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({
 
   return (
     <header
-      className="lg:hidden flex-shrink-0 z-30 flex items-center h-[65px] px-4 sm:px-6 gap-3 border-b"
+      className="lg:hidden flex-shrink-0 z-50 flex items-center h-[65px] px-4 sm:px-6 gap-3 border-b"
       style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}
     >
       <button
         type="button"
         onClick={onMenuClick}
-        className="p-2 rounded-lg -ml-1 transition-colors"
+        className="p-2 rounded-lg -ml-1 transition-colors hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-secondary)]"
         style={{ color: 'var(--text-secondary)' }}
         aria-label={isSidebarOpen ? 'Close navigation' : 'Open navigation'}
         aria-expanded={isSidebarOpen}
+        aria-controls="admin-sidebar"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
