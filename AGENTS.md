@@ -48,8 +48,11 @@ Python Lambda code lives in `**lambda functions/`** at the repo root (folder nam
 | Folder                           | Role                                                                                                                                                           |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ID-Pirate-CreateOrder-Function` | `ORDER_LAMBDA_URL` — create order                                                                                                                              |
-| `idPirateOrderLookup`            | `LOOKUP_LAMBDA_URL` — track, discounts, `list_user_orders`, `validate_reseller`, etc.                                                                          |
-| `admin_handler`                  | `ADMIN_LAMBDA_URL` — admin CRUD; keep `**admin_update_order`** for the admin UI                                                                                |
+| `idPirateOrderLookup`            | `LOOKUP_LAMBDA_URL` — track, discounts, crypto payment intents, `list_user_orders`, `validate_reseller`, etc.                                                    |
+| `admin_handler`                  | `ADMIN_LAMBDA_URL` — admin CRUD; Payments hub APIs (`get_payment_activity_summary`, `list_payment_intents`); keep `**admin_update_order`** for the admin UI   |
+| `payment_watcher`                | EventBridge `rate(2 minutes)` — polls blockchains, marks orders paid (not a Function URL)                                                                      |
+| `shared/order_pricing.py`          | Server-side order totals — zip with **Create Order only** (no crypto dependency)                                                                               |
+| `payment_shared/`                  | Crypto gateway — `admin_activity.py` (Activity ledger APIs), handlers, settings; zip with LOOKUP, admin_handler, payment_watcher when enabling payments        |
 | `reseller_handler`               | `RESELLER_LAMBDA_URL` — reseller-only: list/get/update orders; **PyJWT** via layer or zip (`scripts/build-pyjwt-lambda-layer.sh` for 3.13+3.14 — see SETUP.md) |
 | `idPirate_auth`                  | `AUTH_LAMBDA_URL`                                                                                                                                              |
 
@@ -62,6 +65,8 @@ Python Lambda code lives in `**lambda functions/`** at the repo root (folder nam
 | `apiClient.ts`                                       | ~500  | All API functions — `apiFetch`, `fetchResellerOrders`, `resellerUpdateOrder`, etc.             |
 | `types.ts`                                           | 86    | `JwtPayload`, `IdFormData`, `OrderDetails`, `TrackingStage`, `PaymentMethod`                   |
 | `constants.ts`                                       | 86    | `stateOptions`, `statePrices`, `defaultIdPrice`, `handlingFee`, `shippingFee`, dropdown arrays |
+| `paymentConstants.ts` / `paymentTypes.ts`            | —     | Crypto asset metadata, payment intent types                                                    |
+| `lib/payments/`                                      | —     | Crypto client API — `api.ts`, `rails.ts`, `originLabel.ts`, `intentStatus.ts`; import from `@/lib/payments` |
 | `storage.ts`                                         | 46    | SSR-safe localStorage: `getStorageItem`, `setStorageItem`, `removeStorageItem`                 |
 | `localStorage-polyfill.ts`                           | ~30   | Polyfill imported first in `layout.tsx` to fix Next.js dev mode bug                            |
 | `validateReseller.ts`                                | —     | Reseller upload session: LOOKUP validation + dev slug allowlist (`RESELLER_UPLOAD_DEV_SLUGS`)  |
@@ -77,14 +82,15 @@ Python Lambda code lives in `**lambda functions/`** at the repo root (folder nam
 | `/account`        | `account/page.tsx`        | 199   | None               | Login/Register tabbed form                                                   |
 | `/order`          | `order/page.tsx`          | 93    | None               | State ID gallery grid                                                        |
 | `/order/new`      | `order/new/page.tsx`      | 407   | `withAuth`         | Multi-ID form, sidebar, mobile nav, completion dots                          |
-| `/checkout`       | `checkout/page.tsx`       | 289   | `withAuth`         | Order review, shipping, payment, submit modal                                |
+| `/checkout`       | `checkout/page.tsx`       | 289   | `withAuth`         | Order review, shipping, payment (Crypto sub-picker or manual), submit          |
+| `/checkout/pay/[orderId]` | `checkout/pay/[orderId]/page.tsx` | — | `withAuth` | Crypto invoice: exact amount, QR, poll status, cancel/switch                 |
 | `/dashboard`      | `dashboard/page.tsx`      | 180   | `withAuth`         | Stat cards, order list                                                       |
 | `/orders`         | `orders/page.tsx`         | —     | `withAuth`         | All orders list                                                              |
 | `/track`          | `track/page.tsx`          | ~143  | None               | Order search, auto-fill from URL params                                      |
 | `/news`           | `news/page.tsx`           | 82    | None               | News feed                                                                    |
 | `/terms`          | `terms/page.tsx`          | ~85   | None               | Simple text page                                                             |
 | `/privacy`        | `privacy/page.tsx`        | ~85   | None               | Simple text page                                                             |
-| `/admin`          | `admin/page.tsx`          | 49    | `withAdminAuth`    | Metrics + user management                                                    |
+| `/admin`          | `admin/page.tsx`          | 49    | `withAdminAuth`    | Metrics, orders, **Payments** hub (Activity + Gateways)                      |
 | `/reseller`       | `reseller/page.tsx`       | —     | `withResellerAuth` | Reseller dashboard (orders, link, analytics)                                 |
 | `/invoices`       | `invoices/page.tsx`       | —     | —                  | Stub — purpose TBD                                                           |
 | `/za`             | `za/page.tsx`             | —     | —                  | Stub — purpose TBD                                                           |
@@ -102,14 +108,27 @@ Python Lambda code lives in `**lambda functions/`** at the repo root (folder nam
 | `GET /api/reseller/orders`           | `reseller/orders/route.ts`           | `RESELLER_LAMBDA_URL` (`list_reseller_orders`)                   |
 | `GET /api/reseller/orders/[id]`      | `reseller/orders/[orderId]/route.ts` | `RESELLER_LAMBDA_URL` (`get_reseller_order`)                     |
 | `POST /api/reseller/update-order`    | `reseller/update-order/route.ts`     | `RESELLER_LAMBDA_URL` (`update_reseller_order`)                  |
-| `POST /api/orders/track`             | `orders/track/route.ts`              | `LOOKUP_LAMBDA_URL`                                              |
-| `POST /api/admin`                    | `admin/route.ts`                     | `ADMIN_LAMBDA_URL`                                               |
+| `POST /api/orders/track`             | `orders/track/route.ts`              | `LOOKUP_LAMBDA_URL` (also `list_crypto_methods`, `create_payment_intent`, `get_payment_intent`, `cancel_payment_intent`; `payToken` for guests) |
+| `POST /api/payments/pay-session`     | `payments/pay-session/route.ts`      | Mints HMAC pay token for guest/white-label crypto (`PAY_TOKEN_SECRET`) |
+| `POST /api/reseller/payment-intent`  | `reseller/payment-intent/route.ts`   | `RESELLER_LAMBDA_URL` (`get_reseller_payment_intent`) |
+| `POST /api/admin`                    | `admin/route.ts`                     | `ADMIN_LAMBDA_URL` (incl. `get_payment_activity_summary`, `list_payment_intents`) |
 | `POST /api/uploads/presign`          | `uploads/presign/route.ts`           | Presigned PUT to R2 (user JWT or reseller session token)         |
 | `POST /api/uploads/reseller-session` | `uploads/reseller-session/route.ts`  | Mints reseller upload token (`LOOKUP_LAMBDA` validates reseller) |
 | `POST /api/uploads/presign-get`      | `uploads/presign-get/route.ts`       | Admin-only presigned GET for R2 keys                             |
 | `POST /api/uploads/presign-get-own`  | `uploads/presign-get-own/route.ts`   | User: presigned GET for own order assets                         |
 | `POST /api/uploads/delete`           | `uploads/delete/route.ts`            | Delete R2 object (auth + key ownership rules)                    |
 
+
+### Admin (`app/admin/components/`)
+
+| File | Purpose |
+| ---- | ------- |
+| `PaymentsHubSection.tsx` | Payments sidebar section — Activity \| Gateways tabs |
+| `PaymentActivitySection.tsx` | Invoice ledger, summary cards, filters, detail drawer |
+| `PaymentGatewaysSection.tsx` | Crypto deposit addresses + future rail placeholders |
+| `PaymentSettingsSection.tsx` | Legacy — superseded by Payments hub (Gateways tab) |
+
+Admin sidebar label: **Payments** (not crypto-settings-only).
 
 ### Components (`app/components/`)
 
@@ -305,8 +324,14 @@ R2_ENDPOINT=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_UPLOAD_TOKEN_SECRET=
+# Guest crypto pay tokens (same value on LOOKUP Lambda)
+PAY_TOKEN_SECRET=
 # Local dev: comma-separated slugs allowed for reseller upload when LOOKUP does not know them (development only)
 # RESELLER_UPLOAD_DEV_SLUGS=manny
+
+# Crypto payment gateway — AWS Lambda env only (see integration/dynamodb/PAYMENT_GATEWAY.md)
+# LOOKUP: COINGECKO_API_KEY= (optional)
+# payment_watcher: ETHERSCAN_API_KEY=, SOLANA_RPC_URL= (optional), HELIUS_API_KEY= (optional)
 ```
 
 ---
@@ -389,4 +414,5 @@ This is a **product constraint**, not a ban on ever paying for scale—when grow
 - **Vercel:** Set all Lambda Function URLs + `**RESELLER_LAMBDA_URL`** after deploying `lambda functions/reseller_handler` (same `**JWT_SECRET`** and DynamoDB access as other handlers).
 - **Repo vs AWS:** Source of truth for Python handlers is `**lambda functions/`** (not `aws/handlers/` — that path may be absent or legacy in this repo).
 - **Admin vs reseller:** Admin order tools use `**POST /api/admin`**; reseller dashboard uses `**/api/reseller/*`** only.
+- **Crypto payments:** Create DynamoDB tables `idPirate_settings`, `idPirate_payment_intents` (see `integration/dynamodb/PAYMENT_GATEWAY.md`). Deploy `payment_watcher` with EventBridge `rate(2 minutes)`. Zip `payment_shared/` with LOOKUP, Create Order, admin_handler, and payment_watcher.
 
