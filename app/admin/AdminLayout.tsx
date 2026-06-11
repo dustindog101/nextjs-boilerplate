@@ -2,9 +2,9 @@
 import React, { ReactNode, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
-import { Home, Users, Package, Tag, BarChart3, Handshake, ShoppingBag, LogOut, Newspaper, Settings } from 'lucide-react';
+import { Home, Users, Package, Tag, BarChart3, Handshake, ShoppingBag, LogOut, Newspaper, Settings, Wallet } from 'lucide-react';
 
-export type AdminSection = 'metrics' | 'users' | 'orders' | 'products' | 'resellers' | 'affiliates' | 'discounts' | 'news' | 'settings';
+export type AdminSection = 'metrics' | 'users' | 'orders' | 'products' | 'resellers' | 'affiliates' | 'discounts' | 'news' | 'payments' | 'settings';
 
 interface SidebarLink {
   id: AdminSection;
@@ -55,6 +55,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeSectio
     { id: 'affiliates', name: 'Affiliates', icon: <Users size={20} /> },
     { id: 'discounts', name: 'Discounts', icon: <Tag size={20} /> },
     { id: 'news', name: 'News', icon: <Newspaper size={20} /> },
+    { id: 'payments', name: 'Payments', icon: <Wallet size={20} /> },
     { id: 'settings', name: 'Settings', icon: <Settings size={20} /> },
   ];
 

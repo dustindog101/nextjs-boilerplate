@@ -13,6 +13,7 @@ const SECTION_LABELS: Record<AdminSection, string> = {
   affiliates: 'Affiliates',
   discounts: 'Discounts',
   news: 'News',
+  payments: 'Payments',
   settings: 'Settings',
 };
 
@@ -32,7 +33,7 @@ export const AdminTopBar: React.FC<AdminTopBarProps> = ({
 
   return (
     <header
-      className="lg:hidden flex-shrink-0 z-50 flex items-center h-[65px] px-4 sm:px-6 gap-3 border-b"
+      className="lg:hidden flex-shrink-0 z-30 flex items-center h-[65px] px-4 sm:px-6 gap-3 border-b"
       style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}
     >
       <button

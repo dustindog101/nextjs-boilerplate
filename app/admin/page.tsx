@@ -15,10 +15,19 @@ import { AffiliatesSection } from './components/AffiliatesSection';
 import { DiscountsSection } from './components/DiscountsSection';
 import { NewsSection } from './components/NewsSection';
 import { SettingsSection } from './components/SettingsSection';
+import { PaymentsHubSection } from './components/PaymentsHubSection';
+import { ADMIN_HIGHLIGHT_ORDER_KEY } from './components/PaymentActivitySection';
+import { setStorageItem } from '@/lib/storage';
 
 function AdminDashboardPage() {
   const [activeSection, setActiveSection] = useState<AdminSection>('metrics');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+  const openOrderFromPayments = (orderId: string) => {
+    setStorageItem(ADMIN_HIGHLIGHT_ORDER_KEY, orderId);
+    setActiveSection('orders');
+    setSidebarOpen(false);
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -30,6 +39,7 @@ function AdminDashboardPage() {
       case 'affiliates': return <AffiliatesSection />;
       case 'discounts': return <DiscountsSection />;
       case 'news': return <NewsSection />;
+      case 'payments': return <PaymentsHubSection onOpenOrder={openOrderFromPayments} />;
       case 'settings': return <SettingsSection />;
       default: return <MetricsSection />;
     }

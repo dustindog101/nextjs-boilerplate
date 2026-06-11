@@ -1,15 +1,26 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { adminUpdateOrder, adminPresignGetUrl } from '../../../lib/apiClient';
+import { adminSetOrderPaymentExpiry } from '@/lib/payments';
 import { OrderR2ImageStrip } from '../../components/order/OrderR2ImageStrip';
-import { Search, X, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+    AdminOrderPaymentPanel,
+    type AdminOrderPaymentFields,
+} from './AdminOrderPaymentPanel';
+import { AdminOrderDetailsPanel } from './AdminOrderDetailsPanel';
+import { Search, X, ChevronDown, ChevronUp, Package, CreditCard, FileText } from 'lucide-react';
 import { Spinner, SortableTh } from '../../components/ui';
 import { useAdminData } from '../AdminDataContext';
 import { sortRows } from '@/lib/tableSort';
 import { useTableSortState } from '@/app/hooks/useTableSort';
+import { toDatetimeLocalInputValue } from '@/lib/datetimeLocal';
+import { parseCryptoAssetFromMethod } from '@/lib/payments/orderHelpers';
+import { ADMIN_HIGHLIGHT_ORDER_KEY } from './PaymentActivitySection';
+import { getStorageItem, removeStorageItem } from '@/lib/storage';
 
 const statusOptions = ['pending', 'processing', 'shipped', 'delivered'] as const;
-const paymentStatusOptions = ['Unpaid', 'Paid'] as const;
+
+type EditTab = 'details' | 'order' | 'payment';
 
 const statusConfig: Record<string, { label: string; color: string; dotColor: string }> = {
     pending: { label: 'Pending', color: '#F59E0B', dotColor: '#F59E0B' },
@@ -21,28 +32,67 @@ const statusConfig: Record<string, { label: string; color: string; dotColor: str
 /* ── Edit Order Modal ── */
 interface EditModalProps {
     order: any;
+    initialTab?: EditTab;
     onClose: () => void;
     onSave: (orderId: string, data: Record<string, any>) => Promise<void>;
+    onRefresh: () => Promise<void>;
 }
 
-const EditOrderModal: React.FC<EditModalProps> = ({ order, onClose, onSave }) => {
-    const resolveAssetUrl = useCallback((key: string) => adminPresignGetUrl(key), []);
-
+const EditOrderModal: React.FC<EditModalProps> = ({
+    order,
+    initialTab = 'details',
+    onClose,
+    onSave,
+    onRefresh,
+}) => {
+    const [tab, setTab] = useState<EditTab>(initialTab);
     const [status, setStatus] = useState(order.status || 'pending');
-    const [paymentStatus, setPaymentStatus] = useState(order.paymentStatus || 'Unpaid');
     const [notes, setNotes] = useState(order.notes || '');
     const [trackingNumber, setTrackingNumber] = useState(order.trackingNumber || '');
+    const [paymentFields, setPaymentFields] = useState<AdminOrderPaymentFields>({
+        paymentStatus: order.paymentStatus || 'Unpaid',
+        paymentMethod: order.paymentMethod || '',
+        cryptoTxHash: order.cryptoTxHash || '',
+        paymentExpiresAt: toDatetimeLocalInputValue(
+            (order.paymentExpiresAt as string | undefined) ?? undefined
+        ),
+    });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const patchPayment = (patch: Partial<AdminOrderPaymentFields>) => {
+        setPaymentFields((prev) => ({ ...prev, ...patch }));
+    };
 
     const handleSave = async () => {
         setSaving(true);
         setError(null);
         try {
-            await onSave(order.orderId, { status, paymentStatus, notes, trackingNumber });
+            const asset = parseCryptoAssetFromMethod(paymentFields.paymentMethod);
+            const updateData: Record<string, unknown> = {
+                status,
+                notes,
+                trackingNumber,
+                paymentStatus: paymentFields.paymentStatus,
+                paymentMethod: paymentFields.paymentMethod || undefined,
+                cryptoTxHash: paymentFields.cryptoTxHash.trim() || undefined,
+            };
+            if (asset) {
+                updateData.cryptoAsset = asset;
+            }
+            await onSave(order.orderId, updateData);
+            if (paymentFields.paymentExpiresAt) {
+                await adminSetOrderPaymentExpiry(
+                    order.orderId,
+                    new Date(paymentFields.paymentExpiresAt).toISOString()
+                );
+            } else {
+                await adminSetOrderPaymentExpiry(order.orderId, null);
+            }
+            await onRefresh();
             onClose();
-        } catch (err: any) {
-            setError(err.message || 'Failed to save.');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to save.');
         } finally {
             setSaving(false);
         }
@@ -50,65 +100,81 @@ const EditOrderModal: React.FC<EditModalProps> = ({ order, onClose, onSave }) =>
 
     const fieldStyle = { background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' };
 
+    const tabBtn = (id: EditTab, label: string, Icon: typeof Package) => (
+        <button
+            type="button"
+            onClick={() => setTab(id)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            style={{
+                background: tab === id ? 'rgba(99,102,241,0.15)' : 'transparent',
+                color: tab === id ? 'var(--accent)' : 'var(--text-secondary)',
+                border: tab === id ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
+            }}
+        >
+            <Icon size={16} />
+            {label}
+        </button>
+    );
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="rounded-2xl shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+            <div className="rounded-2xl shadow-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
                 <button onClick={onClose} className="absolute top-4 right-4 transition-colors" style={{ color: 'var(--text-tertiary)' }}><X size={20} /></button>
-                <h3 className="text-lg font-bold mb-5" style={{ color: 'var(--text-primary)' }}>
-                    Edit Order <span className="font-mono text-sm" style={{ color: 'var(--text-tertiary)' }}>#{order.orderId.substring(0, 8)}</span>
+                <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    Edit order <span className="font-mono text-sm" style={{ color: 'var(--text-tertiary)' }}>#{order.orderId.substring(0, 8)}</span>
                 </h3>
+                <p className="text-xs mb-5" style={{ color: 'var(--text-tertiary)' }}>
+                    ${order.price?.total?.toFixed(2) ?? '—'} · {order.numberOfIds ?? 0} ID(s)
+                </p>
 
-                <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-wrap gap-2 mb-6 p-1 rounded-xl" style={{ background: 'var(--bg-primary)' }}>
+                    {tabBtn('details', 'Order details', FileText)}
+                    {tabBtn('order', 'Fulfillment', Package)}
+                    {tabBtn('payment', 'Payment & invoice', CreditCard)}
+                </div>
+
+                {tab === 'details' && (
+                    <AdminOrderDetailsPanel order={order} />
+                )}
+
+                {tab === 'order' && (
+                    <div className="space-y-4">
                         <div>
-                            <label className="text-label mb-1 block">Status</label>
+                            <label className="text-label mb-1 block">Fulfillment status</label>
                             <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-lg px-4 py-2.5 text-sm outline-none" style={fieldStyle}>
                                 {statusOptions.map(s => <option key={s} value={s}>{statusConfig[s]?.label || s}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="text-label mb-1 block">Payment</label>
-                            <select value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} className="w-full rounded-lg px-4 py-2.5 text-sm outline-none" style={fieldStyle}>
-                                {paymentStatusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
+                            <label className="text-label mb-1 block">Tracking number</label>
+                            <input type="text" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} className="w-full rounded-lg px-4 py-2.5 text-sm outline-none" style={fieldStyle} placeholder="Optional" />
                         </div>
-                    </div>
-                    <div>
-                        <label className="text-label mb-1 block">Tracking Number</label>
-                        <input type="text" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} className="w-full rounded-lg px-4 py-2.5 text-sm outline-none" style={fieldStyle} placeholder="Optional" />
-                    </div>
-                    <div>
-                        <label className="text-label mb-1 block">Notes</label>
-                        <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none" style={fieldStyle} placeholder="Internal notes..." />
-                    </div>
+                        <div>
+                            <label className="text-label mb-1 block">Internal notes</label>
+                            <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none" style={fieldStyle} placeholder="Internal notes..." />
+                        </div>
 
-                    <div className="border-t pt-4 mt-4" style={{ borderColor: 'var(--border)' }}>
-                        <label className="text-label mb-2 block">Submitted ID images (R2)</label>
-                        {(order.ids || []).length === 0 ? (
-                            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>No line items.</p>
-                        ) : (
-                            (order.ids || []).map((idRow: Record<string, unknown>, idx: number) => (
-                                <div key={idx} className="mb-4 last:mb-0">
-                                    <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>ID #{idx + 1}</p>
-                                    <OrderR2ImageStrip
-                                        slots={[
-                                            { label: 'Photo', objectKey: typeof idRow.photoKey === 'string' ? idRow.photoKey : undefined },
-                                            { label: 'Signature', objectKey: typeof idRow.signatureKey === 'string' ? idRow.signatureKey : undefined },
-                                        ]}
-                                        resolveUrl={resolveAssetUrl}
-                                    />
-                                </div>
-                            ))
-                        )}
+                        <p className="text-xs pt-2" style={{ color: 'var(--text-tertiary)' }}>
+                            Full customer and ID fields are on the <strong className="font-medium" style={{ color: 'var(--text-secondary)' }}>Order details</strong> tab.
+                        </p>
                     </div>
+                )}
 
-                    {error && <p className="text-red-400 text-sm p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)' }}>{error}</p>}
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button onClick={onClose} className="btn btn-outline px-4 py-2 text-sm" disabled={saving}>Cancel</button>
-                        <button onClick={handleSave} className="btn btn-primary px-4 py-2 text-sm" disabled={saving}>
-                            {saving ? 'Saving…' : 'Save Changes'}
-                        </button>
-                    </div>
+                {tab === 'payment' && (
+                    <AdminOrderPaymentPanel
+                        order={order}
+                        fields={paymentFields}
+                        onChange={patchPayment}
+                        onInvoiceChange={onRefresh}
+                    />
+                )}
+
+                {error && <p className="text-red-400 text-sm p-2 rounded-lg mt-4" style={{ background: 'rgba(239,68,68,0.1)' }}>{error}</p>}
+                <div className="flex justify-end gap-3 pt-6 mt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <button onClick={onClose} className="btn btn-outline px-4 py-2 text-sm" disabled={saving}>Cancel</button>
+                    <button onClick={handleSave} className="btn btn-primary px-4 py-2 text-sm" disabled={saving}>
+                        {saving ? 'Saving…' : 'Save changes'}
+                    </button>
                 </div>
             </div>
         </div>
@@ -121,9 +187,26 @@ export const OrdersSection = () => {
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [editingOrder, setEditingOrder] = useState<any | null>(null);
+    const [editInitialTab, setEditInitialTab] = useState<EditTab>('details');
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
+    const openEdit = (order: any, tab: EditTab = 'order') => {
+        setEditInitialTab(tab);
+        setEditingOrder(order);
+    };
+
     useEffect(() => { loadOrders(); }, [loadOrders]);
+
+    useEffect(() => {
+        const highlightId = getStorageItem(ADMIN_HIGHLIGHT_ORDER_KEY);
+        if (!highlightId || !orders.data?.length) return;
+        const match = orders.data.find((o: { orderId?: string }) => o.orderId === highlightId);
+        if (match) {
+            setExpandedId(highlightId);
+            setSearch(highlightId);
+        }
+        removeStorageItem(ADMIN_HIGHLIGHT_ORDER_KEY);
+    }, [orders.data]);
 
     const filtered = useMemo(() => {
         let result = orders.data || [];
@@ -176,7 +259,15 @@ export const OrdersSection = () => {
 
     return (
         <div className="p-4 sm:p-6">
-            {editingOrder && <EditOrderModal order={editingOrder} onClose={() => setEditingOrder(null)} onSave={handleSaveOrder} />}
+            {editingOrder && (
+                <EditOrderModal
+                    order={editingOrder}
+                    initialTab={editInitialTab}
+                    onClose={() => setEditingOrder(null)}
+                    onSave={handleSaveOrder}
+                    onRefresh={refreshOrders}
+                />
+            )}
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                 <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
@@ -319,12 +410,58 @@ export const OrdersSection = () => {
                                         {isExpanded && (
                                             <tr>
                                                 <td colSpan={7} className="px-4 py-4" style={{ background: 'var(--bg-secondary)' }}>
-                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-3">
-                                                        <div><span className="text-label block mb-1">Payment Method</span><span style={{ color: 'var(--text-primary)' }}>{order.paymentMethod || 'N/A'}</span></div>
+                                                    {(() => {
+                                                        const firstId = (order.ids || [])[0] as Record<string, unknown> | undefined;
+                                                        const customerName = firstId
+                                                            ? [firstId.firstName, firstId.lastName].filter(Boolean).join(' ')
+                                                            : '';
+                                                        const idState = firstId?.state ? String(firstId.state) : '';
+                                                        return (customerName || idState) ? (
+                                                            <div className="mb-4 text-sm">
+                                                                <span className="text-label block mb-1">Customer / ID</span>
+                                                                <p style={{ color: 'var(--text-primary)' }}>
+                                                                    {customerName || '—'}
+                                                                    {idState ? (
+                                                                        <span style={{ color: 'var(--text-secondary)' }}> · {idState}</span>
+                                                                    ) : null}
+                                                                    {(order.ids || []).length > 1 ? (
+                                                                        <span style={{ color: 'var(--text-tertiary)' }}> (+{(order.ids || []).length - 1} more)</span>
+                                                                    ) : null}
+                                                                </p>
+                                                            </div>
+                                                        ) : null;
+                                                    })()}
+
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-4">
+                                                        <div>
+                                                            <span className="text-label block mb-1">Payment</span>
+                                                            <span className="badge inline-block" style={order.paymentStatus === 'Paid'
+                                                                ? { background: 'rgba(16,185,129,0.12)', color: '#10B981' }
+                                                                : { background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }
+                                                            }>
+                                                                {order.paymentStatus || 'Unpaid'}
+                                                            </span>
+                                                            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{order.paymentMethod || '—'}</p>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-label block mb-1">Crypto / invoice</span>
+                                                            <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
+                                                                {order.cryptoAsset ? String(order.cryptoAsset) : '—'}
+                                                            </p>
+                                                            {order.paymentExpiresAt && (
+                                                                <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                                                                    Exp {new Date(order.paymentExpiresAt).toLocaleString()}
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                         <div><span className="text-label block mb-1">Shipping</span><span className="text-xs" style={{ color: 'var(--text-primary)' }}>{order.shipping || 'N/A'}</span></div>
                                                         <div><span className="text-label block mb-1">Tracking #</span><span style={{ color: 'var(--text-primary)' }}>{order.trackingNumber || '—'}</span></div>
-                                                        <div><span className="text-label block mb-1">Notes</span><span className="text-xs" style={{ color: 'var(--text-primary)' }}>{order.notes || '—'}</span></div>
                                                     </div>
+                                                    {order.cryptoTxHash && (
+                                                        <p className="text-xs font-mono mb-4 break-all" style={{ color: 'var(--text-tertiary)' }}>
+                                                            Tx: {order.cryptoTxHash}
+                                                        </p>
+                                                    )}
 
                                                     <div className="mb-4 space-y-4" onClick={(e) => e.stopPropagation()}>
                                                         <span className="text-label block mb-2">ID images</span>
@@ -346,7 +483,11 @@ export const OrdersSection = () => {
                                                         )}
                                                     </div>
 
-                                                    <button onClick={(e) => { e.stopPropagation(); setEditingOrder(order); }} className="btn btn-outline px-3 py-1.5 text-xs">Edit Order</button>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <button onClick={(e) => { e.stopPropagation(); openEdit(order, 'details'); }} className="btn btn-primary px-3 py-1.5 text-xs">View order</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); openEdit(order, 'order'); }} className="btn btn-outline px-3 py-1.5 text-xs">Edit fulfillment</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); openEdit(order, 'payment'); }} className="btn btn-outline px-3 py-1.5 text-xs">Payment &amp; invoice</button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         )}
