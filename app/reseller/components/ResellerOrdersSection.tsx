@@ -1,12 +1,20 @@
 "use client";
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { Search, MoreVertical, Check, Loader2, Eye, PanelBottom } from 'lucide-react';
+import { Search, MoreVertical, Check, Loader2, Eye, PanelBottom, Wallet } from 'lucide-react';
 import { useResellerData } from '../ResellerDataContext';
 import { resellerUpdateOrder } from '@/lib/apiClient';
 import { sortRows } from '@/lib/tableSort';
 import { useTableSortState } from '@/app/hooks/useTableSort';
 import { SortableTh } from '../../components/ui';
+import { OrderPayModalHost } from '@/app/components/payments/OrderPayModalHost';
+import { useOrderPayModal } from '@/app/hooks/useOrderPayModal';
+import {
+    cryptoAssetFromOrder,
+    isCryptoOrder,
+    isOrderUnpaid,
+} from '@/lib/payments/orderHelpers';
+import type { OrderDetails } from '@/lib/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -51,8 +59,15 @@ const EditSelect: React.FC<EditSelectProps> = ({ value, options, colorMap, onCha
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-export const ResellerOrdersSection: React.FC = () => {
+function ResellerOrdersSectionInner() {
     const { orders, loadOrders, refreshOrders } = useResellerData();
+    const {
+        payOrderId,
+        payAsset,
+        payOrder,
+        openPayModal,
+        closePayModal,
+    } = useOrderPayModal({ resellerView: true });
     useEffect(() => {
         void loadOrders();
     }, [loadOrders]);
@@ -319,6 +334,24 @@ export const ResellerOrdersSection: React.FC = () => {
                                                                 className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
                                                                 role="menu"
                                                             >
+                                                                {isOrderUnpaid(o) && isCryptoOrder(o) && (
+                                                                    <button
+                                                                        type="button"
+                                                                        role="menuitem"
+                                                                        className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-900 hover:bg-slate-50"
+                                                                        onClick={() => {
+                                                                            void openPayModal(
+                                                                                o.orderId,
+                                                                                cryptoAssetFromOrder(o),
+                                                                                o as OrderDetails
+                                                                            );
+                                                                            setMenuOpenId(null);
+                                                                        }}
+                                                                    >
+                                                                        <Wallet size={16} className="text-slate-400" />
+                                                                        View payment
+                                                                    </button>
+                                                                )}
                                                                 <Link
                                                                     href={`/order/view?orderId=${encodeURIComponent(o.orderId)}&from=reseller&section=orders`}
                                                                     className="flex items-center gap-2 px-3 py-2.5 text-sm text-slate-900 hover:bg-slate-50"
@@ -374,6 +407,29 @@ export const ResellerOrdersSection: React.FC = () => {
                                                                 <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Payment Method</p>
                                                                 <p>{o.paymentMethod ?? '—'}</p>
                                                             </div>
+                                                            {o.cryptoAsset && (
+                                                                <div>
+                                                                    <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Crypto asset</p>
+                                                                    <p>{o.cryptoAsset}</p>
+                                                                </div>
+                                                            )}
+                                                            {isOrderUnpaid(o) && isCryptoOrder(o) && (
+                                                                <div className="sm:col-span-2 md:col-span-3">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            void openPayModal(
+                                                                                o.orderId,
+                                                                                cryptoAssetFromOrder(o),
+                                                                                o as OrderDetails
+                                                                            );
+                                                                        }}
+                                                                        className="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+                                                                    >
+                                                                        View payment
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                             <div>
                                                                 <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Last Updated</p>
                                                                 <p>{o.updatedAt ? new Date(o.updatedAt).toLocaleString() : '—'}</p>
@@ -390,6 +446,24 @@ export const ResellerOrdersSection: React.FC = () => {
                     </div>
                 </div>
             )}
+            <OrderPayModalHost
+                payOrderId={payOrderId}
+                payAsset={payAsset}
+                payOrder={payOrder}
+                resellerView
+                onClose={closePayModal}
+                onPaid={() => void refreshOrders()}
+            />
         </div>
     );
-};
+}
+
+export const ResellerOrdersSection: React.FC = () => (
+    <Suspense fallback={
+        <div className="p-12 flex justify-center">
+            <Loader2 size={24} className="animate-spin text-slate-400" />
+        </div>
+    }>
+        <ResellerOrdersSectionInner />
+    </Suspense>
+);

@@ -55,16 +55,16 @@ export function OrderListCard({ order, index = 0, viewHref, onPay }: OrderListCa
 
   return (
     <div
-      className="glass p-5 flex flex-col justify-between hover:border-[var(--accent)]/30 transition-all animate-fade-up"
+      className="glass p-5 flex h-full flex-col hover:border-[var(--accent)]/30 transition-all animate-fade-up"
       style={{ animationDelay: `${50 * (index + 1)}ms` }}
     >
-      <div>
-        <div className="flex items-center justify-between mb-3 gap-2">
+      <div className="min-w-0">
+        <div className="flex items-start justify-between mb-3 gap-2">
           <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2 min-w-0">
             <HashIcon className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
             <span className="truncate">#{order.orderId.substring(0, 8)}…</span>
           </h3>
-          <span className={`flex items-center gap-1.5 text-xs font-medium shrink-0 ${cfg.color}`}>
+          <span className={`flex items-center gap-1.5 text-xs font-medium shrink-0 text-right ${cfg.color}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
             {cfg.label}
           </span>
@@ -95,27 +95,27 @@ export function OrderListCard({ order, index = 0, viewHref, onPay }: OrderListCa
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-3">
-        <span className="text-price font-bold flex items-center gap-1">
+      <div className="mt-4 pt-3 border-t border-[var(--border)] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-price font-bold flex items-center gap-1 shrink-0">
           <DollarSignIcon className="h-3.5 w-3.5" />
           ${order.price?.total ? order.price.total.toFixed(2) : 'N/A'}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
           {showPayment && canOpenCryptoPay && (
             <button
               type="button"
               onClick={() => onPay(order.orderId, asset)}
-              className="btn btn-primary text-xs px-3 py-1.5"
+              className="btn btn-primary text-xs px-3 py-1.5 w-full sm:w-auto"
             >
               View payment
             </button>
           )}
           {showPayment && !canOpenCryptoPay && (
-            <Link href={paymentViewHref} className="btn btn-primary text-xs px-3 py-1.5">
+            <Link href={paymentViewHref} className="btn btn-primary text-xs px-3 py-1.5 w-full sm:w-auto">
               View payment
             </Link>
           )}
-          <Link href={viewHref} className="btn btn-outline text-xs px-3 py-1.5">
+          <Link href={viewHref} className="btn btn-outline text-xs px-3 py-1.5 w-full sm:w-auto">
             View order
           </Link>
         </div>

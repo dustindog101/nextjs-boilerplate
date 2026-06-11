@@ -8,11 +8,19 @@ export interface ResellerOrder {
     orderId: string;
     createdAt: string;
     status: 'pending' | 'processing' | 'shipped' | 'delivered';
-    paymentStatus?: 'unpaid' | 'paid';
+    paymentStatus?: string;
+    paymentMethod?: string;
+    paymentIntentId?: string;
+    cryptoAsset?: string;
+    paymentExpiresAt?: string;
+    cryptoTxHash?: string;
     price: { total: number; subtotal?: number };
-    numberOfIds: number;
+    numberOfIds?: number;
+    ids?: unknown[];
     shipping?: string;
     source?: string;
+    notes?: string;
+    updatedAt?: string;
 }
 
 interface Resource<T> {

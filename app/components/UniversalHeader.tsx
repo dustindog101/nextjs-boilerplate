@@ -2,7 +2,8 @@
 // Dark Maritime Premium header with backdrop blur
 
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
 import { usePathname, useRouter } from 'next/navigation';
@@ -28,17 +29,52 @@ export const UniversalHeader = ({
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const updateDropdownPosition = useCallback(() => {
+    const button = userMenuButtonRef.current;
+    if (!button) return;
+    const rect = button.getBoundingClientRect();
+    setDropdownStyle({
+      position: 'fixed',
+      top: rect.bottom + 8,
+      right: window.innerWidth - rect.right,
+      width: '13rem',
+    });
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+      const target = event.target as Node;
+      if (
+        dropdownRef.current?.contains(target) ||
+        userMenuButtonRef.current?.contains(target)
+      ) {
+        return;
       }
+      setIsDropdownOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    updateDropdownPosition();
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [isDropdownOpen, updateDropdownPosition]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -69,8 +105,8 @@ export const UniversalHeader = ({
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[var(--header-bg)] backdrop-blur-xl border-b border-[var(--border)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-50 overflow-visible bg-[var(--header-bg)] backdrop-blur-xl border-b border-[var(--border)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between overflow-visible">
           {/* Left: Logo + Desktop Nav */}
           <div className="flex items-center gap-6">
             <Link href="/" className="text-xl sm:text-2xl font-bold tracking-tight hover:opacity-90 transition-opacity font-[var(--font-display)]">
@@ -125,51 +161,62 @@ export const UniversalHeader = ({
               {isLoading ? (
                 <div className="h-9 w-20 bg-white/[0.1] rounded-lg animate-pulse" />
               ) : user ? (
-                <div ref={dropdownRef} className="relative">
+                <div className="relative">
                   <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    ref={userMenuButtonRef}
+                    onClick={() => {
+                      if (!isDropdownOpen) updateDropdownPosition();
+                      setIsDropdownOpen((open) => !open);
+                    }}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
+                    aria-expanded={isDropdownOpen}
+                    aria-haspopup="menu"
                   >
                     <UserIcon className="h-4 w-4" />
                     <span className="font-medium">{user.username}</span>
                     <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  <div
-                    onMouseLeave={() => setIsDropdownOpen(false)}
-                    className={`absolute right-0 mt-2 w-52 bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border)] py-1 z-50 transition-all duration-200 ease-out ${isDropdownOpen
-                      ? 'opacity-100 translate-y-0 visible'
-                      : 'opacity-0 -translate-y-2 invisible pointer-events-none'
-                      }`}
-                  >
-                    <Link href="/dashboard" className="block px-4 py-2.5 border-b border-[var(--border)] hover:bg-[var(--bg-hover)] transition-colors">
-                      <p className="text-xs text-[var(--text-tertiary)]">Signed in as</p>
-                      <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{user.username}</p>
-                    </Link>
-                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
-                      Dashboard
-                    </Link>
-                    <Link href="/orders" className="block px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
-                      My Orders
-                    </Link>
-                    {user.role === 'admin' && (
-                      <Link href="/admin" className="block px-4 py-2 text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-colors">
-                        Admin Panel
-                      </Link>
-                    )}
-                    {(user.isReseller || user.role === 'admin') && (
-                      <Link href="/reseller" className="block px-4 py-2 text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-colors">
-                        Reseller Dashboard
-                      </Link>
-                    )}
-                    <div className="border-t border-[var(--border)] my-1" />
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                  {isMounted && isDropdownOpen && createPortal(
+                    <div
+                      ref={dropdownRef}
+                      role="menu"
+                      style={dropdownStyle}
+                      onMouseLeave={() => setIsDropdownOpen(false)}
+                      className="z-[200] bg-[var(--bg-elevated)] rounded-xl shadow-lg border border-[var(--border)] py-1 animate-fade-in"
                     >
-                      Logout
-                    </button>
-                  </div>
+                      <Link href="/dashboard" role="menuitem" className="block px-4 py-2.5 border-b border-[var(--border)] hover:bg-[var(--bg-hover)] transition-colors">
+                        <p className="text-xs text-[var(--text-tertiary)]">Signed in as</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{user.username}</p>
+                      </Link>
+                      <Link href="/dashboard" role="menuitem" className="block px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
+                        Dashboard
+                      </Link>
+                      <Link href="/orders" role="menuitem" className="block px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
+                        My Orders
+                      </Link>
+                      {user.role === 'admin' && (
+                        <Link href="/admin" role="menuitem" className="block px-4 py-2 text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-colors">
+                          Admin Panel
+                        </Link>
+                      )}
+                      {(user.isReseller || user.role === 'admin') && (
+                        <Link href="/reseller" role="menuitem" className="block px-4 py-2 text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-colors">
+                          Reseller Dashboard
+                        </Link>
+                      )}
+                      <div className="border-t border-[var(--border)] my-1" />
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                      >
+                        Logout
+                      </button>
+                    </div>,
+                    document.body,
+                  )}
                 </div>
               ) : (
                 <Link href="/account" className="btn btn-primary text-sm py-2 px-4">
