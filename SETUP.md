@@ -27,6 +27,12 @@ npm install
 
 If you hit macOS `EPERM` permission errors, grant your terminal Full Disk Access and rerun install.
 
+## Test accounts
+
+See **[`integration/TEST_ACCOUNTS.md`](integration/TEST_ACCOUNTS.md)** for shared dev login (`idpirate_test_user`, `idpirate_test_admin`).  
+**Crypto payments:** **[`integration/payments/CRYPTO_PAYMENTS.md`](integration/payments/CRYPTO_PAYMENTS.md)** (production guide).  
+**AWS deploy:** **[`integration/AWS_DEPLOY.md`](integration/AWS_DEPLOY.md)** · status: **[`integration/STATUS.md`](integration/STATUS.md)**.
+
 ## 3) Configure Environment Variables
 
 Copy **`.env.example`** to **`.env.local`** in the project root and fill in values.
@@ -136,6 +142,15 @@ The route handler **forwards the request body unchanged** to `LOOKUP_LAMBDA_URL`
 ### Uploads fail with network error
 
 Usually **R2 CORS** or wrong origin. Add the exact browser origin to the bucket CORS policy.
+
+## Crypto payment gateway (optional)
+
+1. Create DynamoDB tables — see **`integration/dynamodb/PAYMENT_GATEWAY.md`**.
+2. Deploy **`ID-Pirate-CreateOrder-Function`** with **`shared/`** only (no crypto required). For crypto, also deploy LOOKUP + admin with **`payment_shared/`** — see **`integration/payments/README.md`**.
+3. Deploy **`payment_watcher`** Lambda; add EventBridge rule `rate(2 minutes)`.
+4. Set Lambda env: `COINGECKO_API_KEY` (LOOKUP, optional), `ETHERSCAN_API_KEY` (watcher, for USDC on EVM chains).
+5. Admin → **Crypto Pay**: enable assets and deposit addresses.
+6. Checkout: **Crypto** → pick asset → pay page with exact on-chain amount.
 
 ## Reasoning
 

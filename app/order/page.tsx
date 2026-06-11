@@ -33,6 +33,7 @@ const stateGradients: Record<string, string> = {
   'Illinois': 'from-blue-500 to-indigo-600',
   'Connecticut': 'from-slate-500 to-slate-700',
   'Arizona': 'from-red-500 to-orange-600',
+  'TEST_DONT_ORDER': 'from-violet-600 to-fuchsia-700',
 };
 
 // ================================

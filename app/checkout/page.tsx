@@ -7,19 +7,18 @@ import { useAuth } from '../hooks/useAuth';
 import { getStorageItem, removeStorageItem } from '../../lib/storage';
 import { submitOrder, validateDiscount, DiscountValidation } from '../../lib/apiClient';
 import { statePrices, defaultIdPrice, handlingFee as HANDLING_FEE, shippingFee as SHIPPING_BASE } from '../../lib/constants';
+import {
+    createPaymentIntent,
+    cryptoPaymentMethodLabel,
+    MANUAL_PAYMENT_METHODS,
+} from '@/lib/payments';
+import type { CryptoAssetId } from '@/lib/paymentConstants';
 import { IdFormData } from '../../lib/types';
+import { useCryptoPaymentMethods } from '../hooks/useCryptoPaymentMethods';
+import { CryptoPaymentSection, CRYPTO_PAYMENT_PARENT_ID } from './components/CryptoPaymentSection';
 import { EditIcon } from '../components/icons';
 import { Footer } from '../components/ui';
 import { Spinner } from '../components/ui/Spinner';
-
-// --- Component Data ---
-const paymentMethods = [
-    { name: 'Bitcoin', icon: '₿' },
-    { name: 'Zelle', icon: 'Z' },
-    { name: 'Apple Pay', icon: '' },
-    { name: 'Cash App', icon: '$' },
-    { name: 'Venmo', icon: 'V' },
-];
 
 const inputClasses =
     'w-full rounded-xl px-4 py-3 text-sm [color-scheme:dark] bg-white/[0.06] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/35 focus:border-[var(--accent)]/50 focus:outline-none transition-all';
@@ -29,7 +28,10 @@ function CheckoutPage() {
     const router = useRouter();
     const [orderItems, setOrderItems] = useState<IdFormData[]>([]);
     const [deliveryMethod, setDeliveryMethod] = useState<'local' | 'shipping'>('shipping');
-    const [activePayment, setActivePayment] = useState<string>(paymentMethods[0].name);
+    const [activePayment, setActivePayment] = useState<string>(MANUAL_PAYMENT_METHODS[0].name);
+    const { methods: cryptoMethods } = useCryptoPaymentMethods();
+    const [selectedCryptoAsset, setSelectedCryptoAsset] = useState<CryptoAssetId | null>(null);
+    const [cryptoExpanded, setCryptoExpanded] = useState(false);
     const [orderNotes, setOrderNotes] = useState('');
     const [shippingFullName, setShippingFullName] = useState('');
     const [shippingStreetAddress, setShippingStreetAddress] = useState('');
@@ -64,6 +66,10 @@ function CheckoutPage() {
     const uploadsIncomplete =
         orderItems.length > 0 &&
         orderItems.some((item) => !item.photoKey || !item.signatureKey);
+
+    const isCryptoPayment = activePayment === CRYPTO_PAYMENT_PARENT_ID;
+    const cryptoReady = isCryptoPayment && selectedCryptoAsset !== null;
+    const canSubmit = orderItems.length > 0 && !uploadsIncomplete && (!isCryptoPayment || cryptoReady);
 
     const handleApplyDiscount = async () => {
         if (!discountCode.trim()) return;
@@ -101,7 +107,13 @@ function CheckoutPage() {
             return;
         }
 
-        setLoading(true); setOrderStatus('processing'); setOrderMessage('Submitting your order...'); setShowModal(true);
+        const willUseCrypto = activePayment === CRYPTO_PAYMENT_PARENT_ID && selectedCryptoAsset !== null;
+        setLoading(true);
+        setOrderStatus('processing');
+        setOrderMessage(
+            willUseCrypto ? 'Creating your order and payment invoice…' : 'Submitting your order...'
+        );
+        setShowModal(true);
 
         const fullShippingAddress = deliveryMethod === 'shipping' ? `${shippingFullName}, ${shippingStreetAddress}, ${shippingCity}, ${shippingStateProvince}, ${shippingZipCode}, USA` : "Local Delivery";
 
@@ -111,10 +123,14 @@ function CheckoutPage() {
             issueDate: `${rest.issueYear}-${rest.issueMonth}-${rest.issueDay}`,
         }));
 
+        const paymentMethodLabel = isCryptoPayment && selectedCryptoAsset
+            ? cryptoPaymentMethodLabel(selectedCryptoAsset)
+            : activePayment;
+
         const orderPayload = {
             userId: user.userId,
             shipping: fullShippingAddress,
-            paymentMethod: activePayment,
+            paymentMethod: paymentMethodLabel,
             notes: orderNotes,
             price: { subtotal, total },
             discountCode: discountResult?.code || undefined,
@@ -123,9 +139,28 @@ function CheckoutPage() {
 
         try {
             const data = await submitOrder(orderPayload);
+            removeStorageItem('idPirateOrderForms');
+
+            if (willUseCrypto && selectedCryptoAsset) {
+                try {
+                    await createPaymentIntent(data.orderId, selectedCryptoAsset);
+                } catch (intentErr: unknown) {
+                    setOrderStatus('error');
+                    setOrderMessage(
+                        intentErr instanceof Error
+                            ? intentErr.message
+                            : 'Failed to create payment invoice. Your order was created — open My Orders to try again.'
+                    );
+                    setLoading(false);
+                    return;
+                }
+                setShowModal(false);
+                router.push(`/orders?pay=${data.orderId}`);
+                return;
+            }
+
             setOrderStatus('success');
             setOrderMessage(`Order placed! ID: ${data.orderId}`);
-            removeStorageItem('idPirateOrderForms');
         } catch (error: any) {
             setOrderStatus('error');
             setOrderMessage(`Error: ${error.message || 'Failed to submit.'}`);
@@ -329,10 +364,26 @@ function CheckoutPage() {
                             <div>
                                 <h2 className="text-label mb-3">Payment Method</h2>
                                 <div className="space-y-2">
-                                    {paymentMethods.map(method => (
+                                    <CryptoPaymentSection
+                                        methods={cryptoMethods}
+                                        isActive={isCryptoPayment}
+                                        expanded={cryptoExpanded}
+                                        selectedAsset={selectedCryptoAsset}
+                                        onSelectParent={() => {
+                                            setActivePayment(CRYPTO_PAYMENT_PARENT_ID);
+                                            setCryptoExpanded(true);
+                                        }}
+                                        onSelectAsset={setSelectedCryptoAsset}
+                                    />
+                                    {MANUAL_PAYMENT_METHODS.map(method => (
                                         <button
                                             key={method.name}
-                                            onClick={() => setActivePayment(method.name)}
+                                            type="button"
+                                            onClick={() => {
+                                                setActivePayment(method.name);
+                                                setSelectedCryptoAsset(null);
+                                                setCryptoExpanded(false);
+                                            }}
                                             className={`w-full flex items-center p-3 rounded-xl border transition-all cursor-pointer ${activePayment === method.name
                                                 ? 'border-[var(--accent)] bg-[var(--accent)]/10'
                                                 : 'border-[var(--border)] hover:border-[var(--border-hover)]'
@@ -343,13 +394,16 @@ function CheckoutPage() {
                                         </button>
                                     ))}
                                 </div>
+                                {isCryptoPayment && !selectedCryptoAsset && (
+                                    <p className="text-xs text-amber-400/90 mt-2">Select a crypto asset to continue.</p>
+                                )}
                             </div>
 
                             {/* Submit */}
                             <button
                                 onClick={handleFinalOrderSubmit}
                                 className="btn btn-primary w-full py-3.5 text-base"
-                                disabled={loading || orderItems.length === 0 || uploadsIncomplete}
+                                disabled={loading || !canSubmit}
                                 title={uploadsIncomplete ? 'Upload photo and signature for each ID on the order form' : undefined}
                             >
                                 {loading ? (

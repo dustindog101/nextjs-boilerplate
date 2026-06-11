@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { withAuth } from '../components/withAuth';
 import { useAuth } from '../hooks/useAuth';
@@ -11,58 +11,58 @@ import {
   DollarSignIcon,
 } from '../components/icons';
 import { Footer, Spinner } from '../components/ui';
+import { OrderListCard } from '../components/order/OrderListCard';
+import { OrderPayModalHost } from '../components/payments/OrderPayModalHost';
+import { useOrderPayModal } from '../hooks/useOrderPayModal';
+import type { OrderDetails } from '@/lib/types';
 
-// --- Type ---
-interface OrderDetails {
-  orderId: string;
-  createdAt: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered';
-  price: { total: number };
-  numberOfIds: number;
-}
-
-/* ── Status helpers ── */
-const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
-  pending: { label: 'Order Created', color: 'text-amber-400', dot: 'bg-amber-500' },
-  processing: { label: 'Processing', color: 'text-blue-400', dot: 'bg-blue-500' },
-  shipped: { label: 'Shipped', color: 'text-sky-400', dot: 'bg-sky-500' },
-  delivered: { label: 'Delivered', color: 'text-emerald-400', dot: 'bg-emerald-500' },
-};
-
-function DashboardPage() {
+function DashboardContent() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<OrderDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await fetchUserOrders();
-        const sorted = data.orders.sort(
-          (a: OrderDetails, b: OrderDetails) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        setOrders(sorted);
-      } catch (err: any) {
-        setFetchError(err.message || 'Failed to fetch orders.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    load();
+  const {
+    payOrderId,
+    payAsset,
+    payOrder,
+    openPayModal,
+    closePayModal,
+    syncPayOrderFromList,
+  } = useOrderPayModal({ cleanUrlPath: '/dashboard', ready: !isLoading });
+
+  const loadOrders = useCallback(async () => {
+    try {
+      const data = await fetchUserOrders();
+      const sorted = (data.orders as OrderDetails[]).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setOrders(sorted);
+      setFetchError(null);
+    } catch (err: unknown) {
+      setFetchError(err instanceof Error ? err.message : 'Failed to fetch orders.');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  /* ── Stats ── */
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  useEffect(() => {
+    syncPayOrderFromList(orders);
+  }, [orders, syncPayOrderFromList]);
+
   const totalSpent = orders.reduce((s, o) => s + (o.price?.total ?? 0), 0);
   const totalIds = orders.reduce((s, o) => s + (o.numberOfIds ?? 0), 0);
   const activeOrders = orders.filter(o => o.status !== 'delivered').length;
+  const modalOrder = payOrder ?? orders.find((o) => o.orderId === payOrderId) ?? null;
 
   return (
     <div className="min-h-screen flex flex-col">
       <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow">
 
-        {/* ── Welcome Header ── */}
         <header className="mb-8 sm:mb-10 animate-fade-up">
           <h1 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] tracking-tight">
             Welcome back{user?.username ? `, ${user.username}` : ''}
@@ -72,7 +72,6 @@ function DashboardPage() {
           </p>
         </header>
 
-        {/* ── Stat Cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
           {[
             { label: 'Total Orders', value: orders.length, icon: <PackageIcon className="h-5 w-5" /> },
@@ -96,7 +95,6 @@ function DashboardPage() {
           ))}
         </div>
 
-        {/* ── Orders Section ── */}
         <section>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-bold text-[var(--text-primary)]">Recent Orders</h2>
@@ -125,54 +123,44 @@ function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {orders.map((order, i) => {
-                const cfg = statusConfig[order.status] || statusConfig.pending;
-                return (
-                  <Link
-                    key={order.orderId}
-                    href={`/order/view?orderId=${order.orderId}${user?.isReseller ? '&from=reseller' : ''}`}
-                    className="glass p-5 flex flex-col justify-between hover:border-[var(--accent)]/30 transition-all group animate-fade-up"
-                    style={{ animationDelay: `${50 * (i + 1)}ms` }}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors flex items-center gap-2">
-                          <HashIcon className="h-4 w-4 text-[var(--text-tertiary)]" />
-                          #{order.orderId.substring(0, 8)}…
-                        </h3>
-                        <span className={`flex items-center gap-1.5 text-xs font-medium ${cfg.color}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-                          {cfg.label}
-                        </span>
-                      </div>
-
-                      <div className="space-y-1.5 text-sm text-[var(--text-secondary)]">
-                        <p className="flex items-center gap-2">
-                          <CalendarIcon className="h-3.5 w-3.5" />
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </p>
-                        <p>{order.numberOfIds} ID{order.numberOfIds !== 1 ? 's' : ''}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-[var(--border)] flex items-center justify-between">
-                      <span className="text-price font-bold">
-                        ${order.price?.total ? order.price.total.toFixed(0) : 'N/A'}
-                      </span>
-                      <span className="text-xs text-[var(--text-tertiary)] group-hover:text-[var(--accent)] transition-colors">
-                        View Details →
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
+              {orders.map((order, i) => (
+                <OrderListCard
+                  key={order.orderId}
+                  order={order}
+                  index={i}
+                  viewHref={`/order/view?orderId=${order.orderId}${user?.isReseller ? '&from=reseller' : ''}`}
+                  onPay={(orderId, asset) => openPayModal(orderId, asset, order)}
+                />
+              ))}
             </div>
           )}
         </section>
       </div>
 
       <Footer />
+
+      <OrderPayModalHost
+        payOrderId={payOrderId}
+        payAsset={payAsset}
+        payOrder={modalOrder}
+        onClose={closePayModal}
+        onPaid={loadOrders}
+      />
     </div>
+  );
+}
+
+function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }
 

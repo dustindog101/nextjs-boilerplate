@@ -4,6 +4,15 @@
 // Lambda URLs are NEVER exposed to the browser.
 
 import { getStorageItem } from './storage';
+import {
+  listCryptoMethods as _listCryptoMethods,
+  createPaymentIntent as _createPaymentIntent,
+  getPaymentIntent as _getPaymentIntent,
+  cancelPaymentIntent as _cancelPaymentIntent,
+  adminGetPaymentSettings as _adminGetPaymentSettings,
+  adminUpdatePaymentSettings as _adminUpdatePaymentSettings,
+  adminSetOrderPaymentExpiry as _adminSetOrderPaymentExpiry,
+} from './payments/api';
 
 // --- Type Definitions ---
 
@@ -218,6 +227,16 @@ export const validateDiscount = async (
     body: JSON.stringify({ requestType: 'validate_discount', code, orderTotal }),
   });
 };
+
+
+// ====================================================================
+// CRYPTO PAYMENTS — re-exported from lib/payments (isolated module)
+// ====================================================================
+
+export const listCryptoMethods = _listCryptoMethods;
+export const createPaymentIntent = _createPaymentIntent;
+export const getPaymentIntent = _getPaymentIntent;
+export const cancelPaymentIntent = _cancelPaymentIntent;
 
 
 // ====================================================================
@@ -467,6 +486,12 @@ export interface ReferralGroup {
 export const adminListReferrals = async (): Promise<ReferralGroup[]> => {
   return adminApiFetch<ReferralGroup[]>({ requestType: 'list_referrals' });
 };
+
+// ── Payment gateway settings ─────────────────────────────────────────
+
+export const adminGetPaymentSettings = _adminGetPaymentSettings;
+export const adminUpdatePaymentSettings = _adminUpdatePaymentSettings;
+export const adminSetOrderPaymentExpiry = _adminSetOrderPaymentExpiry;
 
 /** Short-lived URL to view an object in R2 (admin only). */
 export const adminPresignGetUrl = async (objectKey: string): Promise<string> => {

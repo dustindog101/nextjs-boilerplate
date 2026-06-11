@@ -1,14 +1,21 @@
 "use client";
-import React, { Suspense, useCallback } from 'react';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Footer, FormInput, FormSelect, FileInput, Spinner } from '../../components/ui';
 import { BackArrowIcon, EditIcon, SaveIcon, CancelIcon, PlusIcon, TrashIcon } from '../../components/icons';
 import { OrderStatusTracker } from '../../components/order/OrderStatusTracker';
 import { OrderSummaryCard } from '../../components/order/OrderSummaryCard';
+import { OrderPaymentBlock } from '../../components/order/OrderPaymentBlock';
+import { CryptoPayModal } from '../../components/payments/CryptoPayModal';
 import { useOrder } from '../../hooks/useOrder';
 import { presignGetOrderAssetUrl } from '../../../lib/apiClient';
 import { OrderR2ImageStrip } from '../../components/order/OrderR2ImageStrip';
+import {
+  cryptoAssetFromOrder,
+  isCryptoOrder,
+  isOrderUnpaid,
+} from '@/lib/payments/orderHelpers';
 import {
   stateOptions,
   eyeColorOptions,
@@ -20,12 +27,27 @@ import {
 } from '../../../lib/constants';
 
 function OrderViewContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const {
     loggedInUser, isAuthChecking, isLoadingInitialData, fetchError,
     orderData, editableOrderData, isEditing, isSavingChanges, saveFeedback,
-    startEditing, cancelEditing, saveChanges, updateGeneralField, updateIdField
+    startEditing, cancelEditing, saveChanges, updateGeneralField, updateIdField,
+    reloadOrder,
   } = useOrder();
+
+  const [payModalOpen, setPayModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!searchParams.get('pay') || !orderData) return;
+    if (isOrderUnpaid(orderData) && isCryptoOrder(orderData)) {
+      setPayModalOpen(true);
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('pay');
+    const qs = params.toString();
+    router.replace(`/order/view${qs ? `?${qs}` : ''}`, { scroll: false });
+  }, [searchParams, orderData, router]);
 
   /** JWT may omit isReseller; reseller links add ?from=reseller; orders table adds &section=orders */
   const from = searchParams.get('from');
@@ -98,6 +120,18 @@ function OrderViewContent() {
           onStartEdit={startEditing}
           canEdit={!isEditing && orderData.status !== 'shipped' && orderData.status !== 'delivered'}
         />
+
+        <div className="mt-6">
+          <OrderPaymentBlock
+            order={orderData}
+            paymentActionLabel="View payment"
+            onOpenPayment={
+              isOrderUnpaid(orderData) && isCryptoOrder(orderData)
+                ? () => setPayModalOpen(true)
+                : undefined
+            }
+          />
+        </div>
 
         {/* Status Tracker */}
         <div className="mt-6">
@@ -220,6 +254,17 @@ function OrderViewContent() {
       </div>
 
       <Footer />
+
+      {orderData && isOrderUnpaid(orderData) && isCryptoOrder(orderData) && (
+        <CryptoPayModal
+          orderId={orderData.orderId}
+          order={orderData}
+          open={payModalOpen}
+          onClose={() => setPayModalOpen(false)}
+          onPaid={reloadOrder}
+          defaultAsset={cryptoAssetFromOrder(orderData)}
+        />
+      )}
     </div>
   );
 }

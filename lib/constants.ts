@@ -15,6 +15,7 @@ export const stateOptions = [
     'Arizona',
     'Florida',
     'Texas',
+    'TEST_DONT_ORDER',
 ];
 
 // --- Physical Attribute Options ---
@@ -62,6 +63,7 @@ export const statePrices: Record<string, number> = {
     Arizona: 90,
     Florida: 100,
     Texas: 100,
+    'TEST_DONT_ORDER': 1,
 };
 
 export const defaultIdPrice = 95;

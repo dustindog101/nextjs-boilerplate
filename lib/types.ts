@@ -61,6 +61,10 @@ export interface OrderDetails {
     ids: IdFormData[];
     numberOfIds?: number;
     userId?: string;
+    paymentIntentId?: string;
+    cryptoAsset?: string;
+    cryptoTxHash?: string;
+    paymentExpiresAt?: string;
 }
 
 // --- Tracking Stages ---

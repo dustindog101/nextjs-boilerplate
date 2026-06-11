@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { OrderDetails, JwtPayload } from '../../lib/types';
 import { getStorageItem, removeStorageItem } from '../../lib/storage';
@@ -123,9 +123,25 @@ export const useOrder = () => {
         });
     };
 
+    const reloadOrder = useCallback(async () => {
+        if (!orderData?.orderId) return;
+        try {
+            const data = loggedInUser?.isReseller
+                ? await fetchResellerOrderById(orderData.orderId)
+                : await fetchOrderById(orderData.orderId);
+            setOrderData(data);
+            if (!isEditing) {
+                setEditableOrderData(JSON.parse(JSON.stringify(data)));
+            }
+        } catch {
+            /* keep current data */
+        }
+    }, [orderData?.orderId, loggedInUser?.isReseller, isEditing]);
+
     return {
         loggedInUser, isAuthChecking, isLoadingInitialData, fetchError,
         orderData, editableOrderData, isEditing, isSavingChanges, saveFeedback,
-        logout, startEditing, cancelEditing, saveChanges, updateGeneralField, updateIdField
+        logout, startEditing, cancelEditing, saveChanges, updateGeneralField, updateIdField,
+        reloadOrder,
     };
 };

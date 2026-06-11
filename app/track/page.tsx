@@ -10,11 +10,19 @@ import {
 } from '../components/icons';
 import { Footer } from '../components/ui';
 import { Spinner } from '../components/ui/Spinner';
+import { OrderPayModalHost } from '../components/payments/OrderPayModalHost';
+import { useOrderPayModal } from '../hooks/useOrderPayModal';
 import { OrderDetails, TRACKING_STAGES } from '../../lib/types';
 import { trackOrder } from '../../lib/apiClient';
+import {
+  cryptoAssetFromOrder,
+  isCryptoOrder,
+  isOrderUnpaid,
+  normalizePaymentStatus,
+} from '@/lib/payments/orderHelpers';
 
-// --- Payment Method Icons ---
 const getPaymentMethodIcon = (method: string) => {
+  if (method.toLowerCase().startsWith('crypto')) return '₿';
   switch (method.toLowerCase()) {
     case 'bitcoin': return '₿';
     case 'zelle': return 'Z';
@@ -33,6 +41,19 @@ function TrackPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [orderData, setOrderData] = useState<OrderDetails | null>(null);
   const [displayError, setDisplayError] = useState<string | null>(null);
+
+  const {
+    payOrderId,
+    payAsset,
+    payOrder,
+    payToken,
+    openPayModal,
+    closePayModal,
+  } = useOrderPayModal({
+    order: orderData,
+    ready: !!orderData && !isLoading,
+    cleanUrlPath: '/track',
+  });
 
   const handleTrackOrder = useCallback(async (idToTrack?: string) => {
     const orderId = idToTrack || orderNumber;
@@ -54,19 +75,19 @@ function TrackPageContent() {
       } else {
         setDisplayError('Order data is empty. Please check the order number.');
       }
-    } catch (error: any) {
-      setDisplayError(`Error: ${error.message || 'An unexpected error occurred.'}`);
+    } catch (error: unknown) {
+      setDisplayError(
+        `Error: ${error instanceof Error ? error.message : 'An unexpected error occurred.'}`
+      );
     } finally {
       setIsLoading(false);
     }
   }, [orderNumber]);
 
-  // Auto-trigger search if orderId is provided in URL params
   useEffect(() => {
     if (initialOrderId) {
       handleTrackOrder(initialOrderId);
     }
-    // Only run on mount — initialOrderId is stable from searchParams
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -81,6 +102,11 @@ function TrackPageContent() {
     }
   };
 
+  const canShowCryptoPay =
+    orderData && isOrderUnpaid(orderData) && isCryptoOrder(orderData);
+
+  const paymentStatus = orderData ? normalizePaymentStatus(orderData.paymentStatus) : null;
+
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 py-12 sm:py-20">
@@ -92,7 +118,6 @@ function TrackPageContent() {
             Enter your order number to check the latest status.
           </p>
 
-          {/* Search */}
           <div className="glass p-5 sm:p-6">
             <div className="flex flex-col gap-3">
               <input
@@ -118,7 +143,6 @@ function TrackPageContent() {
           </div>
         </main>
 
-        {/* Loading State */}
         {isLoading && (
           <div className="mt-8 glass p-6 animate-fade-in w-full max-w-md">
             <p className="text-center text-[var(--accent)] text-sm font-medium flex items-center justify-center gap-2">
@@ -128,19 +152,16 @@ function TrackPageContent() {
           </div>
         )}
 
-        {/* Error State */}
         {displayError && !isLoading && (
           <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-fade-in w-full max-w-md">
             <p className="text-sm text-red-400 text-center">{displayError}</p>
           </div>
         )}
 
-        {/* Order Results */}
         {orderData && !isLoading && !displayError && (
           <div className="mt-8 glass p-6 sm:p-8 animate-fade-up w-full max-w-lg md:max-w-2xl">
             <h2 className="text-xl font-bold text-[var(--text-primary)] mb-5">Order Details</h2>
 
-            {/* Order Info Grid */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <p className="text-label mb-1">Order ID</p>
@@ -160,25 +181,49 @@ function TrackPageContent() {
               </div>
             </div>
 
-            {/* Payment Info */}
-            <div className="bg-white/[0.04] border border-[var(--border)] rounded-xl p-4 mb-6 flex items-center justify-between">
-              <div>
-                <p className="text-label mb-1">Payment</p>
-                <span className={`text-sm font-medium ${orderData.paymentStatus === 'Paid' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {orderData.paymentStatus || 'N/A'}
-                </span>
+            <div className="bg-white/[0.04] border border-[var(--border)] rounded-xl p-4 mb-6">
+              <div className="flex items-center justify-between gap-4 mb-3">
+                <div>
+                  <p className="text-label mb-1">Payment</p>
+                  <span
+                    className={`text-sm font-medium ${
+                      paymentStatus === 'Paid' ? 'text-emerald-400' : 'text-amber-400'
+                    }`}
+                  >
+                    {paymentStatus ?? 'N/A'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                  <span className="text-lg text-[var(--accent)]">{getPaymentMethodIcon(orderData.paymentMethod || '')}</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">{orderData.paymentMethod || 'N/A'}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                <span className="text-lg text-[var(--accent)]">{getPaymentMethodIcon(orderData.paymentMethod || '')}</span>
-                <span className="text-sm font-medium text-[var(--text-primary)]">{orderData.paymentMethod || 'N/A'}</span>
-              </div>
+              {canShowCryptoPay && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void openPayModal(
+                      orderData.orderId,
+                      cryptoAssetFromOrder(orderData),
+                      orderData
+                    );
+                  }}
+                  className="btn btn-primary text-xs px-4 py-2"
+                >
+                  View payment
+                </button>
+              )}
             </div>
 
-            {/* Progress Tracker */}
+            {orderData.cryptoTxHash && (
+              <div className="bg-white/[0.04] border border-[var(--border)] rounded-xl p-4 mb-6">
+                <p className="text-label mb-1">On-chain transaction</p>
+                <p className="text-xs font-mono text-[var(--text-secondary)] break-all">{orderData.cryptoTxHash}</p>
+              </div>
+            )}
+
             <div className="relative flex justify-between items-start pt-2 pb-4 px-2">
-              {/* Background line */}
               <div className="absolute top-6 left-6 right-6 h-0.5 bg-white/10" />
-              {/* Active line */}
               <div
                 className="absolute top-6 left-6 h-0.5 bg-[var(--accent)] transition-all duration-500"
                 style={{
@@ -219,11 +264,18 @@ function TrackPageContent() {
       </div>
 
       <Footer />
+
+      <OrderPayModalHost
+        payOrderId={payOrderId}
+        payAsset={payAsset}
+        payOrder={payOrder ?? orderData}
+        payToken={payToken}
+        onClose={closePayModal}
+      />
     </div>
   );
 }
 
-// Wrap in Suspense because useSearchParams() requires it in Next.js App Router
 export default function TrackPage() {
   return (
     <Suspense fallback={
