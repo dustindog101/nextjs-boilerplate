@@ -62,7 +62,27 @@ Keep in sync with `lib/paymentConstants.ts`.
 | **Logged-in customer** | JWT (`idPirateAuthToken`) | Checkout, My Orders, dashboard |
 | **Guest / white-label** | HMAC **pay token** (48h TTL) | Public `/track`, reseller checkout without login |
 | **Reseller dashboard** | Reseller JWT + `get_reseller_payment_intent` | Read-only invoice view for their orders |
-| **Admin** | Admin JWT | Settings, per-order invoices, manual overrides |
+| **Admin** | Admin JWT (longer TTL — see below) | Settings, Activity ledger, per-order invoices |
+
+### Session & token TTL
+
+| Token | Issued by | Default TTL | Config |
+|-------|-----------|-------------|--------|
+| **Login JWT** (`idPirateAuthToken`) | `idPirate_auth` Lambda | **1 hour** | `JWT_TTL_HOURS` on auth Lambda |
+| **Admin login JWT** | same | **8 hours** | `ADMIN_JWT_TTL_HOURS` on auth Lambda |
+| **Guest pay token** | Vercel `/api/payments/pay-session` | **48 hours** | `PAY_TOKEN_SECRET` |
+| **Payment invoice** | LOOKUP / admin intent create | **48 hours** default | Admin → Payments → Gateways → invoice expiry |
+
+The browser stores the login JWT in `localStorage` (`idPirateAuthToken`). `AuthContext` drops it when `exp` is in the past — there is no silent refresh; admins must log in again after TTL.
+
+**To extend admin sessions:** set on the **auth Lambda** (not admin Lambda):
+
+```env
+JWT_TTL_HOURS=1          # customers, resellers
+ADMIN_JWT_TTL_HOURS=12   # role=admin only (recommend 8–24h, not weeks)
+```
+
+Redeploy `idPirate_auth` after changing. Existing tokens keep their original `exp` until re-login.
 
 ### Pay token flow
 
@@ -137,6 +157,58 @@ Designed to stay within **AWS / Vercel / Cloudflare free tiers** at low volume:
 
 ---
 
+## External APIs, limits & watcher adapters (developer reference)
+
+The watcher runs on **EventBridge every 2 minutes**. Each run groups active intents by `(asset, depositAddress)` and makes **one adapter call per group** — not per intent — to stay within free tiers.
+
+### Chain → adapter matrix
+
+| Asset ID | Adapter file | Upstream API | Notes |
+|----------|--------------|--------------|-------|
+| `btc` | `adapters/esplora.py` | `blockstream.info/api` | Public Esplora; no API key |
+| `ltc` | `adapters/esplora.py` | `litecoinspace.org/api` | Public Esplora; no API key |
+| `sol` | `adapters/solana_rpc.py` | Helius or public Solana RPC | **Use `HELIUS_API_KEY` in production** |
+| `usdc_ethereum` | `adapters/etherscan_v2.py` | Etherscan V2 `chainid=1` | Requires `ETHERSCAN_API_KEY` |
+| `usdc_polygon` | `adapters/etherscan_v2.py` | Etherscan V2 `chainid=137` | Same key |
+| `usdc_base` | `adapters/etherscan_v2.py` | **Blockscout first** (`base.blockscout.com`) | Etherscan **free tier does not cover Base (8453)** — Blockscout is primary |
+| `usdc_solana` | `adapters/solana_rpc.py` | SPL balance delta via RPC | Same RPC as SOL |
+
+**Base USDC incident (2026):** Etherscan V2 returned empty/NOTOK for chain 8453 on the free plan. Fix: Blockscout primary for 8453 (and 10 Optimism), plus `User-Agent: idPirate-payment-watcher/1.0` on all explorer HTTP calls (Blockscout returns 403 without it).
+
+### Known provider limits (verify on vendor docs — tiers change)
+
+| Provider | Used for | Free-tier guidance |
+|----------|----------|-------------------|
+| **Etherscan V2** | ETH + Polygon USDC `tokentx` | ~5 req/s, daily cap; **Base/Optimism need paid plan or Blockscout** |
+| **Blockscout (hosted)** | Base (+ Optimism fallback) | Public explorer API; rate limits apply; always send User-Agent |
+| **Blockstream / Litecoinspace** | BTC, LTC | Public Esplora; avoid burst traffic beyond watcher cadence |
+| **Helius** | Solana SOL + USDC SPL | Free tier has monthly credits; preferred over `api.mainnet-beta.solana.com` |
+| **Public Solana RPC** | Fallback | Aggressive rate limits — fine for dev, not production volume |
+| **CoinGecko** | Invoice USD→crypto rate at create | Optional `COINGECKO_API_KEY`; called once per invoice create, not per poll |
+
+### Invoice / intent API (LOOKUP + admin)
+
+| `requestType` | Rate / cost notes |
+|---------------|-------------------|
+| `list_crypto_methods` | Public; cached client-side per page load |
+| `create_payment_intent` | CoinGecko fetch + rare DynamoDB scan for amount suffix collision (max 5 retries) |
+| `get_payment_intent` | Single `GetItem`; client polls ~15–30s while modal open only |
+| `get_payment_activity_summary` | Up to 5 GSI COUNT queries (admin) |
+| `list_payment_intents` | Up to 5 GSI queries + `batch_get_item` orders (admin); cap `limit` 100 |
+
+### Verify adapters after deploy or key rotation
+
+```bash
+chmod +x integration/payments/verify-watcher-adapters.sh
+ETHERSCAN_API_KEY=... HELIUS_API_KEY=... ./integration/payments/verify-watcher-adapters.sh
+```
+
+Probes HTTP connectivity to each explorer/RPC. Empty transfer lists are OK; **403/429 or missing key** is a fail. Then run `./integration/payments/smoke-test.sh` for Lambda wiring.
+
+**Ops checklist when enabling a new asset:** Gateways tab address set → run verify script → create test invoice → watch **Admin → Payments → Activity** for `detected` → `confirmed` within ~2–4 min.
+
+---
+
 ## Environment variables
 
 ### Vercel (server-only)
@@ -145,6 +217,14 @@ Designed to stay within **AWS / Vercel / Cloudflare free tiers** at low volume:
 LOOKUP_LAMBDA_URL=...
 ADMIN_LAMBDA_URL=...
 PAY_TOKEN_SECRET=...          # same as LOOKUP Lambda
+```
+
+### Auth Lambda (`idPirate_auth`)
+
+```env
+JWT_SECRET=...
+JWT_TTL_HOURS=1               # default — customers / resellers
+ADMIN_JWT_TTL_HOURS=8         # default — admin dashboard sessions
 ```
 
 ### LOOKUP Lambda

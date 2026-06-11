@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
     stateOptions,
     eyeColorOptions,
@@ -38,6 +38,12 @@ import {
     RESELLER_DRAFT_MAX_AGE_MS,
 } from '@/lib/resellerPortalStorage';
 import { UploadSlot, ImageLightbox, type UploadSlotStatus } from '@/app/components/ui';
+import { CryptoAssetPicker } from '@/app/components/payments/CryptoAssetPicker';
+import { useCryptoPaymentMethods } from '@/app/hooks/useCryptoPaymentMethods';
+import { createPaymentIntent } from '@/lib/payments';
+import { createPaySession } from '@/lib/payments/paySession';
+import { cryptoPaymentMethodLabel } from '@/lib/paymentConstants';
+import type { CryptoAssetId } from '@/lib/paymentConstants';
 import {
     ShieldCheck, Plus, Trash2, CheckCircle2, ChevronRight,
     ChevronLeft, MapPin, Truck, Moon, Sun
@@ -249,7 +255,9 @@ const IdCard: React.FC<IdCardProps> = ({
 
 export default function ResellerPortalPage() {
     const params = useParams();
+    const router = useRouter();
     const resellerId = params?.resellerId as string;
+    const { methods: cryptoMethods } = useCryptoPaymentMethods();
 
     // Theme — default false on server + first client paint; persist across reseller pages via storage.
     const [dark, setDark] = useState(false);
@@ -334,32 +342,26 @@ export default function ResellerPortalPage() {
         );
     };
 
-    useEffect(() => {
+    const initUploadSession = React.useCallback(async () => {
         if (!resellerId) return;
-        let cancelled = false;
         setUploadSessionError(null);
         setUploadSessionReady(false);
         uploadTokenRef.current = null;
-        (async () => {
-            try {
-                const { token } = await createResellerUploadSession(resellerId);
-                if (!cancelled) {
-                    uploadTokenRef.current = token;
-                    setUploadSessionReady(true);
-                }
-            } catch (e) {
-                if (!cancelled) {
-                    setUploadSessionError(
-                        e instanceof Error ? e.message : 'Could not verify reseller link for uploads.'
-                    );
-                    setUploadSessionReady(false);
-                }
-            }
-        })();
-        return () => {
-            cancelled = true;
-        };
+        try {
+            const { token } = await createResellerUploadSession(resellerId);
+            uploadTokenRef.current = token;
+            setUploadSessionReady(true);
+        } catch (e) {
+            setUploadSessionError(
+                e instanceof Error ? e.message : 'Could not verify reseller link for uploads.'
+            );
+            setUploadSessionReady(false);
+        }
     }, [resellerId]);
+
+    useEffect(() => {
+        void initUploadSession();
+    }, [initUploadSession]);
 
     const uploadFromFile = async (formId: number, field: 'photo' | 'signature', file: File) => {
         const tok = uploadTokenRef.current;
@@ -453,6 +455,8 @@ export default function ResellerPortalPage() {
     const [shipZip, setShipZip] = useState('');
 
     const [notes, setNotes] = useState('');
+    const [paymentChoice, setPaymentChoice] = useState<'crypto' | 'pay_later'>('pay_later');
+    const [selectedCryptoAsset, setSelectedCryptoAsset] = useState<CryptoAssetId | null>(null);
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [successOrderId, setSuccessOrderId] = useState('');
     const [portalHydrated, setPortalHydrated] = useState(false);
@@ -462,9 +466,27 @@ export default function ResellerPortalPage() {
 
     const uploadsIncomplete =
         idForms.length > 0 && idForms.some((f) => !f.photoKey || !f.signatureKey);
+    const firstIncompleteUploadIndex = idForms.findIndex((f) => !f.photoKey || !f.signatureKey);
     const uploadBusy = Object.values(uploadSlots).some(
         (s) => s.status === 'presigning' || s.status === 'uploading'
     );
+    const sessionInitializing = !uploadSessionReady && !uploadSessionError;
+
+    const placeOrderHint = (() => {
+        if (status === 'loading') return null;
+        if (uploadBusy) return 'Uploads in progress — please wait.';
+        if (uploadSessionError) return 'Secure uploads unavailable. Retry below or refresh the page.';
+        if (sessionInitializing) return 'Setting up secure uploads…';
+        if (uploadsIncomplete && firstIncompleteUploadIndex >= 0) {
+            return `ID #${firstIncompleteUploadIndex + 1}: upload photo and signature to place your order.`;
+        }
+        if (paymentChoice === 'crypto' && cryptoMethods.length > 0 && !selectedCryptoAsset) {
+            return 'Select a crypto asset in Payment above.';
+        }
+        return null;
+    })();
+
+    const placeOrderDisabled = status === 'loading' || uploadBusy || sessionInitializing;
 
     // Restore in-progress draft (same reseller link, within TTL). Cleared on successful submit.
     useEffect(() => {
@@ -557,33 +579,73 @@ export default function ResellerPortalPage() {
 
     // ── Submit ──────────────────────────────────────────────────────────────
 
+    const scrollToIdCard = () => {
+        document.getElementById('reseller-id-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    const resetCheckout = React.useCallback(() => {
+        if (resellerId) clearResellerDraft(resellerId);
+        setSlotPreviewUrls((prev) => {
+            Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
+            return {};
+        });
+        nextFormIdRef.current = 2;
+        setIdForms([createNewIdForm(1)]);
+        setActiveIndex(0);
+        setUploadSlots({});
+        setDeliveryMode('pickup');
+        setShipName('');
+        setShipStreet('');
+        setShipCity('');
+        setShipState('');
+        setShipZip('');
+        setNotes('');
+        setPaymentChoice('pay_later');
+        setSelectedCryptoAsset(null);
+        setSuccessOrderId('');
+        setError(null);
+        setStatus('idle');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [resellerId]);
+
     const handleSubmit = async () => {
         if (!resellerId) { setError('Invalid link.'); return; }
         const incomplete = idForms.findIndex(f => !f.firstName || !f.lastName || !f.streetAddress || !f.city || !f.zipCode);
-        if (incomplete !== -1) { setActiveIndex(incomplete); setError(`ID #${incomplete + 1} is missing required fields.`); return; }
+        if (incomplete !== -1) {
+            setActiveIndex(incomplete);
+            scrollToIdCard();
+            setError(`ID #${incomplete + 1} is missing required fields.`);
+            return;
+        }
         if (deliveryMode === 'ship' && (!shipName || !shipStreet || !shipCity || !shipState || !shipZip)) {
-            setError('Please complete your shipping address.'); return;
+            setError('Please complete your shipping address.');
+            return;
         }
 
         const missingUpload = idForms.findIndex((f) => !f.photoKey || !f.signatureKey);
         if (missingUpload !== -1) {
             setActiveIndex(missingUpload);
+            scrollToIdCard();
             setError(`ID #${missingUpload + 1}: upload both photo and signature.`);
             return;
         }
-        const uploadBusy = Object.values(uploadSlots).some(
-            (s) => s.status === 'presigning' || s.status === 'uploading'
-        );
         if (uploadBusy) {
             setError('Wait for uploads to finish.');
             return;
         }
         if (!uploadSessionReady || uploadSessionError) {
-            setError('Upload session not ready. Refresh or try again later.');
+            setError(uploadSessionError || 'Upload session not ready. Try Retry below or refresh the page.');
             return;
         }
 
-        setStatus('loading'); setError(null);
+        const useCrypto = paymentChoice === 'crypto' && selectedCryptoAsset !== null;
+        if (paymentChoice === 'crypto' && cryptoMethods.length > 0 && !selectedCryptoAsset) {
+            setError('Select a crypto asset to continue.');
+            return;
+        }
+
+        setStatus('loading');
+        setError(null);
 
         const shippingAddress = deliveryMode === 'ship'
             ? `${shipName}, ${shipStreet}, ${shipCity}, ${shipState} ${shipZip}`
@@ -595,23 +657,47 @@ export default function ResellerPortalPage() {
             issueDate: `${rest.issueYear}-${rest.issueMonth}-${rest.issueDay}`,
         }));
 
+        const paymentMethodLabel = useCrypto && selectedCryptoAsset
+            ? cryptoPaymentMethodLabel(selectedCryptoAsset)
+            : 'Pay Later';
+
         try {
             const data = await submitOrder({
                 userId: resellerId,
                 resellerId,
                 source: 'reseller_portal',
                 shipping: shippingAddress,
-                paymentMethod: 'Pay Later',
+                paymentMethod: paymentMethodLabel,
                 notes,
                 price: { total: fees },
                 ids: idsPayload,
             });
+            clearResellerDraft(resellerId);
+
+            if (useCrypto && selectedCryptoAsset) {
+                try {
+                    const session = await createPaySession(data.orderId);
+                    await createPaymentIntent(data.orderId, selectedCryptoAsset, {
+                        payToken: session.payToken,
+                    });
+                } catch (intentErr: unknown) {
+                    setError(
+                        intentErr instanceof Error
+                            ? intentErr.message
+                            : 'Order placed but payment invoice failed. Open Track to try again.'
+                    );
+                    setStatus('idle');
+                    return;
+                }
+                router.push(`/track?orderId=${encodeURIComponent(data.orderId)}&pay=1`);
+                return;
+            }
+
             setSuccessOrderId(data.orderId);
             setStatus('success');
-            clearResellerDraft(resellerId);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Submission failed. Please try again.');
-            setStatus('error');
+            setStatus('idle');
         }
     };
 
@@ -620,26 +706,37 @@ export default function ResellerPortalPage() {
     if (status === 'success') {
         return (
             <div className={`${s.bg} min-h-screen flex items-center justify-center p-6`}>
-                <div className={`${s.card} p-10 max-w-md w-full text-center`}>
-                    <CheckCircle2 size={48} className="text-emerald-500 mx-auto mb-5" />
+                <div className={`${s.card} p-8 sm:p-10 max-w-md w-full text-center animate-fade-up`}>
+                    <CheckCircle2 size={44} className="text-emerald-500 mx-auto mb-4" />
                     <h1 className={`${s.text} text-2xl font-bold mb-2`}>Order Placed!</h1>
-                    <p className={`${s.subtext} mb-4 text-sm`}>Your order has been received and is now being processed.</p>
-                    <p className={`text-xs font-mono px-3 py-2 rounded-lg mb-5 ${dark ? 'bg-white/[0.05] text-zinc-400' : 'bg-slate-100 text-slate-500'}`}>
-                        Order ID: {successOrderId}
+                    <p className={`${s.subtext} text-sm mb-5`}>
+                        Your order has been received and is now being processed.
+                    </p>
+                    <p
+                        className={`text-xs font-mono px-3 py-2.5 rounded-xl mb-6 break-all ${dark ? 'bg-white/[0.05] text-zinc-400' : 'bg-slate-100 text-slate-500'}`}
+                    >
+                        {successOrderId}
                     </p>
                     <Link
                         href={`/track?orderId=${encodeURIComponent(successOrderId)}`}
-                        className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-white transition-all mb-4 ${dark ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                        className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-white transition-all ${dark ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-blue-600 hover:bg-blue-700'}`}
                     >
                         Track Your Order
+                        <ChevronRight size={16} />
                     </Link>
-                    <p className={`${s.subtext} text-xs mb-5`}>Your reseller will be in touch with payment details.</p>
-                    <Link
-                        href="/"
-                        className={`w-full py-3 rounded-xl font-medium text-sm text-center transition-all border ${dark ? 'border-white/[0.12] text-zinc-200 hover:bg-white/[0.06]' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
-                    >
-                        Back to checkout
-                    </Link>
+                    <p className={`${s.subtext} text-xs mt-4`}>
+                        Your reseller will be in touch with payment details.
+                    </p>
+                    <div className={`mt-6 pt-5 border-t ${s.divider}`}>
+                        <button
+                            type="button"
+                            onClick={resetCheckout}
+                            className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${dark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                            <ChevronLeft size={16} />
+                            Back to checkout
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -704,7 +801,13 @@ export default function ResellerPortalPage() {
                                 onClick={() => setActiveIndex(i)}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 border transition-all ${activeIndex === i ? s.pillActive : s.pill}`}
                             >
-                                <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${f.firstName ? 'bg-emerald-500' : 'bg-zinc-500'}`} />
+                                <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${
+                                    f.photoKey && f.signatureKey
+                                        ? 'bg-emerald-500'
+                                        : f.firstName
+                                          ? 'bg-amber-500'
+                                          : 'bg-zinc-500'
+                                }`} />
                                 ID #{i + 1}
                                 {idForms.length > 1 && (
                                     <span onClick={e => { e.stopPropagation(); removeForm(i); }} className="ml-0.5 opacity-40 hover:opacity-100">
@@ -800,14 +903,46 @@ export default function ResellerPortalPage() {
                     </div>
                 </div>
 
-                {/* ── Payment info ──────────────────────────────────────── */}
+                {/* ── Payment ───────────────────────────────────────────── */}
                 <div className={s.card}>
-                    <div className="p-4 sm:p-5 flex items-start gap-3">
-                        <ShieldCheck size={16} className={`mt-0.5 flex-shrink-0 ${dark ? 'text-indigo-400' : 'text-blue-500'}`} />
-                        <p className={`${s.subtext} text-sm leading-relaxed`}>
-                            <span className={`${s.text} font-semibold`}>No payment required here.</span>{' '}
-                            Your reseller will send you payment instructions after your order is confirmed.
-                        </p>
+                    <div className="p-4 sm:p-5 space-y-4">
+                        <h3 className={`${s.text} font-bold`}>Payment</h3>
+                        {cryptoMethods.length > 0 ? (
+                            <>
+                                <div className={`grid grid-cols-2 rounded-xl overflow-hidden border ${s.divider}`}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaymentChoice('crypto')}
+                                        className={`py-3 text-sm font-medium transition-all ${paymentChoice === 'crypto' ? (dark ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white') : s.subtext}`}
+                                    >
+                                        Crypto
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaymentChoice('pay_later')}
+                                        className={`py-3 text-sm font-medium transition-all ${paymentChoice === 'pay_later' ? (dark ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white') : s.subtext}`}
+                                    >
+                                        Pay Later
+                                    </button>
+                                </div>
+                                {paymentChoice === 'crypto' && (
+                                    <CryptoAssetPicker
+                                        methods={cryptoMethods}
+                                        selected={selectedCryptoAsset}
+                                        onSelect={setSelectedCryptoAsset}
+                                    />
+                                )}
+                                {paymentChoice === 'pay_later' && (
+                                    <p className={`${s.subtext} text-sm`}>
+                                        Your reseller will send payment instructions after your order is confirmed.
+                                    </p>
+                                )}
+                            </>
+                        ) : (
+                            <p className={`${s.subtext} text-sm`}>
+                                Your reseller will send you payment instructions after your order is confirmed.
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -829,21 +964,43 @@ export default function ResellerPortalPage() {
                         <div className="flex items-center gap-2">
                             <span>Fee ${HANDLING_FEE}</span>
                             {deliveryMode === 'ship' && <span>· Ship ${SHIPPING_FEE}</span>}
+                            {!uploadsIncomplete && (
+                                <span className="text-emerald-500 font-medium">· Ready</span>
+                            )}
                         </div>
                     </div>
+                    {placeOrderHint && (
+                        <p
+                            className={`mb-2 text-xs leading-relaxed ${
+                                uploadSessionError
+                                    ? 'text-red-400'
+                                    : dark
+                                      ? 'text-amber-400/90'
+                                      : 'text-amber-700'
+                            }`}
+                        >
+                            {placeOrderHint}
+                            {uploadSessionError && (
+                                <button
+                                    type="button"
+                                    onClick={() => void initUploadSession()}
+                                    className="ml-2 underline font-medium hover:opacity-80"
+                                >
+                                    Retry
+                                </button>
+                            )}
+                        </p>
+                    )}
                     <button
+                        type="button"
                         onClick={handleSubmit}
-                        disabled={
-                            status === 'loading' ||
-                            uploadsIncomplete ||
-                            uploadBusy ||
-                            !!uploadSessionError ||
-                            !uploadSessionReady
-                        }
-                        className={`w-full py-4 rounded-xl font-bold text-base text-white transition-all flex items-center justify-center gap-2 disabled:opacity-60 ${dark ? 'bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99]' : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.99]'}`}
+                        disabled={placeOrderDisabled}
+                        className={`w-full py-4 rounded-xl font-bold text-base text-white transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${dark ? 'bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99]' : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.99]'}`}
                     >
                         {status === 'loading' ? (
                             <><span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Placing Order…</>
+                        ) : sessionInitializing ? (
+                            <><span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Preparing…</>
                         ) : (
                             <>Place Order <ChevronRight size={18} /></>
                         )}

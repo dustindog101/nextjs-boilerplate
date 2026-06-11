@@ -76,6 +76,8 @@ White-label and public `/track` use HMAC pay tokens (no login):
 
 See [`OPS_RUNBOOK.md`](OPS_RUNBOOK.md) for rollout and monitoring.
 
+**Adapter health check:** [`verify-watcher-adapters.sh`](verify-watcher-adapters.sh) — run after deploy or API key changes (Base USDC uses Blockscout, not Etherscan free tier).
+
 **Full guide:** [`CRYPTO_PAYMENTS.md`](CRYPTO_PAYMENTS.md) — architecture, security, UX flows, free tier.
 
 See also: `integration/dynamodb/PAYMENT_GATEWAY.md`

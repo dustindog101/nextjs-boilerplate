@@ -7,6 +7,8 @@
 | `CRYPTO_PAYMENTS_ENABLED` | LOOKUP, admin, payment_watcher | `false` kills gateway without code removal |
 | `PAY_TOKEN_SECRET` | LOOKUP + Vercel (server-only) | HMAC for guest pay tokens (`openssl rand -hex 32`) |
 | `JWT_SECRET` | All auth Lambdas | Must match across handlers |
+| `JWT_TTL_HOURS` | **idPirate_auth** | Customer/reseller login TTL (default `1`) |
+| `ADMIN_JWT_TTL_HOURS` | **idPirate_auth** | Admin login TTL (default `8`) |
 | `COINGECKO_API_KEY` | LOOKUP | Optional; reduces rate limits |
 | `ETHERSCAN_API_KEY` | payment_watcher | Required for USDC on EVM chains |
 | `SOLANA_RPC_URL` | payment_watcher | Default public RPC |
@@ -22,12 +24,14 @@ Redeploy **`admin_handler`** after changes to `payment_admin.py` or `payment_sha
 4. Admin → Payments → Gateways: enable assets, set deposit addresses, TTL
 5. Deploy payment_watcher + EventBridge `rate(2 minutes)`
 6. Set Vercel `PAY_TOKEN_SECRET` (same value as LOOKUP)
-7. Run smoke test: `LOOKUP_LAMBDA_URL=... ./integration/payments/smoke-test.sh`
+7. Run adapter probe: `ETHERSCAN_API_KEY=... ./integration/payments/verify-watcher-adapters.sh`
+8. Run smoke test: `LOOKUP_LAMBDA_URL=... ./integration/payments/smoke-test.sh`
 
 ## Monitoring
 
 - **CloudWatch** — `payment_watcher` logs every 2 min: `processed`, `groups`, adapter errors
 - **Stuck unpaid** — **Admin → Payments → Activity** first; filter `pending` / `detected`, verify tx hash. Watcher lag ~2 min after on-chain payment
+- **Base USDC not detecting** — confirm watcher uses Blockscout (not Etherscan-only); run `verify-watcher-adapters.sh`; check CloudWatch for `[blockscout]` / `[etherscan]` errors
 - **Expired invoices** — watcher sets `expired` and clears `paymentIntentId` / `cryptoAsset` on order
 
 ## Common ops tasks

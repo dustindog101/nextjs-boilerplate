@@ -286,6 +286,7 @@ const result = await someApiFunction(token, payload);
 - JWT stored at localStorage key: `idPirateAuthToken`
 - Decoded client-side with `atob()` (no jwt library)
 - JWT payload shape: `{ userId, username, role: 'user'|'admin', isReseller: boolean, exp, iat }`
+- **TTL:** customers/resellers **1h** (`JWT_TTL_HOURS` on auth Lambda); **admins 8h** (`ADMIN_JWT_TTL_HOURS`). No refresh — re-login after `exp`.
 - `AuthContext` exposes: `user`, `token`, `login(token)`, `logout()`
 
 ---
