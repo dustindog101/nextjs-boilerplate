@@ -10,8 +10,14 @@ import {
 import { TRACKING_STAGES, type OrderDetails } from '@/lib/types';
 import { readResellerTheme, writeResellerTheme } from '@/lib/resellerPortalStorage';
 import { trackOrder } from '@/lib/apiClient';
-
-// ─── Styles (mirrors checkout page) ─────────────────────────────────────────
+import { OrderPayModalHost } from '@/app/components/payments/OrderPayModalHost';
+import { useOrderPayModal } from '@/app/hooks/useOrderPayModal';
+import {
+    cryptoAssetFromOrder,
+    isCryptoOrder,
+    isOrderUnpaid,
+    normalizePaymentStatus,
+} from '@/lib/payments/orderHelpers';
 
 function useStyles(dark: boolean) {
     const bg = dark ? 'bg-[#0f0f13]' : 'bg-slate-50';
@@ -26,9 +32,6 @@ function useStyles(dark: boolean) {
     return { bg, text, subtext, input, header, card };
 }
 
-// ─── Align with LOOKUP Lambda / `OrderDetails.status` ─────────────────────────
-
-/** Map lookup responses and legacy keys onto `OrderDetails.status` keys. */
 function normalizeStatus(raw: string | undefined): string {
     if (!raw) return 'pending';
     const r = String(raw).toLowerCase().replace(/_/g, '-');
@@ -53,12 +56,6 @@ function statusBadgeConfig(status: string): { label: string; icon: React.ReactNo
     const cfg = byKey[n] ?? byKey.pending;
     return { label, ...cfg };
 }
-
-const PAYMENT_CONFIG: Record<string, { label: string; color: string }> = {
-    Unpaid: { label: 'Unpaid', color: 'text-red-400' },
-    Paid: { label: 'Paid', color: 'text-emerald-400' },
-    Partial: { label: 'Partial', color: 'text-amber-400' },
-};
 
 function ProgressBar({ status, dark }: { status: string; dark: boolean }) {
     const n = normalizeStatus(status);
@@ -94,12 +91,8 @@ function ProgressBar({ status, dark }: { status: string; dark: boolean }) {
                             <span
                                 className={`text-[10px] sm:text-xs font-medium text-center leading-tight px-0.5 ${
                                     active
-                                        ? dark
-                                            ? 'text-white'
-                                            : 'text-slate-900'
-                                        : dark
-                                          ? 'text-zinc-600'
-                                          : 'text-slate-400'
+                                        ? dark ? 'text-white' : 'text-slate-900'
+                                        : dark ? 'text-zinc-600' : 'text-slate-400'
                                 }`}
                             >
                                 {stage.label}
@@ -119,8 +112,6 @@ function ProgressBar({ status, dark }: { status: string; dark: boolean }) {
     );
 }
 
-// ─── Detail row ────────────────────────────────────────────────────────────────
-
 const Row: React.FC<{ label: string; value: React.ReactNode; icon?: React.ReactNode; dark: boolean }> = ({
     label,
     value,
@@ -136,8 +127,6 @@ const Row: React.FC<{ label: string; value: React.ReactNode; icon?: React.ReactN
     </div>
 );
 
-// ─── Inner component (uses search params) ─────────────────────────────────────
-
 function TrackInner() {
     const searchParams = useSearchParams();
 
@@ -147,6 +136,19 @@ function TrackInner() {
     const [result, setResult] = useState<OrderDetails | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const {
+        payOrderId,
+        payAsset,
+        payOrder,
+        payToken,
+        openPayModal,
+        closePayModal,
+    } = useOrderPayModal({
+        order: result,
+        ready: !!result && !loading,
+        cleanUrlPath: '/track',
+    });
 
     useEffect(() => {
         const stored = readResellerTheme();
@@ -161,15 +163,6 @@ function TrackInner() {
         }
         writeResellerTheme(dark ? 'dark' : 'light');
     }, [dark]);
-
-    useEffect(() => {
-        const id = searchParams?.get('orderId');
-        if (id) {
-            setOrderId(id);
-            void doTrack(id);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const doTrack = async (id?: string) => {
         const oid = (id ?? orderId).trim();
@@ -194,15 +187,25 @@ function TrackInner() {
         }
     };
 
+    useEffect(() => {
+        const id = searchParams?.get('orderId');
+        if (id) {
+            setOrderId(id);
+            void doTrack(id);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const s = useStyles(dark);
     const badge = result ? statusBadgeConfig(result.status) : null;
-    const paymentKey = result?.paymentStatus != null ? String(result.paymentStatus) : '';
-    const paymentCfg = result ? PAYMENT_CONFIG[paymentKey] ?? { label: paymentKey || '—', color: dark ? 'text-zinc-300' : 'text-slate-700' } : null;
+    const paymentStatus = result ? normalizePaymentStatus(result.paymentStatus) : null;
+    const canShowCryptoPay =
+        result && isOrderUnpaid(result) && isCryptoOrder(result);
 
     return (
         <div className={`${s.bg} min-h-screen transition-colors duration-200`}>
-            <header className={`sticky top-0 z-30 ${s.header} backdrop-blur-xl border-b`}>
-                <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between">
+            <header className={`sticky top-0 z-30 ${s.header} backdrop-blur-xl border-b pt-[env(safe-area-inset-top,0px)]`}>
+                <div className="max-w-xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <ShieldCheck size={16} className="text-indigo-500 flex-shrink-0" />
                         <span className={`${s.text} text-sm font-semibold`}>Order Tracking</span>
@@ -225,11 +228,11 @@ function TrackInner() {
                 </div>
             </header>
 
-            <div className="max-w-xl mx-auto px-4 pt-8 pb-20 space-y-5">
+            <div className="max-w-xl mx-auto px-3 sm:px-4 pt-6 sm:pt-8 pb-[max(5rem,env(safe-area-inset-bottom,0px))] space-y-5">
                 <div className={s.card + ' p-5'}>
                     <h1 className={`${s.text} text-lg font-bold mb-1`}>Track Your Order</h1>
                     <p className={`${s.subtext} text-sm mb-4`}>Enter the Order ID you received after placing your order.</p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                         <input
                             className={s.input}
                             placeholder="Order ID"
@@ -241,10 +244,10 @@ function TrackInner() {
                             type="button"
                             onClick={() => void doTrack()}
                             disabled={loading}
-                            className="flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-all"
+                            className="flex-shrink-0 flex items-center justify-center gap-2 min-h-[48px] px-4 py-3 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-all w-full sm:w-auto touch-manipulation"
                         >
                             {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
-                            <span className="hidden sm:inline">{loading ? 'Searching…' : 'Track'}</span>
+                            <span>{loading ? 'Searching…' : 'Track'}</span>
                         </button>
                     </div>
                     {error && (
@@ -288,10 +291,17 @@ function TrackInner() {
                             />
                             <Row
                                 dark={dark}
-                                label="Payment"
-                                value={<span className={paymentCfg?.color ?? ''}>{paymentCfg?.label ?? '—'}</span>}
+                                label="Payment status"
+                                value={
+                                    <span className={paymentStatus === 'Paid' ? 'text-emerald-500' : 'text-amber-500'}>
+                                        {paymentStatus ?? '—'}
+                                    </span>
+                                }
                                 icon={<CreditCard size={14} />}
                             />
+                            {result.paymentMethod && (
+                                <Row dark={dark} label="Payment method" value={result.paymentMethod} />
+                            )}
                             {result.createdAt && (
                                 <Row
                                     dark={dark}
@@ -302,6 +312,23 @@ function TrackInner() {
                                         year: 'numeric',
                                     })}
                                 />
+                            )}
+                            {canShowCryptoPay && (
+                                <div className="pt-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            void openPayModal(
+                                                result.orderId,
+                                                cryptoAssetFromOrder(result),
+                                                result
+                                            );
+                                        }}
+                                        className="w-full min-h-[48px] py-3 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-all touch-manipulation"
+                                    >
+                                        View payment
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -314,6 +341,14 @@ function TrackInner() {
                     </>
                 )}
             </div>
+
+            <OrderPayModalHost
+                payOrderId={payOrderId}
+                payAsset={payAsset}
+                payOrder={payOrder ?? result}
+                payToken={payToken}
+                onClose={closePayModal}
+            />
         </div>
     );
 }

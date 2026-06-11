@@ -662,3 +662,12 @@ body {
 .admin-dark table.reseller-orders-table > tbody > tr:not(:first-child) {
   border-top: 1px solid var(--border);
 }
+
+/* Hide scrollbars on horizontal tab strips (reseller portal, order form) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

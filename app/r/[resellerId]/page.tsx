@@ -705,8 +705,8 @@ export default function ResellerPortalPage() {
 
     if (status === 'success') {
         return (
-            <div className={`${s.bg} min-h-screen flex items-center justify-center p-6`}>
-                <div className={`${s.card} p-8 sm:p-10 max-w-md w-full text-center animate-fade-up`}>
+            <div className={`${s.bg} min-h-screen flex items-center justify-center p-4 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]`}>
+                <div className={`${s.card} p-6 sm:p-10 max-w-md w-full text-center animate-fade-up`}>
                     <CheckCircle2 size={44} className="text-emerald-500 mx-auto mb-4" />
                     <h1 className={`${s.text} text-2xl font-bold mb-2`}>Order Placed!</h1>
                     <p className={`${s.subtext} text-sm mb-5`}>
@@ -749,20 +749,21 @@ export default function ResellerPortalPage() {
     return (
         <div className={`${s.bg} min-h-screen transition-colors duration-200`}>
             {/* ── Header ──────────────────────────────────────────────── */}
-            <header className={`sticky top-0 z-30 ${s.header} backdrop-blur-xl border-b`}>
-                <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <ShieldCheck size={16} className="text-indigo-500" />
-                        <span className={`${s.text} text-sm font-semibold`}>Secure Checkout</span>
+            <header className={`sticky top-0 z-30 ${s.header} backdrop-blur-xl border-b pt-[env(safe-area-inset-top,0px)]`}>
+                <div className="max-w-2xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <ShieldCheck size={16} className="text-indigo-500 flex-shrink-0" />
+                        <span className={`${s.text} text-sm font-semibold truncate`}>Secure Checkout</span>
                     </div>
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
                         <Link
                             href="/track"
-                            className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap ${dark ? 'border-white/[0.08] text-zinc-300 hover:bg-white/[0.06]' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                            className={`text-xs font-medium px-2.5 sm:px-3 py-1.5 rounded-lg border transition-all whitespace-nowrap ${dark ? 'border-white/[0.08] text-zinc-300 hover:bg-white/[0.06]' : 'border-slate-200 text-slate-600 hover:bg-slate-100'}`}
                         >
-                            Track Order
+                            <span className="sm:hidden">Track</span>
+                            <span className="hidden sm:inline">Track Order</span>
                         </Link>
-                        <span className={`${s.subtext} text-xs`}>{idForms.length} ID{idForms.length !== 1 ? 's' : ''}</span>
+                        <span className={`${s.subtext} text-xs hidden sm:inline`}>{idForms.length} ID{idForms.length !== 1 ? 's' : ''}</span>
                         <button onClick={() => setDark(d => !d)} className={`p-2 rounded-lg ${dark ? 'text-zinc-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'} transition-all`}>
                             {dark ? <Sun size={15} /> : <Moon size={15} />}
                         </button>
@@ -770,7 +771,7 @@ export default function ResellerPortalPage() {
                 </div>
             </header>
 
-            <div className="max-w-2xl mx-auto px-4 pb-32 pt-6 space-y-4">
+            <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 pb-[calc(10rem+env(safe-area-inset-bottom,0px))] space-y-4">
 
                 {/* ── Error Banner ─────────────────────────────────────── */}
                 {(error || uploadSessionError) && (
@@ -792,7 +793,7 @@ export default function ResellerPortalPage() {
                 )}
 
                 {/* ── ID Tabs ───────────────────────────────────────────── */}
-                <div className={`${s.card} overflow-hidden`}>
+                <div id="reseller-id-card" className={`${s.card} overflow-hidden`}>
                     {/* Tab strip */}
                     <div className={`flex items-center gap-2 px-4 py-3 border-b ${s.divider} overflow-x-auto no-scrollbar`}>
                         {idForms.map((f, i) => (
@@ -875,13 +876,16 @@ export default function ResellerPortalPage() {
                                 onClick={() => setDeliveryMode('pickup')}
                                 className={`flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all ${deliveryMode === 'pickup' ? (dark ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white') : `${s.subtext} hover:opacity-80`}`}
                             >
-                                <MapPin size={14} /> Local Pickup
+                                <MapPin size={14} className="flex-shrink-0" />
+                                <span className="truncate">Local Pickup</span>
                             </button>
                             <button
                                 onClick={() => setDeliveryMode('ship')}
-                                className={`flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all ${deliveryMode === 'ship' ? (dark ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white') : `${s.subtext} hover:opacity-80`}`}
+                                className={`flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-1 text-xs sm:text-sm font-medium transition-all ${deliveryMode === 'ship' ? (dark ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white') : `${s.subtext} hover:opacity-80`}`}
                             >
-                                <Truck size={14} /> Ship to Me +${SHIPPING_FEE}
+                                <Truck size={14} className="flex-shrink-0" />
+                                <span className="truncate sm:hidden">Ship +${SHIPPING_FEE}</span>
+                                <span className="truncate hidden sm:inline">Ship to Me +${SHIPPING_FEE}</span>
                             </button>
                         </div>
 
@@ -956,12 +960,12 @@ export default function ResellerPortalPage() {
             </div>
 
             {/* ── Sticky Bottom Bar ────────────────────────────────────── */}
-            <div className={`fixed bottom-0 left-0 right-0 z-40 ${dark ? 'bg-[#0f0f13]/90 border-white/[0.06]' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-t`}>
-                <div className="max-w-2xl mx-auto px-4 py-3">
+            <div className={`fixed bottom-0 left-0 right-0 z-40 ${dark ? 'bg-[#0f0f13]/95 border-white/[0.06]' : 'bg-white/95 border-slate-200'} backdrop-blur-xl border-t pb-[env(safe-area-inset-bottom,0px)]`}>
+                <div className="max-w-2xl mx-auto px-3 sm:px-4 py-3">
                     {/* Order summary line */}
-                    <div className={`flex items-center justify-between mb-2 text-xs ${s.subtext}`}>
-                        <span>{idForms.length} ID{idForms.length !== 1 ? 's' : ''} · {deliveryMode === 'ship' ? 'Ship' : 'Local Pickup'}</span>
-                        <div className="flex items-center gap-2">
+                    <div className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2 text-xs ${s.subtext}`}>
+                        <span className="min-w-0 truncate">{idForms.length} ID{idForms.length !== 1 ? 's' : ''} · {deliveryMode === 'ship' ? 'Ship' : 'Local Pickup'}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
                             <span>Fee ${HANDLING_FEE}</span>
                             {deliveryMode === 'ship' && <span>· Ship ${SHIPPING_FEE}</span>}
                             {!uploadsIncomplete && (
@@ -995,7 +999,7 @@ export default function ResellerPortalPage() {
                         type="button"
                         onClick={handleSubmit}
                         disabled={placeOrderDisabled}
-                        className={`w-full py-4 rounded-xl font-bold text-base text-white transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${dark ? 'bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99]' : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.99]'}`}
+                        className={`w-full min-h-[52px] py-3.5 sm:py-4 rounded-xl font-bold text-base text-white transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed touch-manipulation ${dark ? 'bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99]' : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.99]'}`}
                     >
                         {status === 'loading' ? (
                             <><span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Placing Order…</>
