@@ -412,8 +412,8 @@ This is a **product constraint**, not a ban on ever paying for scale—when grow
 
 ## Deploy and backend checklist (human or agent)
 
+- **Lambda source (local only):** Handlers live in `lambda functions/` — **gitignored, not on GitHub**. See [integration/LAMBDA_WORKFLOW.md](./integration/LAMBDA_WORKFLOW.md) for edit → build → deploy steps and optional nested `git init` inside that folder.
 - **Vercel:** Set all Lambda Function URLs + `**RESELLER_LAMBDA_URL`** after deploying `lambda functions/reseller_handler` (same `**JWT_SECRET`** and DynamoDB access as other handlers).
-- **Repo vs AWS:** Source of truth for Python handlers is `**lambda functions/`** (not `aws/handlers/` — that path may be absent or legacy in this repo).
 - **Admin vs reseller:** Admin order tools use `**POST /api/admin`**; reseller dashboard uses `**/api/reseller/*`** only.
 - **Crypto payments:** Create DynamoDB tables `idPirate_settings`, `idPirate_payment_intents` (see `integration/dynamodb/PAYMENT_GATEWAY.md`). Deploy `payment_watcher` with EventBridge `rate(2 minutes)`. Zip `payment_shared/` with LOOKUP, Create Order, admin_handler, and payment_watcher.
 

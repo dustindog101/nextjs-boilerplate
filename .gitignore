@@ -47,7 +47,7 @@ next-env.d.ts
 # Personal / local notes (not for the repo)
 FORME.md
 
-# Backend Lambda source (local copy; not committed — deploy from your machine)
+# Backend Lambda source (local copy; not committed to GitHub — see integration/LAMBDA_WORKFLOW.md)
 /lambda functions/
 
 # Ad-hoc local Lambda / backend copies (keep repo Next.js–only)
