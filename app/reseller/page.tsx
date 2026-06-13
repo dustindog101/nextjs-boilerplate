@@ -9,6 +9,7 @@ import { AnalyticsSection } from './components/AnalyticsSection';
 import { ResellerOrdersSection } from './components/ResellerOrdersSection';
 import { LinkSection } from './components/LinkSection';
 import { SettingsSection } from './components/SettingsSection';
+import { BatchesSection } from './components/BatchesSection';
 import { useAuth } from '../hooks/useAuth';
 
 // ─── Top bar (mirrors admin) ──────────────────────────────────────────────────
@@ -49,7 +50,7 @@ function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
     );
 }
 
-const VALID_SECTIONS: ResellerSection[] = ['analytics', 'orders', 'link', 'settings'];
+const VALID_SECTIONS: ResellerSection[] = ['analytics', 'orders', 'batches', 'link', 'settings'];
 
 function isValidSection(s: string | null): s is ResellerSection {
     return s !== null && VALID_SECTIONS.includes(s as ResellerSection);
@@ -85,6 +86,7 @@ function ResellerDashboard() {
         switch (activeSection) {
             case 'analytics': return <AnalyticsSection />;
             case 'orders': return <ResellerOrdersSection />;
+            case 'batches': return <BatchesSection />;
             case 'link': return <LinkSection />;
             case 'settings': return <SettingsSection />;
             default: return <AnalyticsSection />;

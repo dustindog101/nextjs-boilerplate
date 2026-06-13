@@ -54,6 +54,7 @@ build_flat_zip payment-watcher \
 
 build_flat_zip reseller \
   reseller_handler/lambda_function.py lambda_function.py \
+  reseller_handler/batches.py batches.py \
   payment_shared payment_shared
 
 echo "Done. Upload zips from $OUT to AWS Lambda (see integration/AWS_DEPLOY.md)."

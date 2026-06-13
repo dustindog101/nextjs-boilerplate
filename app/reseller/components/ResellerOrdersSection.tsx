@@ -3,7 +3,12 @@ import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { Search, MoreVertical, Check, Loader2, Eye, PanelBottom, Wallet } from 'lucide-react';
 import { useResellerData } from '../ResellerDataContext';
-import { resellerUpdateOrder } from '@/lib/apiClient';
+import { resellerUpdateOrder, createResellerBatch } from '@/lib/apiClient';
+import {
+    customerTotalFromOrder,
+    profitFromOrder,
+    wholesaleFromOrder,
+} from '@/lib/resellerMetrics';
 import { sortRows } from '@/lib/tableSort';
 import { useTableSortState } from '@/app/hooks/useTableSort';
 import { SortableTh } from '../../components/ui';
@@ -93,9 +98,26 @@ function ResellerOrdersSectionInner() {
     const [saving, setSaving] = useState<Record<string, boolean>>({});
     const [saved, setSaved] = useState<Record<string, boolean>>({});
     const [rowError, setRowError] = useState<Record<string, string>>({});
+    const [batchFilter, setBatchFilter] = useState<'all' | 'unbatched' | 'in_batch'>('all');
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [batchCreating, setBatchCreating] = useState(false);
+    const [batchMsg, setBatchMsg] = useState<string | null>(null);
+
+    const formatMoney = (n: number | null) => (n !== null ? `$${n.toFixed(2)}` : '—');
+
+    const canSelectForBatch = (o: { batchStatus?: string; status?: string }) => {
+        if (o.status === 'cancelled') return false;
+        const bs = o.batchStatus || 'unbatched';
+        return bs === 'unbatched' || bs === 'draft';
+    };
 
     const filtered = useMemo(() => {
-        const items = orders.data ?? [];
+        let items = orders.data ?? [];
+        if (batchFilter === 'unbatched') {
+            items = items.filter((o) => !o.batchId || o.batchStatus === 'unbatched');
+        } else if (batchFilter === 'in_batch') {
+            items = items.filter((o) => o.batchId && o.batchStatus !== 'unbatched');
+        }
         if (!search.trim()) return items;
         const q = search.toLowerCase();
         return items.filter((o: any) =>
@@ -103,7 +125,35 @@ function ResellerOrdersSectionInner() {
             o.status?.toLowerCase().includes(q) ||
             o.paymentStatus?.toLowerCase().includes(q)
         );
-    }, [orders.data, search]);
+    }, [orders.data, search, batchFilter]);
+
+    const toggleSelect = (orderId: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(orderId)) next.delete(orderId);
+            else next.add(orderId);
+            return next;
+        });
+    };
+
+    const handleCreateBatch = async () => {
+        if (selectedIds.size === 0) return;
+        setBatchCreating(true);
+        setBatchMsg(null);
+        try {
+            await createResellerBatch({
+                name: `Batch ${new Date().toLocaleDateString()}`,
+                orderIds: Array.from(selectedIds),
+            });
+            setSelectedIds(new Set());
+            setBatchMsg('Draft batch created. Open Batches to review and submit.');
+            await refreshOrders();
+        } catch (err: unknown) {
+            setBatchMsg(err instanceof Error ? err.message : 'Could not create batch.');
+        } finally {
+            setBatchCreating(false);
+        }
+    };
 
     const { sortKey, direction, toggleSort } = useTableSortState<
         'orderId' | 'createdAt' | 'status' | 'ids' | 'payment'
@@ -171,7 +221,17 @@ function ResellerOrdersSectionInner() {
                 <h2 className="text-lg font-bold text-slate-900">
                     My Orders <span className="text-slate-400 font-normal text-sm">({sorted.length})</span>
                 </h2>
-                <div className="relative">
+                <div className="flex flex-wrap items-center gap-2">
+                    <select
+                        value={batchFilter}
+                        onChange={(e) => setBatchFilter(e.target.value as typeof batchFilter)}
+                        className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
+                    >
+                        <option value="all">All orders</option>
+                        <option value="unbatched">Unbatched</option>
+                        <option value="in_batch">In batch</option>
+                    </select>
+                    <div className="relative">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                         type="text"
@@ -181,7 +241,12 @@ function ResellerOrdersSectionInner() {
                         className="w-full sm:w-52 bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all"
                     />
                 </div>
+                </div>
             </div>
+
+            {batchMsg && (
+                <p className="mb-3 text-sm text-slate-600 bg-slate-100 border border-slate-200 rounded-lg px-3 py-2">{batchMsg}</p>
+            )}
 
             {sorted.length === 0 ? (
                 <div className="glass p-10 text-center">
@@ -194,6 +259,7 @@ function ResellerOrdersSectionInner() {
                         <table className="min-w-full reseller-orders-table">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200">
+                                    <th className="px-3 py-3 w-10" scope="col" aria-label="Select" />
                                     <SortableTh
                                         columnKey="orderId"
                                         sortKey={sortKey}
@@ -230,6 +296,18 @@ function ResellerOrdersSectionInner() {
                                     >
                                         IDs
                                     </SortableTh>
+                                    <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                        Customer
+                                    </th>
+                                    <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                        Wholesale
+                                    </th>
+                                    <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                        Profit
+                                    </th>
+                                    <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                        Batch
+                                    </th>
                                     <SortableTh
                                         columnKey="payment"
                                         sortKey={sortKey}
@@ -256,6 +334,17 @@ function ResellerOrdersSectionInner() {
                                     return (
                                         <React.Fragment key={o.orderId}>
                                             <tr className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-3 py-3">
+                                                    {canSelectForBatch(o) ? (
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedIds.has(o.orderId)}
+                                                            onChange={() => toggleSelect(o.orderId)}
+                                                            className="rounded border-slate-300"
+                                                            aria-label={`Select order ${o.orderId.slice(0, 8)}`}
+                                                        />
+                                                    ) : null}
+                                                </td>
                                                 {/* Order ID */}
                                                 <td className="px-4 py-3 whitespace-nowrap">
                                                     <p className="text-sm font-mono text-slate-700">{o.orderId.substring(0, 8)}…</p>
@@ -280,6 +369,21 @@ function ResellerOrdersSectionInner() {
                                                 {/* ID count */}
                                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
                                                     {o.ids?.length ?? o.numberOfIds ?? '—'}
+                                                </td>
+
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-amber-700 font-medium">
+                                                    {formatMoney(customerTotalFromOrder(o))}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                                                    {formatMoney(wholesaleFromOrder(o))}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-emerald-700">
+                                                    {formatMoney(profitFromOrder(o))}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500 max-w-[100px] truncate" title={o.batchId}>
+                                                    {o.batchStatus && o.batchStatus !== 'unbatched'
+                                                        ? o.batchStatus
+                                                        : '—'}
                                                 </td>
 
                                                 {/* Payment — editable */}
@@ -382,7 +486,7 @@ function ResellerOrdersSectionInner() {
                                             {/* Expanded detail row */}
                                             {isExpanded && (
                                                 <tr className="bg-slate-50">
-                                                    <td colSpan={7} className="px-4 py-4">
+                                                    <td colSpan={12} className="px-4 py-4">
                                                         {errMsg && (
                                                             <p className="text-red-500 text-xs mb-2 bg-red-50 px-3 py-1.5 rounded-lg">{errMsg}</p>
                                                         )}
@@ -444,6 +548,26 @@ function ResellerOrdersSectionInner() {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+            {selectedIds.size > 0 && (
+                <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 glass px-4 py-3 rounded-xl shadow-lg border border-white/[0.08]">
+                    <span className="text-sm text-white">{selectedIds.size} selected</span>
+                    <button
+                        type="button"
+                        onClick={() => void handleCreateBatch()}
+                        disabled={batchCreating}
+                        className="btn btn-primary text-sm px-4 py-2 rounded-lg"
+                    >
+                        {batchCreating ? 'Creating…' : 'Add to batch'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setSelectedIds(new Set())}
+                        className="btn btn-outline text-sm px-3 py-2 rounded-lg"
+                    >
+                        Clear
+                    </button>
                 </div>
             )}
             <OrderPayModalHost

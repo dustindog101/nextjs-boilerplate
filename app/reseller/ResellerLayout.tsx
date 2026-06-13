@@ -3,10 +3,10 @@ import React, { ReactNode } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
 import {
-    BarChart3, Package, Link2, Settings, Home, LogOut, ChevronLeft, ChevronRight
+    BarChart3, Package, Link2, Settings, Home, LogOut, ChevronLeft, ChevronRight, Layers
 } from 'lucide-react';
 
-export type ResellerSection = 'analytics' | 'orders' | 'link' | 'settings';
+export type ResellerSection = 'analytics' | 'orders' | 'batches' | 'link' | 'settings';
 
 interface ResellerLayoutProps {
     children: ReactNode;
@@ -19,6 +19,7 @@ interface ResellerLayoutProps {
 const NAV: { id: ResellerSection; label: string; icon: React.ReactElement }[] = [
     { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
     { id: 'orders', label: 'My Orders', icon: <Package size={20} /> },
+    { id: 'batches', label: 'Batches', icon: <Layers size={20} /> },
     { id: 'link', label: 'My Link', icon: <Link2 size={20} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
 ];
