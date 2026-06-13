@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { stateOptions, statePrices, defaultIdPrice } from '@/lib/constants';
+import { retailEffectiveAtCount, RESELLER_WHOLESALE_TIERS } from '@/lib/pricing';
 
 // ================================
 // MOCK DATA ENHANCEMENT
@@ -35,6 +36,8 @@ const stateGradients: Record<string, string> = {
   'Arizona': 'from-red-500 to-orange-600',
   'TEST_DONT_ORDER': 'from-violet-600 to-fuchsia-700',
 };
+
+const EXAMPLE_LIST_PRICE = statePrices.Pennsylvania ?? defaultIdPrice;
 
 // ================================
 // COMPONENTS
@@ -135,6 +138,32 @@ export default function OrderGalleryPage() {
         <p className="text-base sm:text-lg text-[var(--text-secondary)]">
           All '{new Date().getFullYear()}' designs pass in-state. Free duplicate included with every order.
         </p>
+      </div>
+
+      {/* ---- VOLUME PRICING ---- */}
+      <div className="glass p-5 sm:p-6 mb-10 max-w-3xl mx-auto animate-fade-up delay-1">
+        <h2 className="text-lg font-bold text-[var(--text-primary)] mb-1">Order more, save more</h2>
+        <p className="text-sm text-[var(--text-secondary)] mb-4">
+          Volume discounts apply automatically at checkout — add more IDs to one order to unlock lower per-ID pricing.
+        </p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center text-sm">
+          {[
+            { label: '1 ID', count: 1 },
+            { label: '2–3 IDs', count: 2 },
+            { label: '4+ IDs', count: 4 },
+          ].map((col) => (
+            <div
+              key={col.label}
+              className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-2 py-3 sm:px-3"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">{col.label}</p>
+              <p className="text-price text-lg sm:text-xl font-bold">
+                ${retailEffectiveAtCount(EXAMPLE_LIST_PRICE, col.count)}
+              </p>
+              <p className="text-[10px] sm:text-xs text-[var(--text-tertiary)] mt-0.5">per ID · PA example</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ---- CONTROLS (Search, Filter, Sort) ---- */}
@@ -255,8 +284,8 @@ export default function OrderGalleryPage() {
                     <span className="text-xs text-[var(--text-secondary)] font-medium">/ 1 ID</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)] pt-1.5 border-t border-[var(--border)]/50 mt-1.5">
-                    <span>2+ IDs: <strong className="text-[var(--price)]">${state.price - 10}</strong></span>
-                    <span>4+ IDs: <strong className="text-[var(--price)]">${state.price - 20}</strong></span>
+                    <span>2–3 IDs: <strong className="text-[var(--price)]">${retailEffectiveAtCount(state.price, 2)}</strong></span>
+                    <span>4+ IDs: <strong className="text-[var(--price)]">${retailEffectiveAtCount(state.price, 4)}</strong></span>
                   </div>
                 </div>
 
@@ -294,7 +323,7 @@ export default function OrderGalleryPage() {
             <div className="inline-flex badge badge-gold mb-3 text-xs">Reseller Program</div>
             <h2 className="text-2xl font-bold text-[var(--text-primary)] font-display mb-2">Need 10+ IDs?</h2>
             <p className="text-sm text-[var(--text-secondary)] max-w-md leading-relaxed">
-              Join our reseller program for wholesale pricing, priority production, and dedicated Telegram support. Prices drop as low as $55/ID.
+              Join our reseller program for wholesale pricing from ${RESELLER_WHOLESALE_TIERS[0].perId}/ID (up to ${RESELLER_WHOLESALE_TIERS[RESELLER_WHOLESALE_TIERS.length - 1].perId}/ID at 20+), priority production, and dedicated Telegram support.
             </p>
           </div>
           <a href="https://t.me/idpirate" target="_blank" rel="noopener noreferrer" className="btn btn-secondary flex-shrink-0 w-full md:w-auto">

@@ -3,7 +3,7 @@
 import React, { useCallback } from 'react';
 import { OrderR2ImageStrip } from '../../components/order/OrderR2ImageStrip';
 import { adminPresignGetUrl } from '@/lib/apiClient';
-import { statePrices, defaultIdPrice } from '@/lib/constants';
+import { effectivePerIdPrice } from '@/lib/pricing';
 
 function DetailField({
   label,
@@ -57,10 +57,19 @@ function formatHeight(row: Record<string, unknown>): string {
   return '—';
 }
 
-function idLinePrice(state: unknown): string {
+function idLinePrice(state: unknown, order: Record<string, unknown>, index: number): string {
   if (typeof state !== 'string' || !state) return '—';
-  const price = statePrices[state] ?? defaultIdPrice;
-  return `$${price.toFixed(2)}`;
+  const price = order.price as { perIdEffective?: number; pricingMode?: string; idCount?: number } | undefined;
+  if (price?.perIdEffective != null) {
+    return `$${Number(price.perIdEffective).toFixed(2)}`;
+  }
+  const ids = (order.ids as unknown[] | undefined) ?? [];
+  const idCount = price?.idCount ?? ids.length;
+  const mode = price?.pricingMode === 'reseller_wholesale' ? 'reseller_wholesale' : 'retail';
+  if (idCount > 0) {
+    return `$${effectivePerIdPrice(state, idCount, mode as 'retail' | 'reseller_wholesale').toFixed(2)}`;
+  }
+  return '—';
 }
 
 interface AdminOrderDetailsPanelProps {
@@ -70,7 +79,18 @@ interface AdminOrderDetailsPanelProps {
 export function AdminOrderDetailsPanel({ order }: AdminOrderDetailsPanelProps) {
   const resolveAssetUrl = useCallback((key: string) => adminPresignGetUrl(key), []);
 
-  const price = order.price as { subtotal?: number; total?: number; discountAmount?: number } | undefined;
+  const price = order.price as {
+    subtotal?: number;
+    total?: number;
+    discountAmount?: number;
+    listSubtotal?: number;
+    volumeSavings?: number;
+    pricingMode?: string;
+    perIdEffective?: number;
+    idCount?: number;
+    handling?: number;
+    shipping?: number;
+  } | undefined;
   const ids = (order.ids as Record<string, unknown>[] | undefined) ?? [];
   const createdAt = order.createdAt as string | undefined;
   const updatedAt = order.updatedAt as string | undefined;
@@ -115,10 +135,25 @@ export function AdminOrderDetailsPanel({ order }: AdminOrderDetailsPanelProps) {
       >
         <p className="text-label mb-3">Pricing</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {price?.listSubtotal != null && price.volumeSavings != null && Number(price.volumeSavings) > 0 ? (
+            <DetailField label="List subtotal" value={`$${Number(price.listSubtotal).toFixed(2)}`} />
+          ) : null}
           <DetailField
-            label="Subtotal"
+            label="ID subtotal"
             value={price?.subtotal != null ? `$${Number(price.subtotal).toFixed(2)}` : undefined}
           />
+          {price?.volumeSavings != null && Number(price.volumeSavings) > 0 ? (
+            <DetailField label="Volume savings" value={`−$${Number(price.volumeSavings).toFixed(2)}`} />
+          ) : null}
+          {price?.pricingMode ? (
+            <DetailField
+              label="Pricing mode"
+              value={price.pricingMode === 'reseller_wholesale' ? 'Reseller wholesale' : 'Retail volume'}
+            />
+          ) : null}
+          {price?.perIdEffective != null ? (
+            <DetailField label="Effective $/ID" value={`$${Number(price.perIdEffective).toFixed(2)}`} />
+          ) : null}
           {price?.discountAmount != null && Number(price.discountAmount) > 0 ? (
             <DetailField label="Discount" value={`-$${Number(price.discountAmount).toFixed(2)}`} />
           ) : null}
@@ -162,7 +197,7 @@ export function AdminOrderDetailsPanel({ order }: AdminOrderDetailsPanelProps) {
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                     {typeof idRow.state === 'string' ? idRow.state : '—'} ·{' '}
-                    <span className="text-price">{idLinePrice(idRow.state)}</span>
+                    <span className="text-price">{idLinePrice(idRow.state, order, idx)}</span>
                   </p>
                 </div>
               </div>

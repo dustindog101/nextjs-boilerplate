@@ -1,12 +1,17 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { withAuth } from '../components/withAuth';
 import { useAuth } from '../hooks/useAuth';
 import { getStorageItem, removeStorageItem } from '../../lib/storage';
 import { submitOrder, validateDiscount, DiscountValidation } from '../../lib/apiClient';
-import { statePrices, defaultIdPrice, handlingFee as HANDLING_FEE, shippingFee as SHIPPING_BASE } from '../../lib/constants';
+import { shippingFee as SHIPPING_BASE } from '../../lib/constants';
+import {
+    calcOrderPricing,
+    effectivePerIdPrice,
+    resolvePricingMode,
+} from '@/lib/pricing';
 import {
     createPaymentIntent,
     cryptoPaymentMethodLabel,
@@ -49,6 +54,22 @@ function CheckoutPage() {
     const [showDiscountInput, setShowDiscountInput] = useState(false);
 
     const SHIPPING_FEE = deliveryMethod === 'shipping' ? SHIPPING_BASE : 0;
+    const pricingMode = resolvePricingMode(user?.isReseller ?? false);
+
+    const orderPricing = useMemo(
+        () =>
+            calcOrderPricing({
+                ids: orderItems.map((item) => ({ state: item.state })),
+                shippingIsDelivery: deliveryMethod === 'shipping',
+                pricingMode,
+                discountCodeAmount: discountResult?.discountAmount ?? 0,
+            }),
+        [orderItems, deliveryMethod, pricingMode, discountResult?.discountAmount],
+    );
+
+    const preDiscountTotal =
+        orderPricing.idSubtotal + orderPricing.handling + orderPricing.shipping;
+    const total = orderPricing.total;
 
     useEffect(() => {
         const storedForms = getStorageItem('idPirateOrderForms');
@@ -58,10 +79,6 @@ function CheckoutPage() {
             } catch (error) { console.error('Failed to parse order forms:', error); }
         }
     }, []);
-
-    const subtotal = orderItems.reduce((acc, item) => acc + (statePrices[item.state] ?? defaultIdPrice), 0);
-    const discountAmount = discountResult?.discountAmount ?? 0;
-    const total = subtotal + HANDLING_FEE + SHIPPING_FEE - discountAmount;
 
     const uploadsIncomplete =
         orderItems.length > 0 &&
@@ -77,7 +94,7 @@ function CheckoutPage() {
         setDiscountError(null);
         setDiscountResult(null);
         try {
-            const result = await validateDiscount(discountCode.trim(), subtotal + HANDLING_FEE + SHIPPING_FEE);
+            const result = await validateDiscount(discountCode.trim(), preDiscountTotal);
             setDiscountResult(result);
         } catch (err: any) {
             setDiscountError(err.message || 'Invalid code.');
@@ -132,7 +149,10 @@ function CheckoutPage() {
             shipping: fullShippingAddress,
             paymentMethod: paymentMethodLabel,
             notes: orderNotes,
-            price: { subtotal, total },
+            price: {
+                subtotal: orderPricing.idSubtotal,
+                total: orderPricing.total,
+            },
             discountCode: discountResult?.code || undefined,
             ids: idsPayload,
         };
@@ -184,7 +204,14 @@ function CheckoutPage() {
                     <div className="w-full lg:w-2/3 space-y-6">
                         {/* Order Items */}
                         <div className="glass p-5 sm:p-6 animate-fade-up delay-1">
-                            <h2 className="text-lg font-bold text-[var(--text-primary)] mb-4">Order Summary</h2>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-bold text-[var(--text-primary)]">Order Summary</h2>
+                                {user?.isReseller && (
+                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300">
+                                        Wholesale
+                                    </span>
+                                )}
+                            </div>
                             {orderItems.length > 0 ? (
                                 <div className="space-y-3">
                                     {orderItems.map((item, index) => (
@@ -193,7 +220,9 @@ function CheckoutPage() {
                                                 <p className="font-semibold text-[var(--text-primary)]">{item.state} ID</p>
                                                 <p className="text-xs text-[var(--text-secondary)]">{item.firstName || 'N/A'} {item.lastName || 'N/A'}</p>
                                             </div>
-                                            <p className="text-price font-bold">${(statePrices[item.state] ?? defaultIdPrice).toFixed(2)}</p>
+                                            <p className="text-price font-bold">
+                                                ${effectivePerIdPrice(item.state, orderItems.length, pricingMode).toFixed(2)}
+                                            </p>
                                         </div>
                                     ))}
                                 </div>
@@ -265,18 +294,34 @@ function CheckoutPage() {
                             <div>
                                 <h2 className="text-lg font-bold text-[var(--text-primary)] mb-4">Total</h2>
                                 <div className="space-y-2 text-sm">
+                                    {orderPricing.volumeSavings > 0 && (
+                                        <div className="flex justify-between text-[var(--text-tertiary)]">
+                                            <span>List subtotal ({orderItems.length} IDs)</span>
+                                            <span className="line-through">${orderPricing.listSubtotal.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between text-[var(--text-secondary)]">
-                                        <span>Subtotal ({orderItems.length} IDs)</span>
-                                        <span>${subtotal.toFixed(2)}</span>
+                                        <span>
+                                            {pricingMode === 'reseller_wholesale'
+                                                ? `Wholesale subtotal (${orderItems.length} IDs)`
+                                                : `Subtotal (${orderItems.length} IDs)`}
+                                        </span>
+                                        <span>${orderPricing.idSubtotal.toFixed(2)}</span>
                                     </div>
+                                    {orderPricing.volumeSavings > 0 && (
+                                        <div className="flex justify-between text-emerald-400">
+                                            <span>Volume savings</span>
+                                            <span>−${orderPricing.volumeSavings.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between text-[var(--text-secondary)]">
                                         <span>Processing</span>
-                                        <span>${HANDLING_FEE.toFixed(2)}</span>
+                                        <span>${orderPricing.handling.toFixed(2)}</span>
                                     </div>
                                     {deliveryMethod === 'shipping' && (
                                         <div className="flex justify-between text-[var(--text-secondary)]">
                                             <span>Shipping</span>
-                                            <span>${SHIPPING_FEE.toFixed(2)}</span>
+                                            <span>${orderPricing.shipping.toFixed(2)}</span>
                                         </div>
                                     )}
                                     {discountResult && (

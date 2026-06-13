@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { withAuth } from '../../components/withAuth';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,11 +11,14 @@ import {
     monthOptions,
     dayOptions,
     yearOptions,
-    statePrices,
-    defaultIdPrice,
     R2_MAX_UPLOAD_BYTES,
     STORAGE_UPLOAD_CONTENT_TYPE,
 } from '../../../lib/constants';
+import {
+    calcOrderPricing,
+    effectivePerIdPrice,
+    resolvePricingMode,
+} from '@/lib/pricing';
 import { prepareImageForUpload } from '../../../lib/imagePrepare';
 import { invalidateViewCacheForKey } from '../../../lib/viewImageCache';
 import { IdFormData } from '../../../lib/types';
@@ -29,7 +32,6 @@ import {
 } from '../../components/icons';
 
 /* ─── Helpers ─── */
-const getPrice = (state: string) => statePrices[state] ?? defaultIdPrice;
 const completionPct = (f: IdFormData) => {
     const fields = [f.firstName, f.lastName, f.streetAddress, f.city, f.zipCode, f.dobMonth, f.dobDay, f.dobYear];
     return Math.round((fields.filter(Boolean).length / fields.length) * 100);
@@ -42,6 +44,7 @@ interface IdFormProps {
     formData: IdFormData;
     index: number;
     total: number;
+    unitPrice: number;
     onChange: (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, isFile?: boolean) => void;
     getUploadSlot: (formId: number, field: 'photo' | 'signature') => { status: UploadSlotStatus; progress: number; error?: string };
     getPreviewUrl: (formId: number, field: 'photo' | 'signature') => string | undefined;
@@ -55,6 +58,7 @@ const IdFormCard: React.FC<IdFormProps> = ({
     formData,
     index,
     total,
+    unitPrice,
     onChange,
     getUploadSlot,
     getPreviewUrl,
@@ -77,7 +81,7 @@ const IdFormCard: React.FC<IdFormProps> = ({
                     <h2 className="text-lg font-bold text-white">ID #{index + 1}</h2>
                     <p className="text-xs text-zinc-500 mt-0.5">of {total} in this order</p>
                 </div>
-                <span className="text-price text-lg font-bold">${getPrice(formData.state)}</span>
+                <span className="text-price text-lg font-bold">${unitPrice.toFixed(2)}</span>
             </div>
 
             <div className="p-5 sm:p-6 space-y-6">
@@ -194,7 +198,8 @@ const IdFormCard: React.FC<IdFormProps> = ({
    ==================================================================== */
 function OrderFormPage() {
     const router = useRouter();
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const pricingMode = resolvePricingMode(user?.isReseller ?? false);
 
     const slotKey = (formId: number, field: 'photo' | 'signature') => `${formId}-${field}`;
 
@@ -419,7 +424,19 @@ function OrderFormPage() {
         }
     };
 
-    const total = idForms.reduce((sum, f) => sum + getPrice(f.state), 0);
+    const orderPricing = useMemo(
+        () =>
+            calcOrderPricing({
+                ids: idForms.map((f) => ({ state: f.state })),
+                shippingIsDelivery: false,
+                pricingMode,
+            }),
+        [idForms, pricingMode],
+    );
+
+    const unitPriceForForm = (state: string) =>
+        effectivePerIdPrice(state, idForms.length, pricingMode);
+
     const activeForm = idForms[activeIndex];
 
     return (
@@ -430,6 +447,11 @@ function OrderFormPage() {
                     SIDEBAR — desktop only (lg+)
                    ══════════════════════════════════════════════ */}
                 <aside className="hidden lg:flex flex-col w-72 xl:w-80 border-r border-white/[0.06] sticky top-16 h-[calc(100vh-4rem)]">
+                    {user?.isReseller && (
+                        <div className="mx-4 mt-4 px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300">
+                            Reseller wholesale pricing
+                        </div>
+                    )}
                     <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
                         <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-2 mb-3">
                             IDs in Order ({idForms.length})
@@ -453,7 +475,7 @@ function OrderFormPage() {
                                     <span className="flex-1 text-left truncate">
                                         ID #{i + 1} · {form.state || 'New'}
                                     </span>
-                                    <span className="text-xs text-zinc-500">${getPrice(form.state)}</span>
+                                    <span className="text-xs text-zinc-500">${unitPriceForForm(form.state).toFixed(0)}</span>
                                     {idForms.length > 1 && (
                                         <span
                                             onClick={(e) => { e.stopPropagation(); removeIdForm(i); }}
@@ -475,9 +497,21 @@ function OrderFormPage() {
 
                     {/* Sidebar footer — total + checkout */}
                     <div className="border-t border-white/[0.06] p-4 space-y-3">
+                        {pricingMode === 'retail' && idForms.length === 1 && (
+                            <p className="text-xs text-zinc-400">
+                                Add 1 more ID and save{' '}
+                                <span className="text-price font-semibold">$10/ID</span>
+                            </p>
+                        )}
+                        {orderPricing.volumeSavings > 0 && (
+                            <div className="flex justify-between text-xs text-emerald-400/90">
+                                <span>Volume savings</span>
+                                <span>−${orderPricing.volumeSavings.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-zinc-400">{idForms.length} ID{idForms.length !== 1 ? 's' : ''}</span>
-                            <span className="text-price text-xl font-bold">${total}</span>
+                            <span className="text-price text-xl font-bold">${orderPricing.idSubtotal.toFixed(2)}</span>
                         </div>
                         <button
                             onClick={handleProceedToCheckout}
@@ -567,6 +601,7 @@ function OrderFormPage() {
                                 formData={activeForm}
                                 index={activeIndex}
                                 total={idForms.length}
+                                unitPrice={unitPriceForForm(activeForm.state)}
                                 onChange={handleFormChange}
                                 getUploadSlot={getUploadSlot}
                                 getPreviewUrl={getPreviewUrl}
@@ -601,7 +636,7 @@ function OrderFormPage() {
                 <div className="flex items-center justify-between px-4 py-3">
                     <div>
                         <span className="text-xs text-zinc-500">{idForms.length} ID{idForms.length !== 1 ? 's' : ''}</span>
-                        <span className="text-price text-lg font-bold ml-2">${total}</span>
+                        <span className="text-price text-lg font-bold ml-2">${orderPricing.idSubtotal.toFixed(2)}</span>
                     </div>
                     <button
                         onClick={handleProceedToCheckout}

@@ -45,6 +45,23 @@ export interface IdFormData {
     signatureFileName?: string;
 }
 
+// --- Order pricing ---
+export type PricingMode = 'retail' | 'reseller_wholesale';
+
+export interface OrderPriceFields {
+    subtotal: number;
+    total: number;
+    idSubtotal?: number;
+    listSubtotal?: number;
+    volumeSavings?: number;
+    idCount?: number;
+    pricingMode?: PricingMode;
+    perIdEffective?: number;
+    handling?: number;
+    shipping?: number;
+    discountAmount?: number;
+}
+
 // --- Order Details ---
 export interface OrderDetails {
     orderId: string;
@@ -54,10 +71,7 @@ export interface OrderDetails {
     paymentMethod: string;
     paymentStatus: 'Paid' | 'Unpaid';
     notes?: string;
-    price: {
-        subtotal: number;
-        total: number;
-    };
+    price: OrderPriceFields;
     ids: IdFormData[];
     numberOfIds?: number;
     userId?: string;
