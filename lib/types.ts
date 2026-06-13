@@ -79,6 +79,12 @@ export interface OrderDetails {
     cryptoAsset?: string;
     cryptoTxHash?: string;
     paymentExpiresAt?: string;
+    customerPrice?: OrderPriceFields & { retailPerId?: number };
+    wholesaleCost?: OrderPriceFields & { pricingMode?: PricingMode };
+    source?: string;
+    resellerId?: string;
+    batchId?: string;
+    batchStatus?: string;
 }
 
 // --- Tracking Stages ---

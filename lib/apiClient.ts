@@ -545,3 +545,121 @@ export const resellerUpdateOrder = async (
     body: JSON.stringify({ orderId, updateData }),
   });
 };
+
+export interface ResellerPublicPricing {
+  defaultPerId: number;
+  handlingFee: number;
+  shippingFee: number;
+}
+
+/** Public — white-label portal retail pricing by reseller slug. */
+export const fetchResellerPublicPricing = async (
+  slug: string
+): Promise<ResellerPublicPricing> => {
+  const enc = encodeURIComponent(slug.trim().toLowerCase());
+  return apiFetch<ResellerPublicPricing>(`/api/reseller/public-pricing?slug=${enc}`, {
+    method: 'GET',
+  });
+};
+
+export interface ResellerSettings {
+  resellerPricing: { defaultPerId: number };
+  username?: string;
+}
+
+export const fetchResellerSettings = async (): Promise<ResellerSettings> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) throw new Error('Authentication required.');
+  return apiFetch<ResellerSettings>('/api/reseller/settings', {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+};
+
+export const updateResellerSettings = async (
+  resellerPricing: { defaultPerId: number }
+): Promise<{ message: string; resellerPricing: { defaultPerId: number } }> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) throw new Error('Authentication required.');
+  return apiFetch('/api/reseller/settings', {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify({ resellerPricing }),
+  });
+};
+
+export interface ResellerBatch {
+  batchId: string;
+  resellerId: string;
+  createdAt: string;
+  name: string;
+  status: string;
+  orderIds: string[];
+  batchType?: string;
+  shipTo?: string;
+  settlementStatus?: string;
+  orders?: unknown[];
+  eligibilityErrors?: string[];
+}
+
+export const fetchResellerBatches = async (): Promise<{ batches: ResellerBatch[] }> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) throw new Error('Authentication required.');
+  return apiFetch('/api/reseller/batches', {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+};
+
+export const createResellerBatch = async (payload: {
+  name?: string;
+  orderIds?: string[];
+}): Promise<ResellerBatch> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) throw new Error('Authentication required.');
+  return apiFetch('/api/reseller/batches', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+};
+
+export const fetchResellerBatch = async (batchId: string): Promise<ResellerBatch> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) throw new Error('Authentication required.');
+  const enc = encodeURIComponent(batchId);
+  return apiFetch(`/api/reseller/batches/${enc}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+};
+
+export const updateResellerBatch = async (
+  batchId: string,
+  payload: {
+    name?: string;
+    addOrderIds?: string[];
+    removeOrderIds?: string[];
+  }
+): Promise<ResellerBatch> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) throw new Error('Authentication required.');
+  const enc = encodeURIComponent(batchId);
+  return apiFetch(`/api/reseller/batches/${enc}`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify({ batchId, ...payload }),
+  });
+};
+
+export const submitResellerBatch = async (
+  batchId: string
+): Promise<{ batchId: string; status: string; orderCount: number }> => {
+  const token = getStorageItem('idPirateAuthToken');
+  if (!token) throw new Error('Authentication required.');
+  const enc = encodeURIComponent(batchId);
+  return apiFetch(`/api/reseller/batches/${enc}/submit`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+};

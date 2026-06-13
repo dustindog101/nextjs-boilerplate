@@ -24,6 +24,7 @@ import {
     requestUploadPresign,
     uploadFileToR2,
     deleteUploadedObject,
+    fetchResellerPublicPricing,
 } from '@/lib/apiClient';
 import { userFacingUploadError } from '@/lib/uploadUserMessage';
 import {
@@ -460,9 +461,14 @@ export default function ResellerPortalPage() {
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [successOrderId, setSuccessOrderId] = useState('');
     const [portalHydrated, setPortalHydrated] = useState(false);
+    const [retailPerId, setRetailPerId] = useState(95);
+    const [pricingLoaded, setPricingLoaded] = useState(false);
 
+    const idCount = idForms.length;
     const shipping = deliveryMode === 'ship' ? SHIPPING_FEE : 0;
-    const fees = HANDLING_FEE + shipping;
+    const customerIdSubtotal = retailPerId * idCount;
+    const customerTotal = customerIdSubtotal + HANDLING_FEE + shipping;
+    const showCustomerPrice = paymentChoice === 'crypto' && cryptoMethods.length > 0;
 
     const uploadsIncomplete =
         idForms.length > 0 && idForms.some((f) => !f.photoKey || !f.signatureKey);
@@ -508,6 +514,23 @@ export default function ResellerPortalPage() {
             setUploadSlots(buildUploadSlotsFromForms(forms));
         }
         setPortalHydrated(true);
+    }, [resellerId]);
+
+    useEffect(() => {
+        if (!resellerId) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const p = await fetchResellerPublicPricing(resellerId);
+                if (!cancelled) {
+                    setRetailPerId(p.defaultPerId);
+                    setPricingLoaded(true);
+                }
+            } catch {
+                if (!cancelled) setPricingLoaded(true);
+            }
+        })();
+        return () => { cancelled = true; };
     }, [resellerId]);
 
     useEffect(() => {
@@ -669,7 +692,15 @@ export default function ResellerPortalPage() {
                 shipping: shippingAddress,
                 paymentMethod: paymentMethodLabel,
                 notes,
-                price: { total: fees },
+                price: { total: customerTotal },
+                customerPrice: {
+                    idSubtotal: customerIdSubtotal,
+                    handling: HANDLING_FEE,
+                    shipping,
+                    total: customerTotal,
+                    retailPerId,
+                    idCount,
+                },
                 ids: idsPayload,
             });
             clearResellerDraft(resellerId);
@@ -964,10 +995,18 @@ export default function ResellerPortalPage() {
                 <div className="max-w-2xl mx-auto px-3 sm:px-4 py-3">
                     {/* Order summary line */}
                     <div className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2 text-xs ${s.subtext}`}>
-                        <span className="min-w-0 truncate">{idForms.length} ID{idForms.length !== 1 ? 's' : ''} · {deliveryMode === 'ship' ? 'Ship' : 'Local Pickup'}</span>
+                        <span className="min-w-0 truncate">{idCount} ID{idCount !== 1 ? 's' : ''} · {deliveryMode === 'ship' ? 'Ship' : 'Local Pickup'}</span>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                            <span>Fee ${HANDLING_FEE}</span>
-                            {deliveryMode === 'ship' && <span>· Ship ${SHIPPING_FEE}</span>}
+                            {showCustomerPrice && pricingLoaded ? (
+                                <span className={`font-bold text-base ${dark ? 'text-amber-400' : 'text-amber-600'}`}>
+                                    ${customerTotal.toFixed(2)}
+                                </span>
+                            ) : (
+                                <>
+                                    <span>Fee ${HANDLING_FEE}</span>
+                                    {deliveryMode === 'ship' && <span>· Ship ${SHIPPING_FEE}</span>}
+                                </>
+                            )}
                             {!uploadsIncomplete && (
                                 <span className="text-emerald-500 font-medium">· Ready</span>
                             )}
