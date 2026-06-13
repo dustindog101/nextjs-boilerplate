@@ -7,7 +7,7 @@ import { fetchResellerOrders } from '../../lib/apiClient';
 export interface ResellerOrder {
     orderId: string;
     createdAt: string;
-    status: 'pending' | 'processing' | 'shipped' | 'delivered';
+    status: string;
     paymentStatus?: string;
     paymentMethod?: string;
     paymentIntentId?: string;
@@ -15,12 +15,28 @@ export interface ResellerOrder {
     paymentExpiresAt?: string;
     cryptoTxHash?: string;
     price: { total: number; subtotal?: number };
+    customerPrice?: {
+        total?: number;
+        idSubtotal?: number;
+        handling?: number;
+        shipping?: number;
+        retailPerId?: number;
+        idCount?: number;
+    };
+    wholesaleCost?: {
+        total?: number;
+        idSubtotal?: number;
+        perIdEffective?: number;
+        idCount?: number;
+    };
     numberOfIds?: number;
     ids?: unknown[];
     shipping?: string;
     source?: string;
     notes?: string;
     updatedAt?: string;
+    batchId?: string;
+    batchStatus?: string;
 }
 
 interface Resource<T> {
