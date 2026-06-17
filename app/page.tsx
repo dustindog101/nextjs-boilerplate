@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getStorageItem, setStorageItem } from '@/lib/storage';
-import { stateOptions, statePrices, defaultIdPrice } from '@/lib/constants';
+import { publicStateOptions, statePrices, defaultIdPrice } from '@/lib/constants';
 
 // ================================
 // DATA
@@ -223,9 +223,10 @@ function FloatingSupport() {
             href="https://t.me/idpirate"
             target="_blank"
             rel="noopener noreferrer"
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#0088cc] hover:bg-[#0077b5] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all animate-fade-up delay-8"
+            aria-label="Chat on Telegram"
+            className="fixed z-50 flex items-center justify-center gap-2 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-full shadow-lg hover:shadow-xl transition-all animate-fade-up delay-8 bottom-[max(1rem,env(safe-area-inset-bottom,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] p-3 sm:px-4 sm:py-3"
         >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" /></svg>
+            <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" /></svg>
             <span className="text-sm font-semibold hidden sm:inline">Chat on Telegram</span>
         </a>
     );
@@ -281,7 +282,7 @@ export default function HomePage() {
                                 </div>
                                 <div className="w-px h-10 bg-[var(--border)]" />
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-[var(--text-primary)] font-display">{stateOptions.length}</div>
+                                    <div className="text-2xl font-bold text-[var(--text-primary)] font-display">{publicStateOptions.length}</div>
                                     <div className="text-xs text-[var(--text-tertiary)] mt-0.5">States Available</div>
                                 </div>
                                 <div className="w-px h-10 bg-[var(--border)]" />
@@ -341,7 +342,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- FEATURE STRIP ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
                 <div className="max-w-6xl mx-auto">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                         {features.map((f, i) => (
@@ -358,7 +359,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- POPULAR STATES ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 bg-[var(--bg-secondary)] section-border">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-20 bg-[var(--bg-secondary)] section-border">
                 <div className="max-w-6xl mx-auto">
                     <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-2 text-center animate-fade-up font-display">
                         Popular States
@@ -432,14 +433,14 @@ export default function HomePage() {
                     </div>
                     <div className="text-center mt-10 animate-fade-up delay-6">
                         <Link href="/order" className="btn btn-outline text-sm px-6">
-                            View All {stateOptions.length} States →
+                            View All {publicStateOptions.length} States →
                         </Link>
                     </div>
                 </div>
             </section>
 
             {/* ---- TESTIMONIALS ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-10">
                         <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-2 animate-fade-up font-display">
@@ -466,7 +467,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- HOW IT WORKS ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 bg-[var(--bg-secondary)] section-border">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-20 bg-[var(--bg-secondary)] section-border">
                 <div className="max-w-3xl mx-auto">
                     <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-10 text-center animate-fade-up font-display">
                         How It Works
@@ -495,7 +496,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- FAQ ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
                 <div className="max-w-2xl mx-auto">
                     <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-8 text-center animate-fade-up font-display">
                         Frequently Asked Questions
@@ -541,11 +542,11 @@ export default function HomePage() {
                         <div>
                             <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4 font-display">Available States</h4>
                             <nav className="flex flex-col gap-1.5">
-                                {stateOptions.slice(0, 8).map(state => (
+                                {publicStateOptions.slice(0, 8).map(state => (
                                     <Link key={state} href="/order" className="text-xs text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors">{state}</Link>
                                 ))}
-                                {stateOptions.length > 8 && (
-                                    <Link href="/order" className="text-xs text-[var(--accent)] font-medium">+ {stateOptions.length - 8} more</Link>
+                                {publicStateOptions.length > 8 && (
+                                    <Link href="/order" className="text-xs text-[var(--accent)] font-medium">+ {publicStateOptions.length - 8} more</Link>
                                 )}
                             </nav>
                         </div>
