@@ -3,7 +3,7 @@
 // IMPORTANT: This must be the first import to fix the broken localStorage polyfill in dev mode
 import "../lib/localStorage-polyfill";
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, DM_Sans } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
@@ -27,6 +27,12 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "ID Pirate — Premium Novelty IDs | Trusted Since 2024",
   description: "The #1 source for premium novelty IDs. Scannable barcodes, UV holograms, microprint. Fast turnaround, discreet shipping, and all security features included.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { stateOptions, statePrices, defaultIdPrice } from '@/lib/constants';
+import { publicStateOptions, statePrices, defaultIdPrice } from '@/lib/constants';
 import { retailEffectiveAtCount, RESELLER_WHOLESALE_TIERS } from '@/lib/pricing';
 
 // ================================
@@ -9,7 +9,7 @@ import { retailEffectiveAtCount, RESELLER_WHOLESALE_TIERS } from '@/lib/pricing'
 // ================================
 
 // Adding metadata to states for filtering/sorting
-const stateData = stateOptions.map(stateName => ({
+const stateData = publicStateOptions.map(stateName => ({
   name: stateName,
   price: statePrices[stateName] || defaultIdPrice,
   popular: ['Pennsylvania', 'New Jersey', 'Florida', 'Texas'].includes(stateName),
@@ -90,7 +90,7 @@ function IdCardMockup({ state, className = '' }: { state: string; className?: st
 export default function OrderGalleryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'popular' | 'new'>('all');
-  const [sort, setSort] = useState<'alpha' | 'price-low' | 'price-high'>('alpha');
+  const [sort, setSort] = useState<'popular' | 'alpha' | 'price-low' | 'price-high'>('popular');
 
   // Filter and sort logic
   const filteredStates = useMemo(() => {
@@ -116,7 +116,8 @@ export default function OrderGalleryPage() {
       case 'price-high':
         result.sort((a, b) => b.price - a.price);
         break;
-      default: // Default 'popular' sort
+      case 'popular':
+      default:
         result.sort((a, b) => {
           if (a.popular && !b.popular) return -1;
           if (!a.popular && b.popular) return 1;
@@ -184,7 +185,7 @@ export default function OrderGalleryPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto">
+        <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto no-scrollbar">
           {[
             { id: 'all', label: 'All States' },
             { id: 'popular', label: '★ Popular' },

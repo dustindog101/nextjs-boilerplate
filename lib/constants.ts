@@ -18,6 +18,9 @@ export const stateOptions = [
     'TEST_DONT_ORDER',
 ];
 
+/** Customer-facing gallery and marketing — excludes internal test state. */
+export const publicStateOptions = stateOptions.filter((s) => s !== 'TEST_DONT_ORDER');
+
 // --- Physical Attribute Options ---
 export const eyeColorOptions = ['Black', 'Blue', 'Brown', 'Gray', 'Green', 'Hazel'];
 
