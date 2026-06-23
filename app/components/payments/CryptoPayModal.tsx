@@ -19,6 +19,7 @@ import type { CryptoAssetId } from '@/lib/paymentConstants';
 import { normalizePaymentStatus } from '@/lib/payments/orderHelpers';
 import type { OrderDetails } from '@/lib/types';
 import type { PaymentIntent, PaymentIntentStatus } from '@/lib/paymentTypes';
+import { PaymentMethodBadge } from './PaymentMethodBadge';
 
 type ModalView = 'invoice' | 'change';
 
@@ -66,8 +67,9 @@ function PaymentContextSummary({
       </div>
 
       {order?.paymentMethod && (
-        <p className="text-sm text-[var(--text-secondary)]">
-          Method: <span className="text-[var(--text-primary)]">{order.paymentMethod}</span>
+        <p className="text-sm text-[var(--text-secondary)] flex items-center gap-2 flex-wrap">
+          <span>Method:</span>
+          <PaymentMethodBadge method={order.paymentMethod} size="sm" showLabel="auto" />
         </p>
       )}
 

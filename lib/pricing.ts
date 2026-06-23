@@ -3,7 +3,8 @@
  * Keep in sync with `lambda functions/shared/order_pricing.py`.
  */
 
-import { defaultIdPrice, handlingFee, shippingFee, statePrices } from './constants';
+import { defaultIdPrice, handlingFee, shippingFee } from './constants';
+import { getProductListPrice, resolveProductId } from './productCatalog';
 
 export const RETAIL_VOLUME_DISCOUNTS = {
     single: 0,
@@ -35,8 +36,8 @@ export interface OrderPriceBreakdown {
     subtotal: number;
 }
 
-export function getStateListPrice(state: string): number {
-    return statePrices[state] ?? defaultIdPrice;
+export function getStateListPrice(stateOrProductId: string): number {
+    return getProductListPrice(resolveProductId(stateOrProductId));
 }
 
 /** Per-ID discount off list price for retail volume tiers. */
@@ -57,15 +58,16 @@ export function wholesalePerId(idCount: number): number {
 
 /** Effective per-ID price for one line item (retail volume or wholesale). */
 export function effectivePerIdPrice(
-    state: string,
+    stateOrProductId: string,
     idCount: number,
     pricingMode: PricingMode,
 ): number {
     if (pricingMode === 'reseller_wholesale') {
         return wholesalePerId(idCount);
     }
-    const base = getStateListPrice(state);
-    if (state === 'TEST_DONT_ORDER') return base;
+    const productId = resolveProductId(stateOrProductId);
+    const base = getProductListPrice(productId);
+    if (productId === 'TEST:DONT_ORDER') return base;
     return Math.max(base - retailDiscountPerId(idCount), 0);
 }
 
@@ -80,7 +82,7 @@ export function resolvePricingMode(isReseller: boolean): PricingMode {
 }
 
 export function calcOrderPricing(input: {
-    ids: { state: string }[];
+    ids: { productId?: string; state?: string }[];
     shippingIsDelivery: boolean;
     pricingMode: PricingMode;
     discountCodeAmount?: number;
@@ -91,16 +93,20 @@ export function calcOrderPricing(input: {
     let listSubtotal = 0;
     let idSubtotal = 0;
 
+    const priceKey = (item: { productId?: string; state?: string }) =>
+        resolveProductId(item.productId ?? item.state ?? '');
+
     if (pricingMode === 'reseller_wholesale') {
         const perId = wholesalePerId(idCount);
-        listSubtotal = input.ids.reduce((sum, item) => sum + getStateListPrice(item.state), 0);
+        listSubtotal = input.ids.reduce((sum, item) => sum + getProductListPrice(priceKey(item)), 0);
         idSubtotal = roundMoney(perId * idCount);
     } else {
         const discountPerId = retailDiscountPerId(idCount);
         for (const item of input.ids) {
-            const base = getStateListPrice(item.state);
+            const productId = priceKey(item);
+            const base = getProductListPrice(productId);
             listSubtotal += base;
-            if (item.state === 'TEST_DONT_ORDER') {
+            if (productId === 'TEST:DONT_ORDER') {
                 idSubtotal += base;
             } else {
                 idSubtotal += Math.max(base - discountPerId, 0);

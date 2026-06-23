@@ -2,17 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getStorageItem, setStorageItem } from '@/lib/storage';
-import { stateOptions, statePrices, defaultIdPrice } from '@/lib/constants';
+import { ALL_REGION_COUNT, lowestPriceForRegion, US_REGION_NAMES } from '@/lib/productCatalog';
 
 // ================================
 // DATA
 // ================================
 
 const featuredStates = [
-    { name: 'Pennsylvania', price: statePrices['Pennsylvania'] || 90, reviews: 127, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'FREE Duplicate', ordersThisWeek: 34 },
-    { name: 'New Jersey', price: statePrices['New Jersey'] || 100, reviews: 203, bestSeller: true, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'FREE Duplicate', ordersThisWeek: 67 },
-    { name: 'Old Maine', price: statePrices['Old Maine'] || 85, reviews: 94, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'FREE Duplicate', ordersThisWeek: 22 },
-    { name: 'Florida', price: statePrices['Florida'] || 100, reviews: 156, newState: true, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'FREE Duplicate', ordersThisWeek: 48 },
+    { name: 'Pennsylvania', price: lowestPriceForRegion('Pennsylvania'), reviews: 127, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'FREE Duplicate', ordersThisWeek: 34 },
+    { name: 'New Jersey', price: lowestPriceForRegion('New Jersey'), reviews: 203, bestSeller: true, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'FREE Duplicate', ordersThisWeek: 67 },
+    { name: 'Maine', price: lowestPriceForRegion('Maine'), reviews: 94, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'FREE Duplicate', ordersThisWeek: 22 },
+    { name: 'Florida', price: lowestPriceForRegion('Florida'), reviews: 156, newState: true, features: ['Scannable Barcodes', 'Microprint', 'UV & OVI Holo'], duplicateInfo: 'FREE Duplicate', ordersThisWeek: 48 },
 ];
 
 const features = [
@@ -54,7 +54,7 @@ const faqs = [
 const stateGradients: Record<string, string> = {
     'Pennsylvania': 'from-blue-600 to-blue-800',
     'New Jersey': 'from-amber-500 to-orange-600',
-    'Old Maine': 'from-emerald-600 to-teal-700',
+    'Maine': 'from-emerald-600 to-teal-700',
     'Florida': 'from-orange-500 to-red-500',
     'Texas': 'from-red-600 to-red-800',
     'Washington': 'from-green-600 to-green-800',
@@ -281,7 +281,7 @@ export default function HomePage() {
                                 </div>
                                 <div className="w-px h-10 bg-[var(--border)]" />
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-[var(--text-primary)] font-display">{stateOptions.length}</div>
+                                    <div className="text-2xl font-bold text-[var(--text-primary)] font-display">{ALL_REGION_COUNT}+</div>
                                     <div className="text-xs text-[var(--text-tertiary)] mt-0.5">States Available</div>
                                 </div>
                                 <div className="w-px h-10 bg-[var(--border)]" />
@@ -308,7 +308,7 @@ export default function HomePage() {
                                 style={{ transform: 'rotate(-3deg) translateX(10px) translateY(-10px)', zIndex: 2, width: '300px', height: '188px', boxShadow: '0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(6, 182, 212, 0.1)' }}
                             />
                             <IdCardMockup
-                                state="Old Maine"
+                                state="Maine"
                                 className="absolute"
                                 style={{ transform: 'rotate(4deg) translateX(60px) translateY(-50px)', zIndex: 3, width: '260px', height: '164px' }}
                             />
@@ -432,7 +432,7 @@ export default function HomePage() {
                     </div>
                     <div className="text-center mt-10 animate-fade-up delay-6">
                         <Link href="/order" className="btn btn-outline text-sm px-6">
-                            View All {stateOptions.length} States →
+                            View All {ALL_REGION_COUNT} States →
                         </Link>
                     </div>
                 </div>
@@ -473,7 +473,7 @@ export default function HomePage() {
                     </h2>
                     <div className="space-y-0">
                         {[
-                            { step: '1', title: 'Choose Your State', text: 'Browse our gallery and pick from 12+ state designs', icon: '🗺️' },
+                            { step: '1', title: 'Choose Your State', text: 'Browse our gallery and pick from 50+ state designs', icon: '🗺️' },
                             { step: '2', title: 'Submit Your Details', text: 'Upload a photo and enter your info securely', icon: '📸' },
                             { step: '3', title: 'Pay Securely', text: 'Choose BTC, Venmo, or CashApp — fully encrypted', icon: '🔐' },
                             { step: '4', title: 'Receive Discreetly', text: 'Ships in unmarked packaging within ~2 weeks', icon: '📦' },
@@ -541,11 +541,11 @@ export default function HomePage() {
                         <div>
                             <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4 font-display">Available States</h4>
                             <nav className="flex flex-col gap-1.5">
-                                {stateOptions.slice(0, 8).map(state => (
+                                {US_REGION_NAMES.slice(0, 8).map(state => (
                                     <Link key={state} href="/order" className="text-xs text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors">{state}</Link>
                                 ))}
-                                {stateOptions.length > 8 && (
-                                    <Link href="/order" className="text-xs text-[var(--accent)] font-medium">+ {stateOptions.length - 8} more</Link>
+                                {US_REGION_NAMES.length > 8 && (
+                                    <Link href="/order" className="text-xs text-[var(--accent)] font-medium">+ {US_REGION_NAMES.length - 8} more</Link>
                                 )}
                             </nav>
                         </div>

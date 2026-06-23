@@ -3,6 +3,7 @@
 import React from 'react';
 import type { CryptoAssetId } from '@/lib/paymentConstants';
 import type { CryptoMethodPublic } from '@/lib/paymentTypes';
+import { PaymentMethodLogo } from './PaymentMethodLogo';
 
 interface CryptoAssetPickerProps {
   methods: CryptoMethodPublic[];
@@ -39,8 +40,8 @@ export function CryptoAssetPicker({
                 : 'border-[var(--border)] hover:border-[var(--border-hover)] bg-white/[0.02]'
             } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
-            <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/[0.06] border border-[var(--border)] text-sm font-bold text-[var(--text-secondary)] shrink-0">
-              {method.icon}
+            <span className="flex items-center justify-center h-8 min-w-8 px-1 rounded-lg bg-white/[0.06] border border-[var(--border)] shrink-0">
+              <PaymentMethodLogo assetId={method.id} size="md" />
             </span>
             <span className="text-sm font-medium text-[var(--text-primary)]">{method.label}</span>
           </button>

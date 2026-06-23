@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { withAuth } from '../../components/withAuth';
 import { useAuth } from '../../hooks/useAuth';
 import {
-    stateOptions,
     eyeColorOptions,
     hairColorOptions,
     sexOptions,
@@ -13,19 +12,26 @@ import {
     yearOptions,
     R2_MAX_UPLOAD_BYTES,
     STORAGE_UPLOAD_CONTENT_TYPE,
+    defaultProductId,
 } from '../../../lib/constants';
 import {
     calcOrderPricing,
     effectivePerIdPrice,
     resolvePricingMode,
 } from '@/lib/pricing';
+import {
+    getProduct,
+    resolveProductId,
+    syncIdFormProduct,
+} from '@/lib/productCatalog';
+import { IdTypeSelector } from '@/app/components/IdTypeSelector';
 import { prepareImageForUpload } from '../../../lib/imagePrepare';
 import { invalidateViewCacheForKey } from '../../../lib/viewImageCache';
 import { IdFormData } from '../../../lib/types';
 import { setStorageItem } from '../../../lib/storage';
 import { deleteUploadedObject, requestUploadPresign, uploadFileToR2 } from '../../../lib/apiClient';
 import { userFacingUploadError } from '../../../lib/uploadUserMessage';
-import { FormInput, FormSelect, Footer, ImageLightbox, UploadSlot, UploadSlotStatus } from '../../components/ui';
+import { FormInput, FormSelect, Footer, ImageLightbox, UploadSlot, UploadSlotStatus, Spinner } from '../../components/ui';
 import {
     PlusIcon,
     TrashIcon,
@@ -44,8 +50,10 @@ interface IdFormProps {
     formData: IdFormData;
     index: number;
     total: number;
-    unitPrice: number;
+    idCount: number;
+    pricingMode: ReturnType<typeof resolvePricingMode>;
     onChange: (id: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, isFile?: boolean) => void;
+    onProductChange: (id: number, productId: string) => void;
     getUploadSlot: (formId: number, field: 'photo' | 'signature') => { status: UploadSlotStatus; progress: number; error?: string };
     getPreviewUrl: (formId: number, field: 'photo' | 'signature') => string | undefined;
     onOpenPreview: (formId: number, field: 'photo' | 'signature') => void;
@@ -58,8 +66,10 @@ const IdFormCard: React.FC<IdFormProps> = ({
     formData,
     index,
     total,
-    unitPrice,
+    idCount,
+    pricingMode,
     onChange,
+    onProductChange,
     getUploadSlot,
     getPreviewUrl,
     onOpenPreview,
@@ -73,22 +83,39 @@ const IdFormCard: React.FC<IdFormProps> = ({
     const photoDisplay = formData.photoFileName || formData.photo?.name;
     const sigDisplay = formData.signatureFileName || formData.signature?.name;
 
+    const productId = resolveProductId(formData.productId);
+    const product = getProduct(productId);
+    const region = product?.region ?? formData.state;
+    const unitPrice = effectivePerIdPrice(productId, idCount, pricingMode);
+    const listPrice = product?.price;
+
     return (
         <div className="glass overflow-hidden animate-fade-up">
             {/* Form header */}
             <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
                 <div>
                     <h2 className="text-lg font-bold text-white">ID #{index + 1}</h2>
-                    <p className="text-xs text-zinc-500 mt-0.5">of {total} in this order</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">of {total} in this order · {region}</p>
                 </div>
-                <span className="text-price text-lg font-bold">${unitPrice.toFixed(2)}</span>
+                <div className="text-right">
+                    <span className="text-price text-lg font-bold tabular-nums">${unitPrice.toFixed(2)}</span>
+                    {pricingMode === 'reseller_wholesale' && listPrice != null && listPrice !== unitPrice && (
+                        <p className="text-[10px] text-zinc-500 mt-0.5 tabular-nums">List ${listPrice.toFixed(2)}</p>
+                    )}
+                </div>
             </div>
 
             <div className="p-5 sm:p-6 space-y-6">
-                {/* ── State Selection ── */}
+                {/* ── Product / variant ── */}
                 <section>
-                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">State</h3>
-                    <FormSelect name="state" value={formData.state} onChange={handleInputChange} options={stateOptions} />
+                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">ID Type</h3>
+                    <IdTypeSelector
+                        productId={productId}
+                        onProductChange={(nextId) => onProductChange(formData.id, nextId)}
+                        variantPickerName={`form-product-${formData.id}`}
+                        pricingMode={pricingMode}
+                        idCount={idCount}
+                    />
                 </section>
 
                 {/* ── Personal Info ── */}
@@ -196,10 +223,15 @@ const IdFormCard: React.FC<IdFormProps> = ({
 /* ====================================================================
    Main Page
    ==================================================================== */
-function OrderFormPage() {
+function OrderFormPageContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { token, user } = useAuth();
     const pricingMode = resolvePricingMode(user?.isReseller ?? false);
+
+    const initialProductId = resolveProductId(
+        searchParams.get('product') ?? searchParams.get('state') ?? defaultProductId,
+    );
 
     const slotKey = (formId: number, field: 'photo' | 'signature') => `${formId}-${field}`;
 
@@ -211,20 +243,48 @@ function OrderFormPage() {
     const [slotPreviewUrls, setSlotPreviewUrls] = useState<Record<string, string>>({});
     const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
 
-    const createNewIdForm = (): IdFormData => ({
+    const createNewIdForm = (productId = defaultProductId): IdFormData =>
+        syncIdFormProduct({
         id: Date.now(),
-        state: stateOptions[0],
+        productId,
+        state: '',
         dobMonth: '01', dobDay: '01', dobYear: '2000',
         issueMonth: '01', issueDay: '01', issueYear: String(new Date().getFullYear()),
         firstName: '', middleName: '', lastName: '',
         streetAddress: '', city: '', zipCode: '', zipPlus4: '',
         heightFeet: '', heightInches: '', weight: '',
         eyeColor: eyeColorOptions[0], hairColor: hairColorOptions[0], sex: sexOptions[0],
-    });
+    }, productId);
 
-    const [idForms, setIdForms] = useState<IdFormData[]>([createNewIdForm()]);
+    const [idForms, setIdForms] = useState<IdFormData[]>(() => [createNewIdForm(initialProductId)]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fromUrl = searchParams.get('product') ?? searchParams.get('state');
+        if (!fromUrl) return;
+        const productId = resolveProductId(fromUrl);
+        setIdForms((prev) => {
+            if (prev.length !== 1) return prev;
+            const only = prev[0];
+            const empty =
+                !only.firstName &&
+                !only.lastName &&
+                !only.streetAddress &&
+                !only.photoKey;
+            if (!empty || only.productId === productId) return prev;
+            return [syncIdFormProduct({ ...only }, productId)];
+        });
+    }, [searchParams]);
+
+    const handleProductChange = (formId: number, productId: string) => {
+        const resolved = resolveProductId(productId);
+        setIdForms((prev) =>
+            prev.map((form) =>
+                form.id === formId ? syncIdFormProduct(form, resolved) : form,
+            ),
+        );
+    };
 
     const getUploadSlot = (formId: number, field: 'photo' | 'signature') =>
         uploadSlots[slotKey(formId, field)] ?? { status: 'idle' as const, progress: 0 };
@@ -427,15 +487,15 @@ function OrderFormPage() {
     const orderPricing = useMemo(
         () =>
             calcOrderPricing({
-                ids: idForms.map((f) => ({ state: f.state })),
+                ids: idForms.map((f) => ({ productId: f.productId, state: f.state })),
                 shippingIsDelivery: false,
                 pricingMode,
             }),
         [idForms, pricingMode],
     );
 
-    const unitPriceForForm = (state: string) =>
-        effectivePerIdPrice(state, idForms.length, pricingMode);
+    const unitPriceForForm = (productId: string) =>
+        effectivePerIdPrice(resolveProductId(productId), idForms.length, pricingMode);
 
     const activeForm = idForms[activeIndex];
 
@@ -475,7 +535,7 @@ function OrderFormPage() {
                                     <span className="flex-1 text-left truncate">
                                         ID #{i + 1} · {form.state || 'New'}
                                     </span>
-                                    <span className="text-xs text-zinc-500">${unitPriceForForm(form.state).toFixed(0)}</span>
+                                    <span className="text-xs text-zinc-500">${unitPriceForForm(form.productId).toFixed(0)}</span>
                                     {idForms.length > 1 && (
                                         <span
                                             onClick={(e) => { e.stopPropagation(); removeIdForm(i); }}
@@ -601,8 +661,10 @@ function OrderFormPage() {
                                 formData={activeForm}
                                 index={activeIndex}
                                 total={idForms.length}
-                                unitPrice={unitPriceForForm(activeForm.state)}
+                                idCount={idForms.length}
+                                pricingMode={pricingMode}
                                 onChange={handleFormChange}
+                                onProductChange={handleProductChange}
                                 getUploadSlot={getUploadSlot}
                                 getPreviewUrl={getPreviewUrl}
                                 onOpenPreview={onOpenPreview}
@@ -657,4 +719,12 @@ function OrderFormPage() {
     );
 }
 
-export default withAuth(OrderFormPage);
+const OrderFormPageAuthenticated = withAuth(OrderFormPageContent);
+
+export default function OrderFormPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Spinner size="lg" /></div>}>
+            <OrderFormPageAuthenticated />
+        </Suspense>
+    );
+}

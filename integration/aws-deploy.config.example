@@ -1,0 +1,15 @@
+# Copy to integration/aws-deploy.config (optional — gitignored if you add secrets)
+# Used by scripts/deploy-aws-crypto.sh
+
+AWS_REGION=us-east-1
+PAYMENT_WATCHER_FUNCTION_NAME=idPirate-payment-watcher
+PAYMENT_WATCHER_RULE_NAME=idPirate-payment-watcher-every-2-min
+
+# Clone an existing Lambda role, or set explicitly:
+# PAYMENT_WATCHER_ROLE_ARN=arn:aws:iam::123456789012:role/your-lambda-role
+
+# Watcher env (USDC on EVM chains needs Etherscan key)
+# ETHERSCAN_API_KEY=
+# SOLANA_RPC_URL=
+# HELIUS_API_KEY=
+CRYPTO_PAYMENTS_ENABLED=true

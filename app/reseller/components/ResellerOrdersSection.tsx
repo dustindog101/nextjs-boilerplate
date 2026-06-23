@@ -13,6 +13,7 @@ import { sortRows } from '@/lib/tableSort';
 import { useTableSortState } from '@/app/hooks/useTableSort';
 import { SortableTh } from '../../components/ui';
 import { OrderPayModalHost } from '@/app/components/payments/OrderPayModalHost';
+import { PaymentMethodBadge } from '@/app/components/payments/PaymentMethodBadge';
 import { useOrderPayModal } from '@/app/hooks/useOrderPayModal';
 import {
     cryptoAssetFromOrder,
@@ -509,7 +510,7 @@ function ResellerOrdersSectionInner() {
                                                             </div>
                                                             <div>
                                                                 <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Payment Method</p>
-                                                                <p>{o.paymentMethod ?? '—'}</p>
+                                                                <PaymentMethodBadge method={o.paymentMethod} size="xs" showLabel="auto" fallback="—" />
                                                             </div>
                                                             {o.cryptoAsset && (
                                                                 <div>

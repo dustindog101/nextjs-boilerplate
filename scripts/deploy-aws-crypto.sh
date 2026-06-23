@@ -93,6 +93,58 @@ table_exists() {
   aws dynamodb describe-table --table-name "$1" --region "$REGION" >/dev/null 2>&1
 }
 
+gsi_exists() {
+  local table="$1"
+  local gsi="$2"
+  aws dynamodb describe-table --table-name "$table" --region "$REGION" \
+    --query "GlobalSecondaryIndexes[?IndexName=='${gsi}'].IndexName" --output text 2>/dev/null | grep -q "$gsi"
+}
+
+ensure_batches_table() {
+  if ! table_exists idPirate_batches; then
+    echo "  Creating idPirate_batches..."
+    run aws dynamodb create-table \
+      --region "$REGION" \
+      --table-name idPirate_batches \
+      --attribute-definitions \
+        AttributeName=batchId,AttributeType=S \
+        AttributeName=resellerId,AttributeType=S \
+        AttributeName=createdAt,AttributeType=S \
+      --key-schema AttributeName=batchId,KeyType=HASH \
+      --global-secondary-indexes \
+        '[{"IndexName":"ResellerIdIndex","KeySchema":[{"AttributeName":"resellerId","KeyType":"HASH"},{"AttributeName":"createdAt","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}}]' \
+      --billing-mode PAY_PER_REQUEST
+    run aws dynamodb wait table-exists --table-name idPirate_batches --region "$REGION"
+    return
+  fi
+
+  echo "  idPirate_batches — exists"
+  if gsi_exists idPirate_batches ResellerIdIndex; then
+    echo "  idPirate_batches ResellerIdIndex — exists"
+    return
+  fi
+
+  echo "  idPirate_batches — adding missing ResellerIdIndex GSI..."
+  run aws dynamodb update-table \
+    --region "$REGION" \
+    --table-name idPirate_batches \
+    --attribute-definitions \
+      AttributeName=batchId,AttributeType=S \
+      AttributeName=resellerId,AttributeType=S \
+      AttributeName=createdAt,AttributeType=S \
+    --global-secondary-index-updates \
+      '[{"Create":{"IndexName":"ResellerIdIndex","KeySchema":[{"AttributeName":"resellerId","KeyType":"HASH"},{"AttributeName":"createdAt","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}}}]'
+  if ! $DRY_RUN; then
+    echo "  Waiting for ResellerIdIndex to become ACTIVE..."
+    while true; do
+      status="$(aws dynamodb describe-table --table-name idPirate_batches --region "$REGION" \
+        --query "GlobalSecondaryIndexes[?IndexName=='ResellerIdIndex'].IndexStatus | [0]" --output text 2>/dev/null || true)"
+      [[ "$status" == "ACTIVE" ]] && break
+      sleep 3
+    done
+  fi
+}
+
 create_payment_tables() {
   echo "== DynamoDB tables =="
 
@@ -128,23 +180,7 @@ create_payment_tables() {
     run aws dynamodb wait table-exists --table-name idPirate_payment_intents --region "$REGION"
   fi
 
-  if table_exists idPirate_batches; then
-    echo "  idPirate_batches — exists"
-  else
-    echo "  Creating idPirate_batches..."
-    run aws dynamodb create-table \
-      --region "$REGION" \
-      --table-name idPirate_batches \
-      --attribute-definitions \
-        AttributeName=batchId,AttributeType=S \
-        AttributeName=resellerId,AttributeType=S \
-        AttributeName=createdAt,AttributeType=S \
-      --key-schema AttributeName=batchId,KeyType=HASH \
-      --global-secondary-indexes \
-        '[{"IndexName":"ResellerIdIndex","KeySchema":[{"AttributeName":"resellerId","KeyType":"HASH"},{"AttributeName":"createdAt","KeyType":"RANGE"}],"Projection":{"ProjectionType":"ALL"}}]' \
-      --billing-mode PAY_PER_REQUEST
-    run aws dynamodb wait table-exists --table-name idPirate_batches --region "$REGION"
-  fi
+  ensure_batches_table
 }
 
 update_lambda_zip() {

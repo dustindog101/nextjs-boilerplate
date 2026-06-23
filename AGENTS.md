@@ -51,7 +51,8 @@ Python Lambda code lives in `**lambda functions/`** at the repo root (folder nam
 | `idPirateOrderLookup`            | `LOOKUP_LAMBDA_URL` — track, discounts, crypto payment intents, `list_user_orders`, `validate_reseller`, etc.                                                    |
 | `admin_handler`                  | `ADMIN_LAMBDA_URL` — admin CRUD; Payments hub APIs (`get_payment_activity_summary`, `list_payment_intents`); keep `**admin_update_order`** for the admin UI   |
 | `payment_watcher`                | EventBridge `rate(2 minutes)` — polls blockchains, marks orders paid (not a Function URL)                                                                      |
-| `shared/order_pricing.py`          | Server-side order totals — zip with **Create Order only** (no crypto dependency)                                                                               |
+| `shared/product_catalog.py`        | Product IDs, per-variant list prices — **keep in sync with `lib/productCatalog.ts`**                                                                         |
+| `shared/order_pricing.py`          | Server-side order totals (volume/wholesale tiers) — zip with **Create Order** and other handlers that bundle `shared/`                                         |
 | `payment_shared/`                  | Crypto gateway — `admin_activity.py` (Activity ledger APIs), handlers, settings; zip with LOOKUP, admin_handler, payment_watcher when enabling payments        |
 | `reseller_handler`               | `RESELLER_LAMBDA_URL` — reseller-only: list/get/update orders; **PyJWT** via layer or zip (`scripts/build-pyjwt-lambda-layer.sh` for 3.13+3.14 — see SETUP.md) |
 | `idPirate_auth`                  | `AUTH_LAMBDA_URL`                                                                                                                                              |
@@ -64,7 +65,9 @@ Python Lambda code lives in `**lambda functions/`** at the repo root (folder nam
 | ---------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------- |
 | `apiClient.ts`                                       | ~500  | All API functions — `apiFetch`, `fetchResellerOrders`, `resellerUpdateOrder`, etc.             |
 | `types.ts`                                           | 86    | `JwtPayload`, `IdFormData`, `OrderDetails`, `TrackingStage`, `PaymentMethod`                   |
-| `constants.ts`                                       | 86    | `stateOptions`, `statePrices`, `defaultIdPrice`, `handlingFee`, `shippingFee`, dropdown arrays |
+| `productCatalog.ts`                                  | —     | ID products (`productId`), variants (standard/premium/CDL/intl), list prices — **sync with `shared/product_catalog.py`** |
+| `constants.ts`                                       | 86    | Dropdown options, `handlingFee`, `shippingFee`; re-exports legacy `stateOptions` / `statePrices` from catalog              |
+| `pricing.ts`                                         | —     | Volume discounts, wholesale tiers — **sync tier logic with `shared/order_pricing.py`**                                     |
 | `paymentConstants.ts` / `paymentTypes.ts`            | —     | Crypto asset metadata, payment intent types                                                    |
 | `lib/payments/`                                      | —     | Crypto client API — `api.ts`, `rails.ts`, `originLabel.ts`, `intentStatus.ts`; import from `@/lib/payments` |
 | `storage.ts`                                         | 46    | SSR-safe localStorage: `getStorageItem`, `setStorageItem`, `removeStorageItem`                 |
@@ -291,21 +294,27 @@ const result = await someApiFunction(token, payload);
 
 ---
 
-## Pricing (from `lib/constants.ts`)
+## Pricing and product catalog
+
+**Product list prices** (per `productId`, e.g. `CA:DMV_POLY`, `PA:STANDARD`) live in:
+
+- **Frontend:** `lib/productCatalog.ts`
+- **Lambda:** `lambda functions/shared/product_catalog.py`
+
+> When adding a state, variant (premium/CDL/international), or changing a list price, **update both files** before deploying. Orders store `productId` on each ID line; the server resolves price from the Python catalog.
+
+**Fees and volume tiers:**
 
 ```ts
-statePrices = {
-  'New Jersey': 100, 'Florida': 100, 'Texas': 100,
-  'Pennsylvania': 90, 'Illinois': 90, 'Connecticut': 90, 'Arizona': 90,
-  'Old Maine': 85, 'Washington': 85, 'Oregon': 85,
-  'South Carolina': 85, 'Missouri': 85,
-}
-defaultIdPrice = 95
-handlingFee    = 5
-shippingFee    = 15
+// lib/constants.ts
+handlingFee = 5
+shippingFee = 15
+defaultIdPrice = 95  // fallback only; prefer productCatalog
+
+// lib/pricing.ts — retail volume −$10 (2–3 IDs) / −$20 (4+); reseller wholesale tiers
 ```
 
-> Always import from `lib/constants.ts`. Do not hardcode prices in components.
+> Use `getProductListPrice(productId)` / `lib/pricing.ts` in the app. Do not hardcode prices in components.
 
 ---
 
@@ -413,6 +422,7 @@ This is a **product constraint**, not a ban on ever paying for scale—when grow
 ## Deploy and backend checklist (human or agent)
 
 - **Lambda source (local only):** Handlers live in `lambda functions/` — **gitignored, not on GitHub**. See [integration/LAMBDA_WORKFLOW.md](./integration/LAMBDA_WORKFLOW.md) for edit → build → deploy steps and optional nested `git init` inside that folder.
+- **Product catalog sync:** `lib/productCatalog.ts` and `lambda functions/shared/product_catalog.py` must be updated together when changing products or list prices; then rebuild zips and redeploy Lambdas.
 - **Vercel:** Set all Lambda Function URLs + `**RESELLER_LAMBDA_URL`** after deploying `lambda functions/reseller_handler` (same `**JWT_SECRET`** and DynamoDB access as other handlers).
 - **Admin vs reseller:** Admin order tools use `**POST /api/admin`**; reseller dashboard uses `**/api/reseller/*`** only.
 - **Crypto payments:** Create DynamoDB tables `idPirate_settings`, `idPirate_payment_intents` (see `integration/dynamodb/PAYMENT_GATEWAY.md`). Deploy `payment_watcher` with EventBridge `rate(2 minutes)`. Zip `payment_shared/` with LOOKUP, Create Order, admin_handler, and payment_watcher.

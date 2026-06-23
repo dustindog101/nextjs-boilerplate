@@ -7,6 +7,7 @@ import {
   isOrderUnpaid,
   normalizePaymentStatus,
 } from '@/lib/payments/orderHelpers';
+import { PaymentMethodBadge } from '../payments/PaymentMethodBadge';
 
 interface OrderPaymentBlockProps {
   order: OrderDetails;
@@ -40,8 +41,9 @@ export function OrderPaymentBlock({
               {normalizePaymentStatus(order.paymentStatus)}
             </span>
             {order.paymentMethod && (
-              <span className="text-sm text-[var(--text-secondary)]">
-                · {order.paymentMethod}
+              <span className="inline-flex items-center">
+                <span className="text-[var(--text-tertiary)] mr-1.5">·</span>
+                <PaymentMethodBadge method={order.paymentMethod} size="sm" showLabel="auto" />
               </span>
             )}
           </div>

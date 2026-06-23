@@ -50,11 +50,13 @@ build_flat_zip create-order \
 build_flat_zip payment-watcher \
   payment_watcher/lambda_function.py lambda_function.py \
   payment_watcher/adapters adapters \
-  payment_shared payment_shared
+  payment_shared payment_shared \
+  shared shared
 
 build_flat_zip reseller \
   reseller_handler/lambda_function.py lambda_function.py \
   reseller_handler/batches.py batches.py \
-  payment_shared payment_shared
+  payment_shared payment_shared \
+  shared shared
 
 echo "Done. Upload zips from $OUT to AWS Lambda (see integration/AWS_DEPLOY.md)."

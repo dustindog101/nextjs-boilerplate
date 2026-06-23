@@ -1,3 +1,4 @@
+import path from 'path';
 import type { NextConfig } from "next";
 
 const securityHeaders = [
@@ -10,6 +11,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Parent dir has a stray package-lock.json; pin Turbopack to this app.
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
+
   // Security headers on all routes
   async headers() {
     return [

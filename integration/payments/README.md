@@ -6,7 +6,7 @@ This feature is **optional**. The main site (orders, checkout with manual paymen
 
 | Layer | Core site | Payment gateway only |
 |-------|-----------|----------------------|
-| **Create Order Lambda** | `shared/order_pricing.py` | — |
+| **Create Order Lambda** | `shared/product_catalog.py`, `shared/order_pricing.py` | — |
 | **LOOKUP Lambda** | track, discount, orders | `payment_routes.py` → `payment_shared/` |
 | **admin Lambda** | users, orders, discounts | `payment_admin.py` → `payment_shared/` |
 | **New Lambda** | — | `payment_watcher/` (EventBridge) |
@@ -35,13 +35,14 @@ import { useCryptoPaymentMethods } from '@/app/hooks/useCryptoPaymentMethods';
 - Change invoice UX: `app/checkout/pay/`, `lib/payments/`, `CryptoPaymentSection.tsx`
 - Change admin addresses: `PaymentGatewaysSection.tsx`, `payment_admin.py`
 - Ops invoice ledger: `PaymentActivitySection.tsx`, `payment_shared/admin_activity.py` (`get_payment_activity_summary`, `list_payment_intents`)
-- Do **not** change `shared/order_pricing.py` unless pricing rules change for all orders
+- Do **not** change `shared/order_pricing.py` or `shared/product_catalog.py` unless pricing rules or product SKUs change for all orders — and update `lib/productCatalog.ts` / `lib/pricing.ts` in the same change
 
 ## Zip layout for AWS
 
 ```
 # Create Order (required)
 ID-Pirate-CreateOrder-Function/lambda_function.py
+shared/product_catalog.py
 shared/order_pricing.py
 shared/__init__.py
 

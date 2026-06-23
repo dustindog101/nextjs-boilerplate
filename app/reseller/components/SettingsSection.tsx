@@ -75,9 +75,10 @@ export const SettingsSection: React.FC = () => {
                 if (!cancelled) {
                     setDefaultPerId(String(data.resellerPricing?.defaultPerId ?? 95));
                 }
-            } catch {
+            } catch (err: unknown) {
                 if (!cancelled) {
-                    setToast({ message: 'Could not load pricing settings.', type: 'error' });
+                    const msg = err instanceof Error ? err.message : 'Could not load pricing settings.';
+                    setToast({ message: msg, type: 'error' });
                 }
             } finally {
                 if (!cancelled) setSettingsLoading(false);

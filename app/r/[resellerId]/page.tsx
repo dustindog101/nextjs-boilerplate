@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
-    stateOptions,
     eyeColorOptions,
     hairColorOptions,
     sexOptions,
@@ -15,6 +14,7 @@ import {
     R2_MAX_UPLOAD_BYTES,
     STORAGE_UPLOAD_CONTENT_TYPE,
 } from '@/lib/constants';
+import { syncIdFormProduct } from '@/lib/productCatalog';
 import { prepareImageForUpload } from '@/lib/imagePrepare';
 import { invalidateViewCacheForKey } from '@/lib/viewImageCache';
 import { IdFormData } from '@/lib/types';
@@ -37,9 +37,12 @@ import {
     reviveIdForm,
     buildUploadSlotsFromForms,
     RESELLER_DRAFT_MAX_AGE_MS,
+    createEmptyIdForm,
 } from '@/lib/resellerPortalStorage';
+import { ProductSelect } from '@/app/components/ProductSelect';
 import { UploadSlot, ImageLightbox, type UploadSlotStatus } from '@/app/components/ui';
 import { CryptoAssetPicker } from '@/app/components/payments/CryptoAssetPicker';
+import { PaymentMethodLogo } from '@/app/components/payments/PaymentMethodLogo';
 import { useCryptoPaymentMethods } from '@/app/hooks/useCryptoPaymentMethods';
 import { createPaymentIntent } from '@/lib/payments';
 import { createPaySession } from '@/lib/payments/paySession';
@@ -53,16 +56,7 @@ import {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Pass explicit `id` so SSR and client hydration match (avoid Date.now() in initial state). */
-const createNewIdForm = (id: number): IdFormData => ({
-    id,
-    state: stateOptions[0],
-    dobMonth: '01', dobDay: '01', dobYear: '2000',
-    issueMonth: '01', issueDay: '01', issueYear: String(new Date().getFullYear()),
-    firstName: '', middleName: '', lastName: '',
-    streetAddress: '', city: '', zipCode: '', zipPlus4: '',
-    heightFeet: '', heightInches: '', weight: '',
-    eyeColor: eyeColorOptions[0], hairColor: hairColorOptions[0], sex: sexOptions[0],
-});
+const createNewIdForm = (id: number) => createEmptyIdForm(id);
 
 // ─── Styles helper (light/dark) ───────────────────────────────────────────────
 
@@ -146,8 +140,14 @@ const IdCard: React.FC<IdCardProps> = ({
     return (
         <div className="space-y-5">
             {/* State */}
-            <SelectField label="State" name="state" value={form.state} onChange={onField}
-                options={stateOptions} inputCls={s.input} labelCls={s.fieldLabel} />
+            <ProductSelect
+                label="ID Type"
+                name="productId"
+                value={form.productId}
+                onChange={onField}
+                className={s.input}
+                labelClassName={`${s.fieldLabel} block mb-1.5`}
+            />
 
             {/* Name */}
             <div>
@@ -596,6 +596,9 @@ export default function ResellerPortalPage() {
     const handleChange = (id: number, e: any) => {
         setIdForms(prev => prev.map(f => {
             if (f.id !== id) return f;
+            if (e.target.name === 'productId') {
+                return syncIdFormProduct(f, e.target.value);
+            }
             return { ...f, [e.target.name]: e.target.value };
         }));
     };
@@ -948,8 +951,9 @@ export default function ResellerPortalPage() {
                                     <button
                                         type="button"
                                         onClick={() => setPaymentChoice('crypto')}
-                                        className={`py-3 text-sm font-medium transition-all ${paymentChoice === 'crypto' ? (dark ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white') : s.subtext}`}
+                                        className={`py-3 text-sm font-medium transition-all flex items-center justify-center gap-2 ${paymentChoice === 'crypto' ? (dark ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white') : s.subtext}`}
                                     >
+                                        <PaymentMethodLogo logoId="crypto" size="xs" />
                                         Crypto
                                     </button>
                                     <button

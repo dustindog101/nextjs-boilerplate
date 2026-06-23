@@ -4,6 +4,7 @@ import React from 'react';
 import type { CryptoAssetId } from '@/lib/paymentConstants';
 import type { CryptoMethodPublic } from '@/lib/paymentTypes';
 import { CRYPTO_PAYMENT_PARENT_ID } from '@/lib/payments';
+import { PaymentMethodLogo } from '@/app/components/payments/PaymentMethodLogo';
 
 interface CryptoPaymentSectionProps {
   methods: CryptoMethodPublic[];
@@ -38,8 +39,8 @@ export function CryptoPaymentSection({
             : 'border-[var(--border)] hover:border-[var(--border-hover)]'
         }`}
       >
-        <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-white/[0.06] border border-[var(--border)] mr-3 text-sm font-bold text-[var(--text-secondary)]">
-          ₿
+        <span className="flex items-center justify-center h-7 min-w-7 px-1 rounded-lg bg-white/[0.06] border border-[var(--border)] mr-3 shrink-0">
+          <PaymentMethodLogo logoId="crypto" size="sm" />
         </span>
         <span className="text-sm font-medium text-[var(--text-primary)]">Crypto</span>
       </button>
@@ -56,8 +57,8 @@ export function CryptoPaymentSection({
                   : 'border-[var(--border)] hover:border-[var(--border-hover)]'
               }`}
             >
-              <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-white/[0.06] border border-[var(--border)] mr-3 text-sm font-bold text-[var(--text-secondary)]">
-                {method.icon}
+              <span className="flex items-center justify-center h-7 min-w-7 px-1 rounded-lg bg-white/[0.06] border border-[var(--border)] mr-3 shrink-0">
+                <PaymentMethodLogo assetId={method.id} size="sm" />
               </span>
               <span className="text-sm font-medium text-[var(--text-primary)]">{method.label}</span>
             </button>

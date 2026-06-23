@@ -8,9 +8,10 @@ import {
     hairColorOptions,
     monthOptions,
     sexOptions,
-    stateOptions,
     yearOptions,
+    defaultProductId,
 } from '@/lib/constants';
+import { resolveProductId, syncIdFormProduct } from '@/lib/productCatalog';
 import { getStorageItem, removeStorageItem, setStorageItem } from '@/lib/storage';
 import type { IdFormData } from '@/lib/types';
 
@@ -78,33 +79,38 @@ function mapLegacyEyeColor(value: string): string {
 }
 
 export function reviveIdForm(raw: SerializableIdForm): IdFormData {
-    return {
-        id: raw.id,
-        state: inList(raw.state, stateOptions, stateOptions[0]),
-        dobMonth: inList(raw.dobMonth, monthOptions, monthOptions[0]),
-        dobDay: inList(raw.dobDay, dayOptions, dayOptions[0]),
-        dobYear: inList(raw.dobYear, yearOptions, yearOptions[0]),
-        issueMonth: inList(raw.issueMonth, monthOptions, monthOptions[0]),
-        issueDay: inList(raw.issueDay, dayOptions, dayOptions[0]),
-        issueYear: inList(raw.issueYear, yearOptions, yearOptions[0]),
-        firstName: raw.firstName ?? '',
-        middleName: raw.middleName ?? '',
-        lastName: raw.lastName ?? '',
-        streetAddress: raw.streetAddress ?? '',
-        city: raw.city ?? '',
-        zipCode: raw.zipCode ?? '',
-        zipPlus4: raw.zipPlus4 ?? '',
-        heightFeet: raw.heightFeet ?? '',
-        heightInches: raw.heightInches ?? '',
-        weight: raw.weight ?? '',
-        eyeColor: mapLegacyEyeColor(raw.eyeColor ?? ''),
-        hairColor: mapLegacyHairColor(raw.hairColor ?? ''),
-        sex: inList(raw.sex, sexOptions, sexOptions[0]),
-        photoKey: raw.photoKey,
-        signatureKey: raw.signatureKey,
-        photoFileName: raw.photoFileName,
-        signatureFileName: raw.signatureFileName,
-    };
+    const productId = resolveProductId(raw.productId ?? raw.state);
+    return syncIdFormProduct(
+        {
+            id: raw.id,
+            productId,
+            state: raw.state ?? '',
+            dobMonth: inList(raw.dobMonth, monthOptions, monthOptions[0]),
+            dobDay: inList(raw.dobDay, dayOptions, dayOptions[0]),
+            dobYear: inList(raw.dobYear, yearOptions, yearOptions[0]),
+            issueMonth: inList(raw.issueMonth, monthOptions, monthOptions[0]),
+            issueDay: inList(raw.issueDay, dayOptions, dayOptions[0]),
+            issueYear: inList(raw.issueYear, yearOptions, yearOptions[0]),
+            firstName: raw.firstName ?? '',
+            middleName: raw.middleName ?? '',
+            lastName: raw.lastName ?? '',
+            streetAddress: raw.streetAddress ?? '',
+            city: raw.city ?? '',
+            zipCode: raw.zipCode ?? '',
+            zipPlus4: raw.zipPlus4 ?? '',
+            heightFeet: raw.heightFeet ?? '',
+            heightInches: raw.heightInches ?? '',
+            weight: raw.weight ?? '',
+            eyeColor: mapLegacyEyeColor(raw.eyeColor ?? ''),
+            hairColor: mapLegacyHairColor(raw.hairColor ?? ''),
+            sex: inList(raw.sex, sexOptions, sexOptions[0]),
+            photoKey: raw.photoKey,
+            signatureKey: raw.signatureKey,
+            photoFileName: raw.photoFileName,
+            signatureFileName: raw.signatureFileName,
+        },
+        productId,
+    );
 }
 
 export function serializeIdForms(forms: IdFormData[]): SerializableIdForm[] {
@@ -142,7 +148,7 @@ export function clearResellerDraft(resellerId: string): void {
 
 /** After restoring draft, mark upload slots as done when R2 keys exist (no blob preview until re-upload). */
 export function buildUploadSlotsFromForms(
-    forms: IdFormData[]
+    forms: IdFormData[],
 ): Record<string, { status: 'done'; progress: number }> {
     const out: Record<string, { status: 'done'; progress: number }> = {};
     for (const f of forms) {
@@ -154,4 +160,34 @@ export function buildUploadSlotsFromForms(
         }
     }
     return out;
+}
+
+export function createEmptyIdForm(id: number): IdFormData {
+    return syncIdFormProduct(
+        {
+            id,
+            productId: defaultProductId,
+            state: '',
+            dobMonth: monthOptions[0],
+            dobDay: dayOptions[0],
+            dobYear: yearOptions[0],
+            issueMonth: monthOptions[0],
+            issueDay: dayOptions[0],
+            issueYear: String(new Date().getFullYear()),
+            firstName: '',
+            middleName: '',
+            lastName: '',
+            streetAddress: '',
+            city: '',
+            zipCode: '',
+            zipPlus4: '',
+            heightFeet: '',
+            heightInches: '',
+            weight: '',
+            eyeColor: eyeColorOptions[0],
+            hairColor: hairColorOptions[0],
+            sex: sexOptions[0],
+        },
+        defaultProductId,
+    );
 }

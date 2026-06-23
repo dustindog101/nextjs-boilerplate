@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getStorageItem, removeStorageItem } from '../../lib/storage';
 import { submitOrder, validateDiscount, DiscountValidation } from '../../lib/apiClient';
 import { shippingFee as SHIPPING_BASE } from '../../lib/constants';
+import { reviveIdForm } from '@/lib/resellerPortalStorage';
 import {
     calcOrderPricing,
     effectivePerIdPrice,
@@ -21,6 +22,7 @@ import type { CryptoAssetId } from '@/lib/paymentConstants';
 import { IdFormData } from '../../lib/types';
 import { useCryptoPaymentMethods } from '../hooks/useCryptoPaymentMethods';
 import { CryptoPaymentSection, CRYPTO_PAYMENT_PARENT_ID } from './components/CryptoPaymentSection';
+import { PaymentMethodLogo } from '../components/payments/PaymentMethodLogo';
 import { EditIcon } from '../components/icons';
 import { Footer } from '../components/ui';
 import { Spinner } from '../components/ui/Spinner';
@@ -59,7 +61,10 @@ function CheckoutPage() {
     const orderPricing = useMemo(
         () =>
             calcOrderPricing({
-                ids: orderItems.map((item) => ({ state: item.state })),
+                ids: orderItems.map((item) => ({
+                    productId: item.productId,
+                    state: item.state,
+                })),
                 shippingIsDelivery: deliveryMethod === 'shipping',
                 pricingMode,
                 discountCodeAmount: discountResult?.discountAmount ?? 0,
@@ -75,7 +80,8 @@ function CheckoutPage() {
         const storedForms = getStorageItem('idPirateOrderForms');
         if (storedForms) {
             try {
-                setOrderItems(JSON.parse(storedForms));
+                const parsed = JSON.parse(storedForms) as IdFormData[];
+                setOrderItems(parsed.map((item) => reviveIdForm(item)));
             } catch (error) { console.error('Failed to parse order forms:', error); }
         }
     }, []);
@@ -221,7 +227,7 @@ function CheckoutPage() {
                                                 <p className="text-xs text-[var(--text-secondary)]">{item.firstName || 'N/A'} {item.lastName || 'N/A'}</p>
                                             </div>
                                             <p className="text-price font-bold">
-                                                ${effectivePerIdPrice(item.state, orderItems.length, pricingMode).toFixed(2)}
+                                                ${effectivePerIdPrice(item.productId ?? item.state, orderItems.length, pricingMode).toFixed(2)}
                                             </p>
                                         </div>
                                     ))}
@@ -434,7 +440,9 @@ function CheckoutPage() {
                                                 : 'border-[var(--border)] hover:border-[var(--border-hover)]'
                                                 }`}
                                         >
-                                            <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-white/[0.06] border border-[var(--border)] mr-3 text-sm font-bold text-[var(--text-secondary)]">{method.icon}</span>
+                                            <span className="flex items-center justify-center h-7 min-w-7 px-1 rounded-lg bg-white/[0.06] border border-[var(--border)] mr-3 shrink-0">
+                                                <PaymentMethodLogo manualMethod={method.name} size="sm" />
+                                            </span>
                                             <span className="text-sm font-medium text-[var(--text-primary)]">{method.name}</span>
                                         </button>
                                     ))}

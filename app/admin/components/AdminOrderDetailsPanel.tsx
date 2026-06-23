@@ -2,6 +2,7 @@
 
 import React, { useCallback } from 'react';
 import { OrderR2ImageStrip } from '../../components/order/OrderR2ImageStrip';
+import { PaymentMethodBadge } from '@/app/components/payments/PaymentMethodBadge';
 import { adminPresignGetUrl } from '@/lib/apiClient';
 import { effectivePerIdPrice } from '@/lib/pricing';
 
@@ -113,7 +114,14 @@ export function AdminOrderDetailsPanel({ order }: AdminOrderDetailsPanelProps) {
         />
         <DetailField label="Fulfillment status" value={String(order.status ?? 'pending')} />
         <DetailField label="Payment status" value={String(order.paymentStatus ?? 'Unpaid')} />
-        <DetailField label="Payment method" value={String(order.paymentMethod ?? '')} />
+        <div>
+          <span className="text-label block mb-0.5">Payment method</span>
+          {order.paymentMethod ? (
+            <PaymentMethodBadge method={String(order.paymentMethod)} size="xs" showLabel="auto" />
+          ) : (
+            <p className="text-sm" style={{ color: 'var(--text-primary)' }}>—</p>
+          )}
+        </div>
         <DetailField label="Shipping" value={String(order.shipping ?? '')} />
         {order.discountCode ? (
           <DetailField label="Discount code" value={String(order.discountCode)} />

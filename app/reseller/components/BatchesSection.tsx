@@ -11,6 +11,7 @@ import {
 import { wholesaleFromOrder } from '@/lib/resellerMetrics';
 import { useResellerData } from '../ResellerDataContext';
 import { Notification } from '../../components/ui/Notification';
+import { PaymentMethodBadge } from '@/app/components/payments/PaymentMethodBadge';
 
 export const BatchesSection: React.FC = () => {
     const { refreshOrders } = useResellerData();
@@ -220,8 +221,10 @@ export const BatchesSection: React.FC = () => {
                                     {(detail.orders ?? []).map((o) => {
                                         const order = o as { orderId?: string; paymentMethod?: string };
                                         return (
-                                            <li key={order.orderId} className="font-mono text-zinc-400 text-xs">
-                                                {order.orderId?.slice(0, 8)}… · {order.paymentMethod ?? '—'}
+                                            <li key={order.orderId} className="font-mono text-zinc-400 text-xs flex items-center gap-1.5 flex-wrap">
+                                                <span>{order.orderId?.slice(0, 8)}…</span>
+                                                <span>·</span>
+                                                <PaymentMethodBadge method={order.paymentMethod} size="xs" showLabel="auto" fallback="—" />
                                             </li>
                                         );
                                     })}

@@ -8,7 +8,11 @@ Python handlers live in **`lambda functions/`** at the repo root. This folder is
 2. **Build zips:** `./scripts/build-payment-lambda-zips.sh`
 3. **Deploy to AWS:** `bash scripts/deploy-aws-crypto.sh --lambdas-only`  
    Requires AWS credentials and `.env.local` with `LOOKUP_LAMBDA_URL`, `ORDER_LAMBDA_URL`, etc.
-4. **Keep pricing in sync:** `lib/pricing.ts` (frontend) and `lambda functions/shared/order_pricing.py` (Create Order).
+4. **Keep product catalog + pricing in sync** — update **both** files together when adding states, variants, or prices:
+   - `lib/productCatalog.ts` (frontend catalog, gallery, checkout)
+   - `lambda functions/shared/product_catalog.py` (server-side list prices)
+   - Volume/wholesale tier math: `lib/pricing.ts` ↔ `lambda functions/shared/order_pricing.py` (and `payment_shared/pricing.py` for crypto repricing)
+   - After edits: `./scripts/build-payment-lambda-zips.sh` then `bash scripts/deploy-aws-crypto.sh --lambdas-only`
 
 ## Optional local Git history
 

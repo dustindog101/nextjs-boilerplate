@@ -63,7 +63,8 @@ Lambda URLs are **never exposed to the client**. All sensitive keys live in serv
 | ------------------------------ | ------------------------------------------------------------- |
 | `app/globals.css`              | Design tokens, utilities, animations — **read this first**    |
 | `lib/apiClient.ts`             | **Only** place API calls should originate from                |
-| `lib/constants.ts`             | Pricing, state list, dropdown options                         |
+| `lib/constants.ts`             | Fees, dropdown options; catalog-derived state helpers          |
+| `lib/productCatalog.ts`        | Product IDs, variants, list prices (**sync with Lambda**)      |
 | `lib/types.ts`                 | Shared TypeScript interfaces                                  |
 | `lib/storage.ts`               | SSR-safe localStorage wrappers                                |
 | `app/components/ui/`           | Reusable "Bold Minimal" UI components                         |
@@ -159,18 +160,20 @@ A strict dark glassmorphic language. **Every page must follow these rules.**
 
 ## 💰 Pricing
 
-Defined in `lib/constants.ts` (single source of truth):
+**Product catalog** (states, premium/CDL/international variants, per-`productId` list prices):
 
+| Location | File |
+| -------- | ---- |
+| Frontend | `lib/productCatalog.ts` |
+| Lambda   | `lambda functions/shared/product_catalog.py` |
 
-| State                                                   | Price |
-| ------------------------------------------------------- | ----- |
-| New Jersey, Florida, Texas                              | $100  |
-| Pennsylvania, Illinois, Connecticut, Arizona            | $90   |
-| Old Maine, Washington, Oregon, South Carolina, Missouri | $85   |
-| Default (unlisted)                                      | $95   |
+> **Keep both files in sync** when adding products or changing prices, then `./scripts/build-payment-lambda-zips.sh` and `bash scripts/deploy-aws-crypto.sh --lambdas-only`.
 
+**Fees** (`lib/constants.ts`): **$5 handling** + **$15 shipping** per order.
 
-Plus: **$5 handling** + **$15 shipping** per order.
+**Volume discounts** (`lib/pricing.ts`): −$10/ID (2–3 IDs), −$20/ID (4+). Server mirrors in `shared/order_pricing.py`.
+
+Example standard list prices: NJ/FL/TX/CA $100 · PA/IL/CT/AZ $90 · ME/WA/OR/SC/MO $85 · default $95. Premium polycarbonate is typically standard + $25; CDL + $35 (see catalog for exact SKUs).
 
 Payment methods: Bitcoin, Zelle, Apple Pay, Cash App, Venmo.
 
