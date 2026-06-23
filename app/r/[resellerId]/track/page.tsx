@@ -18,6 +18,8 @@ import {
     isOrderUnpaid,
     normalizePaymentStatus,
 } from '@/lib/payments/orderHelpers';
+import { PaymentMethodBadge } from '@/app/components/payments/PaymentMethodBadge';
+import { OrderCustomerNoticeBanner } from '@/app/components/order/OrderCustomerNoticeBanner';
 
 function useStyles(dark: boolean) {
     const bg = dark ? 'bg-[#0f0f13]' : 'bg-slate-50';
@@ -259,6 +261,11 @@ function TrackInner() {
 
                 {result && badge && (
                     <>
+                        {result.customerNotice?.trim() ? (
+                            <div className="mb-4">
+                                <OrderCustomerNoticeBanner message={result.customerNotice} />
+                            </div>
+                        ) : null}
                         <div className={s.card + ' p-5'}>
                             <p className={`${s.subtext} text-xs mb-3 uppercase tracking-wider font-semibold`}>Current Status</p>
                             <div className={`inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl ${badge.bg} ${badge.color} font-semibold text-sm mb-5`}>
@@ -300,7 +307,11 @@ function TrackInner() {
                                 icon={<CreditCard size={14} />}
                             />
                             {result.paymentMethod && (
-                                <Row dark={dark} label="Payment method" value={result.paymentMethod} />
+                                <Row
+                                    dark={dark}
+                                    label="Payment method"
+                                    value={<PaymentMethodBadge method={result.paymentMethod} size="sm" showLabel="auto" />}
+                                />
                             )}
                             {result.createdAt && (
                                 <Row

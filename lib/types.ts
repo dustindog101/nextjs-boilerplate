@@ -15,6 +15,9 @@ export interface JwtPayload {
 // --- ID Form Data ---
 export interface IdFormData {
     id: number;
+    /** Catalog product id, e.g. `PA:STANDARD` or `CA:DMV_POLY` */
+    productId: string;
+    /** Human-readable label for admin / legacy views — derived from productId */
     state: string;
     dobMonth: string;
     dobDay: string;
@@ -71,6 +74,8 @@ export interface OrderDetails {
     paymentMethod: string;
     paymentStatus: 'Paid' | 'Unpaid';
     notes?: string;
+    /** Admin message shown to customers on track / order pages */
+    customerNotice?: string;
     price: OrderPriceFields;
     ids: IdFormData[];
     numberOfIds?: number;

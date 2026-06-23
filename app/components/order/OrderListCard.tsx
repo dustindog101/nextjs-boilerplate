@@ -12,6 +12,8 @@ import {
   showPayButton,
   showPaymentAction,
 } from '@/lib/payments/orderHelpers';
+import { PaymentMethodBadge } from '../payments/PaymentMethodBadge';
+import { OrderCustomerNoticeBanner } from './OrderCustomerNoticeBanner';
 
 const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
   pending: { label: 'Order Created', color: 'text-amber-400', dot: 'bg-amber-500' },
@@ -32,14 +34,20 @@ export interface OrderListCardProps {
   onPay: (orderId: string, asset: ReturnType<typeof cryptoAssetFromOrder>) => void;
 }
 
-function paymentSubtitle(order: OrderDetails): string | null {
+function paymentSubtitle(order: OrderDetails): React.ReactNode | null {
   const paid = normalizePaymentStatus(order.paymentStatus) === 'Paid';
-  if (paid) return order.paymentMethod || null;
-  if (isCryptoOrder(order)) {
-    const method = order.paymentMethod?.replace(/^Crypto:\s*/i, '');
-    return method ? `Crypto · ${method}` : 'Crypto · unpaid';
+  if (paid && order.paymentMethod) {
+    return <PaymentMethodBadge method={order.paymentMethod} size="xs" showLabel="auto" />;
   }
-  if (order.paymentMethod) return order.paymentMethod;
+  if (isCryptoOrder(order)) {
+    if (order.paymentMethod) {
+      return <PaymentMethodBadge method={order.paymentMethod} size="xs" showLabel="auto" />;
+    }
+    return 'Crypto · unpaid';
+  }
+  if (order.paymentMethod) {
+    return <PaymentMethodBadge method={order.paymentMethod} size="xs" showLabel="auto" />;
+  }
   return 'Payment pending';
 }
 
@@ -52,6 +60,7 @@ export function OrderListCard({ order, index = 0, viewHref, onPay }: OrderListCa
   const showPayment = showPaymentAction(order);
   const subtitle = paymentSubtitle(order);
   const paymentViewHref = `${viewHref}${viewHref.includes('?') ? '&' : '?'}pay=1`;
+  const customerNotice = order.customerNotice?.trim();
 
   return (
     <div
@@ -82,6 +91,12 @@ export function OrderListCard({ order, index = 0, viewHref, onPay }: OrderListCa
             </>
           )}
         </div>
+
+        {customerNotice ? (
+          <div className="mb-3">
+            <OrderCustomerNoticeBanner message={customerNotice} variant="compact" />
+          </div>
+        ) : null}
 
         <div className="space-y-1.5 text-sm text-[var(--text-secondary)]">
           <p className="flex items-center gap-2">

@@ -17,7 +17,6 @@ import {
   isOrderUnpaid,
 } from '@/lib/payments/orderHelpers';
 import {
-  stateOptions,
   eyeColorOptions,
   hairColorOptions,
   sexOptions,
@@ -25,6 +24,9 @@ import {
   dayOptions,
   yearOptions
 } from '../../../lib/constants';
+import { resolveProductId, syncIdFormProduct } from '@/lib/productCatalog';
+import { ProductSelect } from '@/app/components/ProductSelect';
+import { OrderCustomerNoticeBanner } from '../../components/order/OrderCustomerNoticeBanner';
 
 function OrderViewContent() {
   const router = useRouter();
@@ -114,6 +116,12 @@ function OrderViewContent() {
           <BackArrowIcon className="h-4 w-4" /> {backLabel}
         </Link>
 
+        {orderData.customerNotice?.trim() ? (
+          <div className="mb-6">
+            <OrderCustomerNoticeBanner message={orderData.customerNotice} />
+          </div>
+        ) : null}
+
         {/* Summary Card */}
         <OrderSummaryCard
           order={orderData}
@@ -195,7 +203,23 @@ function OrderViewContent() {
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="lg:col-span-1">
-                    <FormSelect label="State" name="state" value={idForm.state} onChange={(e) => isEditing && updateIdField(index, 'state', e.target.value)} options={stateOptions} disabled={!isEditing} />
+                    <label className="text-label mb-1 block">ID Type</label>
+                    <ProductSelect
+                      name="productId"
+                      value={resolveProductId(idForm.productId ?? idForm.state)}
+                      onChange={(e) => {
+                        if (!isEditing) return;
+                        const productId = resolveProductId(e.target.value);
+                        const synced = syncIdFormProduct(
+                          { ...idForm, productId: idForm.productId ?? '', state: idForm.state },
+                          productId,
+                        );
+                        updateIdField(index, 'productId', synced.productId);
+                        updateIdField(index, 'state', synced.state);
+                      }}
+                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500/60 focus:outline-none disabled:opacity-50"
+                      disabled={!isEditing}
+                    />
                   </div>
                   <FormInput label="First Name" name="firstName" value={idForm.firstName} onChange={(e) => isEditing && updateIdField(index, 'firstName', e.target.value)} disabled={!isEditing} />
                   <FormInput label="Last Name" name="lastName" value={idForm.lastName} onChange={(e) => isEditing && updateIdField(index, 'lastName', e.target.value)} disabled={!isEditing} />

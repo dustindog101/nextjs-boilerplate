@@ -20,18 +20,8 @@ import {
   isOrderUnpaid,
   normalizePaymentStatus,
 } from '@/lib/payments/orderHelpers';
-
-const getPaymentMethodIcon = (method: string) => {
-  if (method.toLowerCase().startsWith('crypto')) return '₿';
-  switch (method.toLowerCase()) {
-    case 'bitcoin': return '₿';
-    case 'zelle': return 'Z';
-    case 'apple pay': return '';
-    case 'cash app': return '$';
-    case 'venmo': return 'V';
-    default: return '';
-  }
-};
+import { PaymentMethodBadge } from '../components/payments/PaymentMethodBadge';
+import { OrderCustomerNoticeBanner } from '../components/order/OrderCustomerNoticeBanner';
 
 function TrackPageContent() {
   const searchParams = useSearchParams();
@@ -159,7 +149,11 @@ function TrackPageContent() {
         )}
 
         {orderData && !isLoading && !displayError && (
-          <div className="mt-8 glass p-6 sm:p-8 animate-fade-up w-full max-w-lg md:max-w-2xl">
+          <div className="mt-8 w-full max-w-lg md:max-w-2xl space-y-4">
+            {orderData.customerNotice?.trim() ? (
+              <OrderCustomerNoticeBanner message={orderData.customerNotice} />
+            ) : null}
+          <div className="glass p-6 sm:p-8 animate-fade-up">
             <h2 className="text-xl font-bold text-[var(--text-primary)] mb-5">Order Details</h2>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
@@ -193,10 +187,11 @@ function TrackPageContent() {
                     {paymentStatus ?? 'N/A'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                  <span className="text-lg text-[var(--accent)]">{getPaymentMethodIcon(orderData.paymentMethod || '')}</span>
-                  <span className="text-sm font-medium text-[var(--text-primary)]">{orderData.paymentMethod || 'N/A'}</span>
-                </div>
+                <PaymentMethodBadge
+                  method={orderData.paymentMethod}
+                  size="md"
+                  showLabel="auto"
+                />
               </div>
               {canShowCryptoPay && (
                 <button
@@ -259,6 +254,7 @@ function TrackPageContent() {
                 );
               })}
             </div>
+          </div>
           </div>
         )}
       </div>

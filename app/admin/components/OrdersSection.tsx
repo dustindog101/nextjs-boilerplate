@@ -9,6 +9,9 @@ import {
 } from './AdminOrderPaymentPanel';
 import { AdminOrderDetailsPanel } from './AdminOrderDetailsPanel';
 import { Search, X, ChevronDown, ChevronUp, Package, CreditCard, FileText } from 'lucide-react';
+import { OrderExportPanel } from './OrderExportPanel';
+import { OrderCustomerNoticePanel } from './OrderCustomerNoticePanel';
+import { PaymentMethodBadge } from '@/app/components/payments/PaymentMethodBadge';
 import { Spinner, SortableTh } from '../../components/ui';
 import { useAdminData } from '../AdminDataContext';
 import { sortRows } from '@/lib/tableSort';
@@ -48,6 +51,7 @@ const EditOrderModal: React.FC<EditModalProps> = ({
     const [tab, setTab] = useState<EditTab>(initialTab);
     const [status, setStatus] = useState(order.status || 'pending');
     const [notes, setNotes] = useState(order.notes || '');
+    const [customerNotice, setCustomerNotice] = useState(order.customerNotice || '');
     const [trackingNumber, setTrackingNumber] = useState(order.trackingNumber || '');
     const [paymentFields, setPaymentFields] = useState<AdminOrderPaymentFields>({
         paymentStatus: order.paymentStatus || 'Unpaid',
@@ -72,6 +76,7 @@ const EditOrderModal: React.FC<EditModalProps> = ({
             const updateData: Record<string, unknown> = {
                 status,
                 notes,
+                customerNotice: customerNotice.trim() || '',
                 trackingNumber,
                 paymentStatus: paymentFields.paymentStatus,
                 paymentMethod: paymentFields.paymentMethod || undefined,
@@ -153,6 +158,13 @@ const EditOrderModal: React.FC<EditModalProps> = ({
                             <label className="text-label mb-1 block">Internal notes</label>
                             <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none" style={fieldStyle} placeholder="Internal notes..." />
                         </div>
+                        <div>
+                            <label className="text-label mb-1 block">Customer message</label>
+                            <textarea rows={3} value={customerNotice} onChange={(e) => setCustomerNotice(e.target.value)} className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none" style={fieldStyle} placeholder="Shown to customers when they track or view this order…" />
+                            <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                                Displays as a banner on track and order pages. Leave blank to hide.
+                            </p>
+                        </div>
 
                         <p className="text-xs pt-2" style={{ color: 'var(--text-tertiary)' }}>
                             Full customer and ID fields are on the <strong className="font-medium" style={{ color: 'var(--text-secondary)' }}>Order details</strong> tab.
@@ -189,6 +201,16 @@ export const OrdersSection = () => {
     const [editingOrder, setEditingOrder] = useState<any | null>(null);
     const [editInitialTab, setEditInitialTab] = useState<EditTab>('details');
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(() => new Set());
+
+    const toggleOrderSelection = (orderId: string, checked: boolean) => {
+        setSelectedOrderIds((prev) => {
+            const next = new Set(prev);
+            if (checked) next.add(orderId);
+            else next.delete(orderId);
+            return next;
+        });
+    };
 
     const openEdit = (order: any, tab: EditTab = 'order') => {
         setEditInitialTab(tab);
@@ -245,6 +267,26 @@ export const OrdersSection = () => {
         );
     }, [filtered, sortKey, direction]);
 
+    const visibleOrderIds = useMemo(
+        () => sorted.map((order: { orderId?: string }) => String(order.orderId ?? '')).filter(Boolean),
+        [sorted]
+    );
+
+    const allVisibleSelected =
+        visibleOrderIds.length > 0 && visibleOrderIds.every((id) => selectedOrderIds.has(id));
+
+    const toggleSelectAllVisible = (checked: boolean) => {
+        setSelectedOrderIds((prev) => {
+            const next = new Set(prev);
+            if (checked) {
+                visibleOrderIds.forEach((id) => next.add(id));
+            } else {
+                visibleOrderIds.forEach((id) => next.delete(id));
+            }
+            return next;
+        });
+    };
+
     const handleSaveOrder = async (orderId: string, data: Record<string, any>) => {
         await adminUpdateOrder(orderId, data);
         await refreshOrders();
@@ -297,11 +339,35 @@ export const OrdersSection = () => {
                 </div>
             </div>
 
+            <div className="mb-4">
+                <OrderExportPanel
+                    orders={sorted}
+                    selectedOrderIds={selectedOrderIds}
+                    onClearSelection={() => setSelectedOrderIds(new Set())}
+                />
+                <OrderCustomerNoticePanel
+                    orders={sorted}
+                    selectedOrderIds={selectedOrderIds}
+                    onClearSelection={() => setSelectedOrderIds(new Set())}
+                    onSaved={refreshOrders}
+                />
+            </div>
+
             <div className="card overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full">
                         <thead>
                             <tr style={{ background: 'var(--bg-secondary)' }}>
+                                <th className="px-4 py-3 w-10" style={{ borderBottom: '1px solid var(--border)' }} scope="col">
+                                    <input
+                                        type="checkbox"
+                                        checked={allVisibleSelected}
+                                        onChange={(e) => toggleSelectAllVisible(e.target.checked)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        aria-label="Select all visible orders"
+                                        className="h-4 w-4 rounded border-white/20 bg-white/[0.04] accent-indigo-500"
+                                    />
+                                </th>
                                 <SortableTh
                                     columnKey="orderId"
                                     sortKey={sortKey}
@@ -371,18 +437,38 @@ export const OrdersSection = () => {
                             {sorted.map((order: any) => {
                                 const cfg = statusConfig[order.status] || statusConfig.pending;
                                 const isExpanded = expandedId === order.orderId;
+                                const isSelected = selectedOrderIds.has(order.orderId);
                                 return (
                                     <React.Fragment key={order.orderId}>
                                         <tr
                                             className="transition-colors cursor-pointer"
-                                            style={{ borderBottom: '1px solid var(--border)' }}
-                                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-                                            onMouseLeave={e => (e.currentTarget.style.background = '')}
+                                            style={{
+                                                borderBottom: '1px solid var(--border)',
+                                                background: isSelected ? 'rgba(99,102,241,0.06)' : undefined,
+                                            }}
+                                            onMouseEnter={e => {
+                                                if (!isSelected) e.currentTarget.style.background = 'var(--bg-hover)';
+                                            }}
+                                            onMouseLeave={e => {
+                                                e.currentTarget.style.background = isSelected ? 'rgba(99,102,241,0.06)' : '';
+                                            }}
                                             onClick={() => setExpandedId(isExpanded ? null : order.orderId)}
                                         >
+                                            <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={(e) => toggleOrderSelection(order.orderId, e.target.checked)}
+                                                    aria-label={`Select order ${order.orderId.substring(0, 8)}`}
+                                                    className="h-4 w-4 rounded border-white/20 bg-white/[0.04] accent-indigo-500"
+                                                />
+                                            </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <p className="text-sm font-medium font-mono" style={{ color: 'var(--text-primary)' }}>#{order.orderId.substring(0, 8)}</p>
                                                 <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{order.userId?.substring(0, 8)}</p>
+                                                {order.customerNotice?.trim() ? (
+                                                    <p className="text-[10px] mt-0.5 font-medium" style={{ color: '#818CF8' }}>Has customer message</p>
+                                                ) : null}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--text-secondary)' }}>{new Date(order.createdAt).toLocaleDateString()}</td>
                                             <td className="px-4 py-3 whitespace-nowrap">
@@ -409,7 +495,7 @@ export const OrdersSection = () => {
                                         </tr>
                                         {isExpanded && (
                                             <tr>
-                                                <td colSpan={7} className="px-4 py-4" style={{ background: 'var(--bg-secondary)' }}>
+                                                <td colSpan={8} className="px-4 py-4" style={{ background: 'var(--bg-secondary)' }}>
                                                     {(() => {
                                                         const firstId = (order.ids || [])[0] as Record<string, unknown> | undefined;
                                                         const customerName = firstId
@@ -441,7 +527,13 @@ export const OrdersSection = () => {
                                                             }>
                                                                 {order.paymentStatus || 'Unpaid'}
                                                             </span>
-                                                            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{order.paymentMethod || '—'}</p>
+                                                            <div className="mt-1">
+                                                                {order.paymentMethod ? (
+                                                                    <PaymentMethodBadge method={order.paymentMethod} size="xs" showLabel="auto" />
+                                                                ) : (
+                                                                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>—</span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         <div>
                                                             <span className="text-label block mb-1">Crypto / invoice</span>
