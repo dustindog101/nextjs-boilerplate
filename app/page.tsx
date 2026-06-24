@@ -510,7 +510,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- FOOTER ---- */}
-            <footer className="border-t border-[var(--border)] bg-[var(--bg-secondary)]">
+            <footer className="border-t border-[var(--border)] bg-[var(--bg-secondary)] pb-20 sm:pb-0">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
                         {/* Brand */}
