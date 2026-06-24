@@ -182,7 +182,7 @@ function StatusBanner() {
                     <span className="font-medium">Accepting orders</span>
                     <span className="hidden sm:inline text-[var(--text-secondary)]">— shipping in 1–3 business days</span>
                 </div>
-                <button onClick={handleDismiss} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors cursor-pointer p-1" aria-label="Dismiss">
+                <button onClick={handleDismiss} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors cursor-pointer p-2 -m-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/[0.06]" aria-label="Dismiss">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -223,7 +223,8 @@ function FloatingSupport() {
             href="https://t.me/idpirate"
             target="_blank"
             rel="noopener noreferrer"
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#0088cc] hover:bg-[#0077b5] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all animate-fade-up delay-8"
+            className="fixed safe-bottom right-4 sm:right-6 z-50 flex items-center gap-2 bg-[#0088cc] hover:bg-[#0077b5] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all animate-fade-up delay-8"
+            aria-label="Chat on Telegram"
         >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" /></svg>
             <span className="text-sm font-semibold hidden sm:inline">Chat on Telegram</span>
@@ -274,18 +275,18 @@ export default function HomePage() {
                             <PaymentIcons className="mt-6 animate-fade-up delay-4" />
 
                             {/* Stat counters */}
-                            <div className="flex items-center gap-6 sm:gap-10 mt-8 animate-fade-up delay-5">
-                                <div className="text-center">
+                            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 sm:flex-nowrap sm:justify-start mt-8 animate-fade-up delay-5">
+                                <div className="text-center min-w-[88px]">
                                     <div className="text-2xl font-bold text-[var(--text-primary)] font-display">2,000+</div>
                                     <div className="text-xs text-[var(--text-tertiary)] mt-0.5">Orders Completed</div>
                                 </div>
-                                <div className="w-px h-10 bg-[var(--border)]" />
-                                <div className="text-center">
+                                <div className="hidden sm:block w-px h-10 bg-[var(--border)]" />
+                                <div className="text-center min-w-[88px]">
                                     <div className="text-2xl font-bold text-[var(--text-primary)] font-display">{ALL_REGION_COUNT}+</div>
                                     <div className="text-xs text-[var(--text-tertiary)] mt-0.5">States Available</div>
                                 </div>
-                                <div className="w-px h-10 bg-[var(--border)]" />
-                                <div className="text-center">
+                                <div className="hidden sm:block w-px h-10 bg-[var(--border)]" />
+                                <div className="text-center min-w-[88px]">
                                     <div className="flex items-center justify-center gap-1">
                                         <span className="text-2xl font-bold text-[var(--text-primary)] font-display">4.9</span>
                                         <svg className="h-5 w-5 text-[var(--gold)]" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
@@ -343,7 +344,7 @@ export default function HomePage() {
             {/* ---- FEATURE STRIP ---- */}
             <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18">
                 <div className="max-w-6xl mx-auto">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                         {features.map((f, i) => (
                             <div key={f.title} className={`card card-hover p-5 sm:p-6 animate-fade-up delay-${i + 1}`}>
                                 <div className="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-[var(--accent-subtle)] mb-3">
@@ -509,7 +510,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- FOOTER ---- */}
-            <footer className="border-t border-[var(--border)] bg-[var(--bg-secondary)]">
+            <footer className="border-t border-[var(--border)] bg-[var(--bg-secondary)] pb-20 sm:pb-0">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
                         {/* Brand */}

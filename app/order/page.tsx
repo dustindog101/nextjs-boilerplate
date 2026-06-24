@@ -126,7 +126,7 @@ function RegionCard({ entry, index }: { entry: RegionGalleryEntry; index: number
                         )}
                         <span className="text-xs text-[var(--text-secondary)] font-medium">/ 1 ID</span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)] pt-1.5 border-t border-[var(--border)]/50 mt-1.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs sm:text-sm text-[var(--text-tertiary)] pt-1.5 border-t border-[var(--border)]/50 mt-1.5">
                         <span>2–3 IDs: <strong className="text-[var(--price)]">${retailEffectiveAtCount(price, 2)}</strong></span>
                         <span>4+ IDs: <strong className="text-[var(--price)]">${retailEffectiveAtCount(price, 4)}</strong></span>
                     </div>
@@ -252,7 +252,7 @@ export default function OrderGalleryPage() {
                 <p className="text-sm text-[var(--text-secondary)] mb-4">
                     Volume discounts apply automatically at checkout — add more IDs to one order to unlock lower per-ID pricing.
                 </p>
-                <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-center text-sm">
                     {[
                         { label: '1 ID', count: 1 },
                         { label: '2–3 IDs', count: 2 },
@@ -279,31 +279,32 @@ export default function OrderGalleryPage() {
                     </svg>
                     <input
                         type="text"
-                        placeholder="Search states or ID types..."
+                        placeholder="Search states..."
                         className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)]"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
 
-                <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto">
+                <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto no-scrollbar flex-nowrap">
                     {[
                         { id: 'all', label: 'All' },
                         { id: 'us', label: 'US States' },
                         { id: 'premium', label: 'Premium' },
                         { id: 'cdl', label: 'CDL' },
-                        { id: 'international', label: 'International' },
+                        { id: 'international', label: 'International', labelSm: 'Intl' },
                         { id: 'popular', label: '★ Popular' },
                     ].map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setFilter(tab.id as FilterTab)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === tab.id
+                            className={`flex-shrink-0 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === tab.id
                                 ? 'bg-[var(--accent-subtle)] text-[var(--accent)] shadow-sm'
                                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                                 }`}
                         >
-                            {tab.label}
+                            <span className="sm:hidden">{tab.labelSm ?? tab.label}</span>
+                            <span className="hidden sm:inline">{tab.label}</span>
                         </button>
                     ))}
                 </div>
