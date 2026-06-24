@@ -258,6 +258,10 @@ export const UniversalHeader = ({
           {/* Panel */}
           <div className="absolute right-0 top-0 h-full w-72 bg-[var(--bg-elevated)] border-l border-[var(--border)] shadow-xl animate-slide-in-right">
             <div className="p-6 pt-20 flex flex-col gap-1">
+              <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                Home
+              </Link>
               <Link href="/order" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
                 <PackageIcon className="h-5 w-5" /> Order
               </Link>
@@ -303,6 +307,14 @@ export const UniversalHeader = ({
                   Login / Register
                 </Link>
               )}
+              <div className="border-t border-[var(--border)] my-3" />
+              <div className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Legal</div>
+              <Link href="/terms" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all text-sm">
+                Terms of Service
+              </Link>
+              <Link href="/privacy" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all text-sm">
+                Privacy Policy
+              </Link>
             </div>
           </div>
         </div>

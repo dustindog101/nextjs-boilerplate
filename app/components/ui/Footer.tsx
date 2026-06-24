@@ -48,7 +48,7 @@ export function Footer({ className = '' }: FooterProps) {
     if (pathname.startsWith('/r/')) return null;
 
     return (
-        <footer className={`border-t border-[var(--border)] bg-[var(--bg-secondary)] ${className}`}>
+        <footer className={`border-t border-[var(--border)] bg-[var(--bg-secondary)] pb-20 sm:pb-0 ${className}`}>
 
             {/* Main footer content */}
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
@@ -67,13 +67,13 @@ export function Footer({ className = '' }: FooterProps) {
                     {/* Column 2: Quick Links */}
                     <div>
                         <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3 font-display">Quick Links</h4>
-                        <nav className="flex flex-col gap-2">
-                            <Link href="/order" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Browse IDs</Link>
-                            <Link href="/track" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Track Order</Link>
-                            <Link href="/news" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">News & Updates</Link>
-                            <Link href="/account" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">My Account</Link>
-                            <Link href="/terms" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Terms of Service</Link>
-                            <Link href="/privacy" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Privacy Policy</Link>
+                        <nav className="flex flex-col gap-1">
+                            <Link href="/order" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors py-2.5 min-h-[44px] flex items-center">Browse IDs</Link>
+                            <Link href="/track" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors py-2.5 min-h-[44px] flex items-center">Track Order</Link>
+                            <Link href="/news" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors py-2.5 min-h-[44px] flex items-center">News & Updates</Link>
+                            <Link href="/account" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors py-2.5 min-h-[44px] flex items-center">My Account</Link>
+                            <Link href="/terms" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors py-2.5 min-h-[44px] flex items-center">Terms of Service</Link>
+                            <Link href="/privacy" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors py-2.5 min-h-[44px] flex items-center">Privacy Policy</Link>
                         </nav>
                     </div>
 
