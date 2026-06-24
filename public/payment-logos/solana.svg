@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Solana">
+  <circle cx="32" cy="32" r="32" fill="#000"/>
   <defs>
     <linearGradient id="sol-grad" x1="100%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#9945FF"/>
       <stop offset="100%" stop-color="#14F195"/>
     </linearGradient>
   </defs>
-  <circle cx="32" cy="32" r="32" fill="#000"/>
   <g fill="url(#sol-grad)">
-    <path d="M22 19 L48 19 L44 26 L18 26 Z"/>
-    <path d="M22 29 L48 29 L44 36 L18 36 Z"/>
-    <path d="M22 39 L48 39 L44 46 L18 46 Z"/>
+    <path d="M19.8 22.2c.3-.3.7-.5 1.2-.5h25.2c.8 0 1.1.9.5 1.5l-4.7 4.7c-.3.3-.7.5-1.2.5H15.6c-.8 0-1.1-.9-.5-1.5l4.7-4.7z"/>
+    <path d="M19.8 41.3c.3-.3.7-.5 1.2-.5h25.2c.8 0 1.1.9.5 1.5l-4.7 4.7c-.3.3-.7.5-1.2.5H15.6c-.8 0-1.1-.9-.5-1.5l4.7-4.7z"/>
+    <path d="M44.2 31.7c-.3-.3-.7-.5-1.2-.5H17.8c-.8 0-1.1.9-.5 1.5l4.7 4.7c.3.3.7.5 1.2.5h25.2c.8 0 1.1-.9.5-1.5l-4.7-4.7z"/>
   </g>
 </svg>
