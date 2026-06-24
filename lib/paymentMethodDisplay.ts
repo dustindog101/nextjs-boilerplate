@@ -41,7 +41,7 @@ export const PAYMENT_LOGO_SRC: Record<Exclude<PaymentLogoId, 'unknown'>, string>
   zelle: '/payment-logos/zelle.svg',
   venmo: '/payment-logos/venmo.svg',
   cash_app: '/payment-logos/cash-app.svg',
-  card: '/payment-logos/crypto.svg',
+  card: '/payment-logos/card.svg',
   crypto: '/payment-logos/crypto.svg',
   btc: '/payment-logos/bitcoin.svg',
   ltc: '/payment-logos/litecoin.svg',

@@ -1,3 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 28" role="img" aria-label="Venmo">
-  <text x="0" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" fill="#008CFF">venmo</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Venmo">
+  <rect width="64" height="64" rx="14" fill="#3D95CE"/>
+  <path fill="#FFF" d="M14 16 L30 48 L34 48 L50 16 L43 16 L32 38 L21 16 Z"/>
 </svg>
