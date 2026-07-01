@@ -7,6 +7,7 @@
 :root {
   /* ---- Backgrounds ---- */
   --bg-primary: #0B0F1A;
+  --bg: var(--bg-primary);
   --bg-secondary: #111827;
   --bg-elevated: #1A2235;
   --bg-hover: #1E293B;

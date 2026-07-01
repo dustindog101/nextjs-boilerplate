@@ -585,13 +585,13 @@ function OrderFormPageContent() {
                 {/* ══════════════════════════════════════════════
                     MOBILE NAV STRIP (< lg)
                    ══════════════════════════════════════════════ */}
-                <div className="lg:hidden sticky top-16 z-30 bg-[var(--bg)]/90 backdrop-blur-xl border-b border-white/[0.06]">
+                <div className="lg:hidden sticky top-16 z-30 bg-[var(--bg-primary)]/90 backdrop-blur-xl border-b border-white/[0.06]">
                     <div className="flex items-center gap-2 px-4 py-3">
                         {/* Prev */}
                         <button
                             onClick={() => setActiveIndex(i => Math.max(0, i - 1))}
                             disabled={activeIndex === 0}
-                            className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer touch-manipulation"
                         >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -606,9 +606,9 @@ function OrderFormPageContent() {
                                     <button
                                         key={form.id}
                                         onClick={() => setActiveIndex(i)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 cursor-pointer
+                                        className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 cursor-pointer touch-manipulation
                                             ${activeIndex === i
-                                                ? 'bg-indigo-500/15 text-white border border-indigo-500/25'
+                                                ? 'bg-[var(--accent-subtle)] text-white border border-[var(--border-accent)]'
                                                 : 'text-zinc-500 hover:text-zinc-300'
                                             }`}
                                     >
@@ -625,7 +625,7 @@ function OrderFormPageContent() {
                         <button
                             onClick={() => setActiveIndex(i => Math.min(idForms.length - 1, i + 1))}
                             disabled={activeIndex === idForms.length - 1}
-                            className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer touch-manipulation"
                         >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -635,7 +635,7 @@ function OrderFormPageContent() {
                         {/* Add */}
                         <button
                             onClick={addIdForm}
-                            className="p-2 rounded-lg text-indigo-400 hover:bg-indigo-500/10 transition-all flex-shrink-0 cursor-pointer"
+                            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition-all flex-shrink-0 cursor-pointer touch-manipulation"
                         >
                             <PlusIcon className="h-4 w-4" />
                         </button>
@@ -646,7 +646,7 @@ function OrderFormPageContent() {
                     MAIN FORM AREA
                    ══════════════════════════════════════════════ */}
                 <main className="flex-1 flex flex-col">
-                    <div className="p-4 sm:p-6 lg:p-8 flex-grow">
+                    <div className="p-4 sm:p-6 lg:p-8 flex-grow pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8">
                         {/* Error banner */}
                         {error && (
                             <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center justify-between animate-fade-up">
@@ -687,14 +687,14 @@ function OrderFormPageContent() {
                         )}
                     </div>
 
-                    <Footer className="w-full" />
+                    <Footer className="w-full hidden lg:block" />
                 </main>
             </div>
 
             {/* ══════════════════════════════════════════════
                 MOBILE BOTTOM BAR
                ══════════════════════════════════════════════ */}
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg)]/90 backdrop-blur-xl border-t border-white/[0.06]">
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-primary)]/90 backdrop-blur-xl border-t border-white/[0.06] pb-[env(safe-area-inset-bottom,0px)]">
                 <div className="flex items-center justify-between px-4 py-3">
                     <div>
                         <span className="text-xs text-zinc-500">{idForms.length} ID{idForms.length !== 1 ? 's' : ''}</span>
@@ -702,7 +702,7 @@ function OrderFormPageContent() {
                     </div>
                     <button
                         onClick={handleProceedToCheckout}
-                        className="btn btn-primary py-2.5 px-6 text-sm font-semibold"
+                        className="btn btn-primary py-2.5 px-6 text-sm font-semibold min-h-[44px] touch-manipulation"
                     >
                         Checkout →
                     </button>
@@ -710,7 +710,7 @@ function OrderFormPageContent() {
             </div>
 
             {/* Bottom spacer so content isn't hidden behind fixed bar on mobile */}
-            <div className="lg:hidden h-16" />
+            <div className="lg:hidden h-[calc(4rem+env(safe-area-inset-bottom,0px))]" />
 
             {lightbox && (
                 <ImageLightbox url={lightbox.url} label={lightbox.label} onClose={() => setLightbox(null)} />

@@ -105,7 +105,7 @@ export const UniversalHeader = ({
 
   return (
     <>
-      <header className="sticky top-0 z-50 overflow-visible bg-[var(--header-bg)] backdrop-blur-xl border-b border-[var(--border)]">
+      <header className="sticky top-0 z-50 overflow-visible bg-[var(--header-bg)] backdrop-blur-xl border-b border-[var(--border)] pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between overflow-visible">
           {/* Left: Logo + Desktop Nav */}
           <div className="flex items-center gap-6">
@@ -228,14 +228,20 @@ export const UniversalHeader = ({
             {/* Mobile: Login + Hamburger */}
             <div className="flex md:hidden items-center gap-2">
               {!isLoading && !user && (
-                <Link href="/account" className="btn btn-primary text-xs py-1.5 px-3">
+                <Link href="/account" className="btn btn-primary text-xs py-2 px-3 min-h-[44px] min-w-[44px] items-center">
                   Login
                 </Link>
               )}
+              {!isLoading && user && (
+                <span className="text-xs text-[var(--text-secondary)] font-medium truncate max-w-[7rem]">
+                  {user.username}
+                </span>
+              )}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer touch-manipulation"
                 aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   {isMobileMenuOpen ? (
@@ -256,32 +262,56 @@ export const UniversalHeader = ({
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
           {/* Panel */}
-          <div className="absolute right-0 top-0 h-full w-72 bg-[var(--bg-elevated)] border-l border-[var(--border)] shadow-xl animate-slide-in-right">
-            <div className="p-6 pt-20 flex flex-col gap-1">
-              <Link href="/order" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
-                <PackageIcon className="h-5 w-5" /> Order
-              </Link>
-              <Link href="/track" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
-                <SearchIcon className="h-5 w-5" /> Track
-              </Link>
-              <Link href="/news" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
-                <NewsIcon className="h-5 w-5" /> News
-              </Link>
+          <div className="absolute right-0 top-0 h-full w-[min(18rem,85vw)] bg-[var(--bg-elevated)] border-l border-[var(--border)] shadow-xl animate-slide-in-right flex flex-col pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+              <span className="text-sm font-semibold text-[var(--text-primary)] font-[var(--font-display)]">Menu</span>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-hover)] transition-all cursor-pointer touch-manipulation"
+                aria-label="Close menu"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 flex flex-col gap-1 overflow-y-auto flex-1">
+              {isOrderFlowPage ? (
+                <Link
+                  href={backButtonHref}
+                  className="flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all touch-manipulation"
+                >
+                  <BackArrowIcon className="h-5 w-5" /> {backButtonText}
+                </Link>
+              ) : (
+                <>
+                  <Link href="/order" className="flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all touch-manipulation">
+                    <PackageIcon className="h-5 w-5" /> Order
+                  </Link>
+                  <Link href="/track" className="flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all touch-manipulation">
+                    <SearchIcon className="h-5 w-5" /> Track
+                  </Link>
+                  <Link href="/news" className="flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all touch-manipulation">
+                    <NewsIcon className="h-5 w-5" /> News
+                  </Link>
+                </>
+              )}
               {user && (
                 <>
-                  <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
+                  <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all touch-manipulation">
                     <UserIcon className="h-5 w-5" /> Dashboard
                   </Link>
-                  <Link href="/orders" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
+                  <Link href="/orders" className="flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all touch-manipulation">
                     <UserIcon className="h-5 w-5" /> My Orders
                   </Link>
                   {user.role === 'admin' && (
-                    <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-all">
+                    <Link href="/admin" className="flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-all touch-manipulation">
                       Admin Panel
                     </Link>
                   )}
                   {(user.isReseller || user.role === 'admin') && (
-                    <Link href="/reseller" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-all">
+                    <Link href="/reseller" className="flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl text-[var(--accent)] hover:text-[var(--accent-hover)] hover:bg-[var(--bg-hover)] transition-all touch-manipulation">
                       Reseller Dashboard
                     </Link>
                   )}
@@ -293,13 +323,13 @@ export const UniversalHeader = ({
                   <div className="px-4 py-2 text-xs text-[var(--text-tertiary)]">Signed in as <span className="text-[var(--text-primary)] font-medium">{user.username}</span></div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-[var(--bg-hover)] transition-all text-left w-full cursor-pointer"
+                    className="flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl text-red-400 hover:text-red-300 hover:bg-[var(--bg-hover)] transition-all text-left w-full cursor-pointer touch-manipulation"
                   >
                     Logout
                   </button>
                 </>
               ) : (
-                <Link href="/account" className="btn btn-primary w-full justify-center mt-2">
+                <Link href="/account" className="btn btn-primary w-full justify-center mt-2 min-h-[44px]">
                   Login / Register
                 </Link>
               )}

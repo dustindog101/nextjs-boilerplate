@@ -54,7 +54,7 @@ export function Footer({ className = '' }: FooterProps) {
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
                     {/* Column 1: Brand */}
-                    <div>
+                    <div className="min-w-0">
                         <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 font-display">
                             <span className="text-[var(--accent)]">ID</span> PIRATE
                         </h3>
@@ -65,8 +65,8 @@ export function Footer({ className = '' }: FooterProps) {
                     </div>
 
                     {/* Column 2: Quick Links */}
-                    <div>
-                        <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3 font-display">Quick Links</h4>
+                    <div className="min-w-0">
+                        <h4 className="text-sm font-semibold text-[var(--text-primary)] tracking-wide mb-3 font-display">Quick Links</h4>
                         <nav className="flex flex-col gap-2">
                             <Link href="/order" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Browse IDs</Link>
                             <Link href="/track" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Track Order</Link>
@@ -78,8 +78,8 @@ export function Footer({ className = '' }: FooterProps) {
                     </div>
 
                     {/* Column 3: Payment & Security */}
-                    <div>
-                        <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3 font-display">We Accept</h4>
+                    <div className="min-w-0">
+                        <h4 className="text-sm font-semibold text-[var(--text-primary)] tracking-wide mb-3 font-display">We Accept</h4>
                         <div className="flex items-center gap-3 mb-4">
                             <BitcoinIcon />
                             <VenmoIcon />
