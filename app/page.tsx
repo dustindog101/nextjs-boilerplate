@@ -42,6 +42,8 @@ const newsTagColors: Record<string, string> = {
     Promo: 'badge-gold',
 };
 
+const STAGGER = ['', 'delay-1', 'delay-2', 'delay-3', 'delay-4', 'delay-5', 'delay-6', 'delay-7', 'delay-8'] as const;
+
 const faqs = [
     { q: 'What security features are included?', a: 'Every ID includes scannable barcodes, microprint, UV & OVI holograms, and passes the bend test. Our IDs are crafted to replicate all security features found on real state-issued IDs.' },
     { q: 'What payment methods do you accept?', a: 'We accept Bitcoin, Venmo, and CashApp. A small processing fee may apply to non-crypto payments.' },
@@ -153,7 +155,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                 </svg>
             </button>
-            <div className={`overflow-hidden transition-all duration-300 ${open ? 'max-h-48 pb-4' : 'max-h-0'}`}>
+            <div className={`overflow-hidden transition-all duration-300 ${open ? 'max-h-96 pb-4' : 'max-h-0'}`}>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{a}</p>
             </div>
         </div>
@@ -223,7 +225,7 @@ function FloatingSupport() {
             href="https://t.me/idpirate"
             target="_blank"
             rel="noopener noreferrer"
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#0088cc] hover:bg-[#0077b5] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all animate-fade-up delay-8"
+            className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom,0px))] right-4 sm:right-6 z-50 flex items-center gap-2 min-h-[44px] bg-[#0088cc] hover:bg-[#0077b5] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all animate-fade-up delay-8 touch-manipulation"
         >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" /></svg>
             <span className="text-sm font-semibold hidden sm:inline">Chat on Telegram</span>
@@ -328,7 +330,7 @@ export default function HomePage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {latestNews.map((item, i) => (
-                            <div key={i} className={`card p-4 flex items-start gap-3 animate-fade-up delay-${i + 1}`}>
+                            <div key={i} className={`card p-4 flex items-start gap-3 animate-fade-up ${STAGGER[i + 1]}`}>
                                 <span className={`badge ${newsTagColors[item.tag] || 'badge-cyan'} text-xs mt-0.5`}>{item.tag}</span>
                                 <div>
                                     <h3 className="text-sm font-semibold text-[var(--text-primary)]">{item.title}</h3>
@@ -341,11 +343,11 @@ export default function HomePage() {
             </section>
 
             {/* ---- FEATURE STRIP ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
                 <div className="max-w-6xl mx-auto">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                         {features.map((f, i) => (
-                            <div key={f.title} className={`card card-hover p-5 sm:p-6 animate-fade-up delay-${i + 1}`}>
+                            <div key={f.title} className={`card card-hover p-5 sm:p-6 animate-fade-up ${STAGGER[i + 1]}`}>
                                 <div className="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-[var(--accent-subtle)] mb-3">
                                     <FeatureIcon type={f.icon} />
                                 </div>
@@ -358,7 +360,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- POPULAR STATES ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 bg-[var(--bg-secondary)] section-border">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-16 bg-[var(--bg-secondary)] section-border">
                 <div className="max-w-6xl mx-auto">
                     <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-2 text-center animate-fade-up font-display">
                         Popular States
@@ -370,7 +372,7 @@ export default function HomePage() {
                         {featuredStates.map((state, i) => (
                             <div
                                 key={state.name}
-                                className={`card card-hover p-0 flex flex-col relative overflow-hidden animate-fade-up delay-${i + 2}`}
+                                className={`card card-hover p-0 flex flex-col relative overflow-hidden animate-fade-up ${STAGGER[Math.min(i + 2, STAGGER.length - 1)]}`}
                             >
                                 {/* Card header with ID mockup */}
                                 <div className="relative p-5 pb-3">
@@ -439,7 +441,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- TESTIMONIALS ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-10">
                         <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-2 animate-fade-up font-display">
@@ -452,7 +454,7 @@ export default function HomePage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {testimonials.map((t, i) => (
-                            <div key={t.name} className={`card p-5 sm:p-6 animate-fade-up delay-${i + 2}`}>
+                            <div key={t.name} className={`card p-5 sm:p-6 animate-fade-up ${STAGGER[Math.min(i + 2, STAGGER.length - 1)]}`}>
                                 <div className="flex items-center justify-between mb-3">
                                     <StarRating rating={t.rating} />
                                     <span className="badge badge-cyan text-xs">{t.tag}</span>
@@ -466,7 +468,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- HOW IT WORKS ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 bg-[var(--bg-secondary)] section-border">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-16 bg-[var(--bg-secondary)] section-border">
                 <div className="max-w-3xl mx-auto">
                     <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-10 text-center animate-fade-up font-display">
                         How It Works
@@ -478,7 +480,7 @@ export default function HomePage() {
                             { step: '3', title: 'Pay Securely', text: 'Choose BTC, Venmo, or CashApp — fully encrypted', icon: '🔐' },
                             { step: '4', title: 'Receive Discreetly', text: 'Ships in unmarked packaging within ~2 weeks', icon: '📦' },
                         ].map((item, i) => (
-                            <div key={item.step} className={`flex items-start gap-5 animate-fade-up delay-${i + 1} relative`}>
+                            <div key={item.step} className={`flex items-start gap-5 animate-fade-up ${STAGGER[i + 1]} relative`}>
                                 {/* Connector line */}
                                 {i < 3 && <div className="absolute left-5 top-12 w-px h-8 bg-[var(--border)]" />}
                                 <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-[var(--accent-subtle)] border border-[var(--border-accent)] text-[var(--accent)] flex items-center justify-center text-sm font-bold font-display">
@@ -495,7 +497,7 @@ export default function HomePage() {
             </section>
 
             {/* ---- FAQ ---- */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18">
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
                 <div className="max-w-2xl mx-auto">
                     <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-8 text-center animate-fade-up font-display">
                         Frequently Asked Questions
@@ -513,7 +515,7 @@ export default function HomePage() {
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
                         {/* Brand */}
-                        <div>
+                        <div className="min-w-0">
                             <h3 className="text-lg font-bold text-[var(--text-primary)] mb-3 font-display">
                                 <span className="text-[var(--accent)]">ID</span> PIRATE
                             </h3>
@@ -527,8 +529,8 @@ export default function HomePage() {
                         </div>
 
                         {/* Quick Links */}
-                        <div>
-                            <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4 font-display">Quick Links</h4>
+                        <div className="min-w-0">
+                            <h4 className="text-sm font-semibold text-[var(--text-primary)] tracking-wide mb-4 font-display">Quick Links</h4>
                             <nav className="flex flex-col gap-2.5">
                                 <Link href="/order" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Browse IDs</Link>
                                 <Link href="/track" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">Track Order</Link>
@@ -538,8 +540,8 @@ export default function HomePage() {
                         </div>
 
                         {/* States */}
-                        <div>
-                            <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4 font-display">Available States</h4>
+                        <div className="min-w-0">
+                            <h4 className="text-sm font-semibold text-[var(--text-primary)] tracking-wide mb-4 font-display">Available States</h4>
                             <nav className="flex flex-col gap-1.5">
                                 {US_REGION_NAMES.slice(0, 8).map(state => (
                                     <Link key={state} href="/order" className="text-xs text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors">{state}</Link>
@@ -551,8 +553,8 @@ export default function HomePage() {
                         </div>
 
                         {/* Payment & Legal */}
-                        <div>
-                            <h4 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4 font-display">We Accept</h4>
+                        <div className="min-w-0">
+                            <h4 className="text-sm font-semibold text-[var(--text-primary)] tracking-wide mb-4 font-display">We Accept</h4>
                             <PaymentIcons className="mb-4" />
                             <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mb-6">
                                 <svg className="h-4 w-4 text-[var(--success)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>

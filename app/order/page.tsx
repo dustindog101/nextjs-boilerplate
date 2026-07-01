@@ -11,6 +11,7 @@ import {
 } from '@/lib/productCatalog';
 import { retailEffectiveAtCount, RESELLER_WHOLESALE_TIERS } from '@/lib/pricing';
 import { ProductVariantPicker } from '@/app/components/ProductVariantPicker';
+import { Footer } from '@/app/components/ui';
 import { defaultIdPrice } from '@/lib/constants';
 
 const GALLERY = buildRegionGallery();
@@ -237,7 +238,8 @@ export default function OrderGalleryPage() {
     );
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="min-h-screen flex flex-col">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow w-full">
             <div className="text-center mb-10 max-w-3xl mx-auto animate-fade-up">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] mb-4 font-display">
                     Select Your ID
@@ -286,7 +288,7 @@ export default function OrderGalleryPage() {
                     />
                 </div>
 
-                <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto">
+                <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto no-scrollbar scroll-smooth">
                     {[
                         { id: 'all', label: 'All' },
                         { id: 'us', label: 'US States' },
@@ -298,7 +300,7 @@ export default function OrderGalleryPage() {
                         <button
                             key={tab.id}
                             onClick={() => setFilter(tab.id as FilterTab)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === tab.id
+                            className={`px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all whitespace-nowrap touch-manipulation ${filter === tab.id
                                 ? 'bg-[var(--accent-subtle)] text-[var(--accent)] shadow-sm'
                                 : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                                 }`}
@@ -383,6 +385,8 @@ export default function OrderGalleryPage() {
                     </a>
                 </div>
             </div>
+        </div>
+        <Footer />
         </div>
     );
 }
