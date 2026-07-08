@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decodeJwtPayload } from '@/lib/auth-server';
-import { getPresignedGetUrl } from '@/lib/r2';
+import { clampPresignGetTtl, getPresignedGetUrl } from '@/lib/r2';
 
 export const runtime = 'nodejs';
 
 /**
- * Admin-only: returns a short-lived presigned GET URL for an object key in R2.
+ * Admin-only: returns a presigned GET URL for an object key in R2.
+ * Accepts an optional `expiresInSeconds` to customize the link lifetime
+ * (used by the admin export modal so exported spreadsheets stay readable
+ * for longer than the default 15-minute viewing TTL).
  */
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('Authorization');
@@ -18,7 +21,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
   }
 
-  let body: { key?: string };
+  let body: { key?: string; expiresInSeconds?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -30,8 +33,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid key.' }, { status: 400 });
   }
 
+  const expiresInSeconds =
+    typeof body.expiresInSeconds === 'number' ? clampPresignGetTtl(body.expiresInSeconds) : undefined;
+
   try {
-    const url = await getPresignedGetUrl(key);
+    const url = await getPresignedGetUrl(key, expiresInSeconds);
     return NextResponse.json({ url });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Presign GET failed.';

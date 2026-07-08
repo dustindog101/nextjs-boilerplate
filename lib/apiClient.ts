@@ -493,16 +493,28 @@ export const adminGetPaymentSettings = _adminGetPaymentSettings;
 export const adminUpdatePaymentSettings = _adminUpdatePaymentSettings;
 export const adminSetOrderPaymentExpiry = _adminSetOrderPaymentExpiry;
 
-/** Short-lived URL to view an object in R2 (admin only). */
-export const adminPresignGetUrl = async (objectKey: string): Promise<string> => {
+/**
+ * Short-lived URL to view an object in R2 (admin only).
+ * Pass `expiresInSeconds` to override the default 15-minute lifetime — used by
+ * the admin export flow so embedded photo/signature links stay valid for the
+ * chosen duration (1h / 12h / 24h / 7d). The server clamps to the R2 max.
+ */
+export const adminPresignGetUrl = async (
+  objectKey: string,
+  opts?: { expiresInSeconds?: number }
+): Promise<string> => {
   const token = getStorageItem('idPirateAuthToken');
   if (!token) {
     throw new Error('Admin action requires authentication token.');
   }
+  const payload: { key: string; expiresInSeconds?: number } = { key: objectKey };
+  if (opts?.expiresInSeconds && Number.isFinite(opts.expiresInSeconds) && opts.expiresInSeconds > 0) {
+    payload.expiresInSeconds = Math.floor(opts.expiresInSeconds);
+  }
   const data = await apiFetch<{ url: string }>('/api/uploads/presign-get', {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ key: objectKey }),
+    body: JSON.stringify(payload),
   });
   return data.url;
 };

@@ -4,7 +4,36 @@ import { randomUUID } from 'crypto';
 import { R2_MAX_UPLOAD_BYTES, STORAGE_UPLOAD_CONTENT_TYPE } from './constants';
 
 const PRESIGN_PUT_TTL = 900;
-const PRESIGN_GET_TTL = 900;
+export const PRESIGN_GET_TTL = 900;
+
+/**
+ * Maximum allowed TTL for a presigned GET URL. AWS S3 / Cloudflare R2 reject
+ * any value above 7 days (604800s) at signing time.
+ */
+export const PRESIGN_GET_MAX_TTL = 7 * 24 * 60 * 60; // 604800
+
+/**
+ * Predefined link-expiry options surfaced in the admin export modal.
+ * `value` is the TTL in seconds (sent to /api/uploads/presign-get); `label`
+ * is what the admin sees in the dropdown.
+ */
+export const PRESIGN_GET_TTL_OPTIONS: { value: number; label: string }[] = [
+  { value: 60 * 60, label: '1 hour' },
+  { value: 12 * 60 * 60, label: '12 hours' },
+  { value: 24 * 60 * 60, label: '24 hours' },
+  { value: 7 * 24 * 60 * 60, label: '7 days' },
+];
+
+/**
+ * Clamp a caller-provided TTL into the safe [1, PRESIGN_GET_MAX_TTL] range.
+ * Non-finite / non-positive values fall back to the default PRESIGN_GET_TTL.
+ */
+export function clampPresignGetTtl(expiresInSeconds?: number): number {
+  if (!Number.isFinite(expiresInSeconds) || (expiresInSeconds as number) <= 0) {
+    return PRESIGN_GET_TTL;
+  }
+  return Math.min(Math.floor(expiresInSeconds as number), PRESIGN_GET_MAX_TTL);
+}
 
 export function assertAllowedImageType(contentType: string): void {
   if (contentType !== STORAGE_UPLOAD_CONTENT_TYPE) {
@@ -68,13 +97,17 @@ export async function getPresignedPutUrl(params: {
   return { url, key };
 }
 
-export async function getPresignedGetUrl(objectKey: string): Promise<string> {
+export async function getPresignedGetUrl(
+  objectKey: string,
+  expiresInSeconds: number = PRESIGN_GET_TTL
+): Promise<string> {
+  const expiresIn = clampPresignGetTtl(expiresInSeconds);
   const client = getClient();
   const command = new GetObjectCommand({
     Bucket: bucket(),
     Key: objectKey,
   });
-  return getSignedUrl(client, command, { expiresIn: PRESIGN_GET_TTL });
+  return getSignedUrl(client, command, { expiresIn });
 }
 
 export async function deleteObjectFromR2(objectKey: string): Promise<void> {

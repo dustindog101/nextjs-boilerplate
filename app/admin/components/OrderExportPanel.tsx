@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Download, FileJson, FileSpreadsheet, Package, X } from 'lucide-react';
 import { adminPresignGetUrl } from '@/lib/apiClient';
+import { PRESIGN_GET_TTL_OPTIONS } from '@/lib/r2';
 import {
   countExportIdRows,
   runAdminOrderExport,
@@ -10,6 +11,9 @@ import {
   type AdminOrderRecord,
 } from '@/lib/adminOrderExport';
 import { Spinner } from '../../components/ui';
+
+/** Default link lifetime for exported photo/signature URLs (24 hours). */
+const DEFAULT_LINK_TTL_SECONDS = PRESIGN_GET_TTL_OPTIONS[2].value;
 
 interface OrderExportPanelProps {
   orders: AdminOrderRecord[];
@@ -51,6 +55,7 @@ export function OrderExportPanel({
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalFormat, setModalFormat] = useState<AdminOrderExportFormat | null>(null);
   const [exportNote, setExportNote] = useState('');
+  const [linkTtlSeconds, setLinkTtlSeconds] = useState<number>(DEFAULT_LINK_TTL_SECONDS);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -76,6 +81,7 @@ export function OrderExportPanel({
   const resetModal = () => {
     setModalFormat(null);
     setExportNote('');
+    setLinkTtlSeconds(DEFAULT_LINK_TTL_SECONDS);
     setError(null);
   };
 
@@ -88,21 +94,25 @@ export function OrderExportPanel({
     setMenuOpen(false);
     setError(null);
     if (format === 'json') {
-      void runExport(format, '');
+      void runExport(format, '', DEFAULT_LINK_TTL_SECONDS);
       return;
     }
     setModalFormat(format);
   };
 
   const runExport = useCallback(
-    async (format: AdminOrderExportFormat, note: string) => {
+    async (format: AdminOrderExportFormat, note: string, ttlSeconds: number) => {
       if (selectedOrders.length === 0) return;
       setExporting(true);
       setError(null);
       try {
+        // Closure bakes the chosen TTL into every per-cell presign call so the
+        // exported spreadsheet's photo/signature links stay valid for that long.
+        const resolveAssetUrl = (objectKey: string) =>
+          adminPresignGetUrl(objectKey, { expiresInSeconds: ttlSeconds });
         await runAdminOrderExport(format, selectedOrders, {
           exportNote: note.trim() || undefined,
-          resolveAssetUrl: adminPresignGetUrl,
+          resolveAssetUrl,
         });
         resetModal();
         onClearSelection();
@@ -245,6 +255,32 @@ export function OrderExportPanel({
                 />
               </div>
 
+              <div>
+                <label className="text-label mb-1 block">Link expiry</label>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={linkTtlSeconds}
+                    onChange={(e) => setLinkTtlSeconds(Number(e.target.value))}
+                    className="rounded-lg px-4 py-2.5 text-sm outline-none cursor-pointer"
+                    style={{
+                      background: 'var(--bg-primary)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-primary)',
+                    }}
+                    disabled={exporting}
+                  >
+                    {PRESIGN_GET_TTL_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    How long embedded photo / signature links stay valid after export.
+                  </span>
+                </div>
+              </div>
+
               <div
                 className="rounded-xl px-4 py-3 text-xs"
                 style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}
@@ -276,7 +312,7 @@ export function OrderExportPanel({
               </button>
               <button
                 type="button"
-                onClick={() => modalFormat && void runExport(modalFormat, exportNote)}
+                onClick={() => modalFormat && void runExport(modalFormat, exportNote, linkTtlSeconds)}
                 className="btn btn-primary px-4 py-2 text-sm inline-flex items-center gap-2"
                 disabled={exporting}
               >
