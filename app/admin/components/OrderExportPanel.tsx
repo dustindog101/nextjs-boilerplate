@@ -30,13 +30,13 @@ const formatOptions: {
   {
     id: 'json',
     label: 'JSON',
-    description: 'Full order payload for backups or integrations',
+    description: 'Vendor-safe order + ID data for API submission',
     icon: FileJson,
   },
   {
     id: 'xlsx',
     label: 'Spreadsheet',
-    description: 'Flat Excel workbook with all order and ID fields',
+    description: 'Flat Excel workbook, one row per ID',
     icon: FileSpreadsheet,
   },
   {
@@ -56,6 +56,8 @@ export function OrderExportPanel({
   const [modalFormat, setModalFormat] = useState<AdminOrderExportFormat | null>(null);
   const [exportNote, setExportNote] = useState('');
   const [linkTtlSeconds, setLinkTtlSeconds] = useState<number>(DEFAULT_LINK_TTL_SECONDS);
+  const [shippingMode, setShippingMode] = useState<'per-order' | 'override'>('per-order');
+  const [shippingOverride, setShippingOverride] = useState('');
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -82,6 +84,8 @@ export function OrderExportPanel({
     setModalFormat(null);
     setExportNote('');
     setLinkTtlSeconds(DEFAULT_LINK_TTL_SECONDS);
+    setShippingMode('per-order');
+    setShippingOverride('');
     setError(null);
   };
 
@@ -93,26 +97,32 @@ export function OrderExportPanel({
   const handlePickFormat = (format: AdminOrderExportFormat) => {
     setMenuOpen(false);
     setError(null);
-    if (format === 'json') {
-      void runExport(format, '', DEFAULT_LINK_TTL_SECONDS);
-      return;
-    }
+    // All formats open the modal so the admin sees progress, can set the link
+    // expiry / shipping override, and sees errors inline.
     setModalFormat(format);
   };
 
   const runExport = useCallback(
-    async (format: AdminOrderExportFormat, note: string, ttlSeconds: number) => {
+    async (
+      format: AdminOrderExportFormat,
+      note: string,
+      ttlSeconds: number,
+      shipMode: 'per-order' | 'override',
+      shipOverride: string
+    ) => {
       if (selectedOrders.length === 0) return;
+      if (format === 'vendor') {
+        // Vendor template ignores shipping override — it has its own row format.
+      }
       setExporting(true);
       setError(null);
       try {
-        // Closure bakes the chosen TTL into every per-cell presign call so the
-        // exported spreadsheet's photo/signature links stay valid for that long.
         const resolveAssetUrl = (objectKey: string) =>
           adminPresignGetUrl(objectKey, { expiresInSeconds: ttlSeconds });
         await runAdminOrderExport(format, selectedOrders, {
           exportNote: note.trim() || undefined,
           resolveAssetUrl,
+          shippingOverride: shipMode === 'override' && shipOverride.trim() ? shipOverride.trim() : undefined,
         });
         resetModal();
         onClearSelection();
@@ -132,7 +142,12 @@ export function OrderExportPanel({
       ? 'Export vendor order'
       : modalFormat === 'xlsx'
         ? 'Export spreadsheet'
-        : 'Export orders';
+        : modalFormat === 'json'
+          ? 'Export JSON'
+          : 'Export orders';
+
+  // Shipping override UI only applies to JSON + spreadsheet (not vendor template)
+  const showShippingOverride = modalFormat === 'json' || modalFormat === 'xlsx';
 
   return (
     <>
@@ -169,6 +184,7 @@ export function OrderExportPanel({
               disabled={exporting}
             >
               <Download size={14} />
+              {exporting ? <Spinner size="sm" /> : null}
               Export
               <ChevronDown size={14} />
             </button>
@@ -215,7 +231,7 @@ export function OrderExportPanel({
       {modalFormat && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div
-            className="rounded-2xl shadow-xl p-6 w-full max-w-lg relative animate-fade-up"
+            className="rounded-2xl shadow-xl p-6 w-full max-w-lg relative animate-fade-up max-h-[90vh] overflow-y-auto"
             style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
           >
             <button
@@ -234,14 +250,14 @@ export function OrderExportPanel({
             <p className="text-sm mb-5" style={{ color: 'var(--text-tertiary)' }}>
               {selectedOrders.length} order{selectedOrders.length === 1 ? '' : 's'} · {idRowCount} ID
               row{idRowCount === 1 ? '' : 's'}
-              {modalFormat !== 'json' ? ' · presigned photo/signature links included when available' : ''}
+              {modalFormat !== 'json' ? ' · presigned photo/signature links included when available' : ' · photo/signature links included when available'}
             </p>
 
             <div className="space-y-4">
               <div>
                 <label className="text-label mb-1 block">Export note</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={exportNote}
                   onChange={(e) => setExportNote(e.target.value)}
                   className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none"
@@ -250,10 +266,55 @@ export function OrderExportPanel({
                     border: '1px solid var(--border)',
                     color: 'var(--text-primary)',
                   }}
-                  placeholder="Optional note added to each exported row"
+                  placeholder="Optional note added to each exported order"
                   disabled={exporting}
                 />
               </div>
+
+              {showShippingOverride && (
+                <div>
+                  <label className="text-label mb-2 block">Shipping address</label>
+                  <div className="flex flex-col gap-2 mb-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-primary)' }}>
+                      <input
+                        type="radio"
+                        name="shippingMode"
+                        checked={shippingMode === 'per-order'}
+                        onChange={() => setShippingMode('per-order')}
+                        disabled={exporting}
+                        style={{ accentColor: 'var(--accent)' }}
+                      />
+                      Use each order&apos;s own shipping address
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-primary)' }}>
+                      <input
+                        type="radio"
+                        name="shippingMode"
+                        checked={shippingMode === 'override'}
+                        onChange={() => setShippingMode('override')}
+                        disabled={exporting}
+                        style={{ accentColor: 'var(--accent)' }}
+                      />
+                      Use one address for all selected orders
+                    </label>
+                  </div>
+                  {shippingMode === 'override' && (
+                    <textarea
+                      rows={2}
+                      value={shippingOverride}
+                      onChange={(e) => setShippingOverride(e.target.value)}
+                      className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none"
+                      style={{
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-primary)',
+                      }}
+                      placeholder="Full Name, Street Address, City, State, ZIP, USA"
+                      disabled={exporting}
+                    />
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="text-label mb-1 block">Link expiry</label>
@@ -276,19 +337,9 @@ export function OrderExportPanel({
                     ))}
                   </select>
                   <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                    How long embedded photo / signature links stay valid after export.
+                    How long photo / signature links stay valid.
                   </span>
                 </div>
-              </div>
-
-              <div
-                className="rounded-xl px-4 py-3 text-xs"
-                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}
-              >
-                <p style={{ color: 'var(--text-secondary)' }}>
-                  <span className="text-label">Account</span> is filled from the order&apos;s customer /
-                  user ID. Existing order notes are merged with your export note for vendor rows.
-                </p>
               </div>
 
               {error && (
@@ -312,7 +363,10 @@ export function OrderExportPanel({
               </button>
               <button
                 type="button"
-                onClick={() => modalFormat && void runExport(modalFormat, exportNote, linkTtlSeconds)}
+                onClick={() =>
+                  modalFormat &&
+                  void runExport(modalFormat, exportNote, linkTtlSeconds, shippingMode, shippingOverride)
+                }
                 className="btn btn-primary px-4 py-2 text-sm inline-flex items-center gap-2"
                 disabled={exporting}
               >

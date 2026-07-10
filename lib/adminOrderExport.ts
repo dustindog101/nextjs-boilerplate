@@ -32,6 +32,8 @@ export interface AdminOrderRecord {
 export interface VendorExportOptions {
   exportNote?: string;
   resolveAssetUrl?: (objectKey: string) => Promise<string>;
+  /** When set, overrides every order's shipping address in the export. */
+  shippingOverride?: string;
 }
 
 interface VendorRow {
@@ -180,28 +182,59 @@ export async function exportOrdersAsJson(
   options: VendorExportOptions = {},
   filenamePrefix = 'orders'
 ): Promise<void> {
-  // Resolve presigned URLs for every photo/signature so the JSON is self-contained
-  // and can be fed straight into a submission API without another round-trip.
-  const enrichedOrders = await Promise.all(
+  // Vendor-safe: only order + ID info. No account, payment, or pricing data.
+  // Each order is a distinct top-level entry so multiple orders are cleanly
+  // separable. Resolved photo/signature URLs are included per ID.
+  const exportOrders = await Promise.all(
     orders.map(async (order) => {
       const ids = order.ids ?? [];
+      const shippingAddress = options.shippingOverride?.trim()
+        ? options.shippingOverride.trim()
+        : (order.shipping ?? '');
+
       const enrichedIds = await Promise.all(
-        ids.map(async (idRow) => ({
-          ...idRow,
+        ids.map(async (idRow, i) => ({
+          idIndex: i + 1,
+          productId: String(idRow.productId ?? idRow.state ?? ''),
+          state: String(idRow.state ?? ''),
+          firstName: String(idRow.firstName ?? ''),
+          middleName: String(idRow.middleName ?? ''),
+          lastName: String(idRow.lastName ?? ''),
+          dob: formatDateField(idRow, 'dob'),
+          issueDate: formatDateField(idRow, 'issue'),
+          streetAddress: String(idRow.streetAddress ?? ''),
+          city: String(idRow.city ?? ''),
+          zipCode: String(idRow.zipCode ?? ''),
+          zipPlus4: String(idRow.zipPlus4 ?? ''),
+          sex: String(idRow.sex ?? ''),
+          height: formatHeight(idRow),
+          weight: String(idRow.weight ?? ''),
+          eyeColor: String(idRow.eyeColor ?? ''),
+          hairColor: String(idRow.hairColor ?? ''),
           photoUrl: await resolveOptionalUrl(idRow.photoKey, options.resolveAssetUrl),
           signatureUrl: await resolveOptionalUrl(idRow.signatureKey, options.resolveAssetUrl),
         }))
       );
-      return { ...order, ids: enrichedIds };
+
+      return {
+        orderId: order.orderId ?? '',
+        status: order.status ?? '',
+        shippingAddress,
+        trackingNumber: order.trackingNumber ?? '',
+        orderNote: typeof order.notes === 'string' ? order.notes : '',
+        exportNote: options.exportNote ?? '',
+        ids: enrichedIds,
+      };
     })
   );
 
   const payload = {
     exportedAt: new Date().toISOString(),
     exportNote: options.exportNote ?? null,
-    orderCount: enrichedOrders.length,
-    idRowCount: countExportIdRows(enrichedOrders),
-    orders: enrichedOrders,
+    shippingOverride: options.shippingOverride?.trim() || null,
+    orderCount: exportOrders.length,
+    idRowCount: exportOrders.reduce((sum, o) => sum + o.ids.length, 0),
+    orders: exportOrders,
   };
 
   const body = JSON.stringify(payload, null, 2);
@@ -216,40 +249,24 @@ export async function exportOrdersAsSpreadsheet(
 ): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Orders');
+  // Vendor-safe: one row per ID. Order-level columns repeat per row so the
+  // sheet is flat and programmatically parseable (no merged cells, no nesting).
+  // No account, payment, or pricing data — only what a vendor needs to fulfill.
+  const shippingOverride = options.shippingOverride?.trim() || '';
+  const exportNote = options.exportNote ?? '';
+
   sheet.columns = [
-    // ── Order-level ──
+    // ── Order-level (repeated on every row) ──
     { header: 'Order ID', key: 'orderId', width: 38 },
-    { header: 'Account', key: 'account', width: 24 },
-    { header: 'Order Date', key: 'orderDate', width: 22 },
     { header: 'Status', key: 'status', width: 14 },
-    { header: 'Payment', key: 'paymentStatus', width: 12 },
-    { header: 'Payment Method', key: 'paymentMethod', width: 18 },
-    { header: 'Payment Intent ID', key: 'paymentIntentId', width: 30 },
-    { header: 'Crypto Asset', key: 'cryptoAsset', width: 16 },
-    { header: 'Crypto Tx Hash', key: 'cryptoTxHash', width: 30 },
-    { header: 'Payment Expires At', key: 'paymentExpiresAt', width: 22 },
-    { header: 'Shipping Address', key: 'shipping', width: 48 },
+    { header: 'Shipping Address', key: 'shippingAddress', width: 48 },
     { header: 'Tracking #', key: 'trackingNumber', width: 18 },
-    { header: 'Number of IDs', key: 'numberOfIds', width: 10 },
-    { header: 'Customer Notice', key: 'customerNotice', width: 30 },
     { header: 'Order Note', key: 'orderNote', width: 28 },
     { header: 'Export Note', key: 'exportNote', width: 28 },
-    { header: 'Reseller ID', key: 'resellerId', width: 20 },
-    { header: 'Source', key: 'source', width: 12 },
-    { header: 'Batch ID', key: 'batchId', width: 20 },
-    { header: 'Batch Status', key: 'batchStatus', width: 14 },
-    // ── Price breakdown ──
-    { header: 'Subtotal', key: 'subtotal', width: 11 },
-    { header: 'ID Subtotal', key: 'idSubtotal', width: 11 },
-    { header: 'Handling', key: 'handling', width: 10 },
-    { header: 'Shipping Cost', key: 'shippingCost', width: 12 },
-    { header: 'Discount', key: 'discountAmount', width: 10 },
-    { header: 'Order Total', key: 'orderTotal', width: 12 },
-    { header: 'Pricing Mode', key: 'pricingMode', width: 14 },
     // ── Per-ID ──
     { header: 'ID #', key: 'idIndex', width: 6 },
     { header: 'Product ID', key: 'productId', width: 18 },
-    { header: 'ID State', key: 'state', width: 16 },
+    { header: 'State', key: 'state', width: 16 },
     { header: 'First Name', key: 'firstName', width: 16 },
     { header: 'Middle Name', key: 'middleName', width: 16 },
     { header: 'Last Name', key: 'lastName', width: 16 },
@@ -264,8 +281,6 @@ export async function exportOrdersAsSpreadsheet(
     { header: 'Weight', key: 'weight', width: 8 },
     { header: 'Eye Color', key: 'eyeColor', width: 12 },
     { header: 'Hair Color', key: 'hairColor', width: 12 },
-    { header: 'Photo Key', key: 'photoKey', width: 40 },
-    { header: 'Signature Key', key: 'signatureKey', width: 40 },
     { header: 'Photo URL', key: 'photoUrl', width: 48 },
     { header: 'Signature URL', key: 'signatureUrl', width: 48 },
   ];
@@ -275,40 +290,17 @@ export async function exportOrdersAsSpreadsheet(
 
   for (const order of orders) {
     const ids = order.ids ?? [];
-    const account = orderAccount(order);
     const orderNote = typeof order.notes === 'string' ? order.notes : '';
-    const exportNote = options.exportNote ?? '';
-    const price = order.price;
+    const shippingAddress = shippingOverride || (order.shipping ?? '');
 
-    // Order-level fields shared by every row (whether or not the order has IDs)
+    // Order-level fields shared by every row in this order
     const orderFields = {
       orderId: order.orderId ?? '',
-      account,
-      orderDate: order.createdAt ?? '',
       status: order.status ?? '',
-      paymentStatus: order.paymentStatus ?? '',
-      paymentMethod: order.paymentMethod ?? '',
-      paymentIntentId: strField(order, 'paymentIntentId'),
-      cryptoAsset: strField(order, 'cryptoAsset'),
-      cryptoTxHash: strField(order, 'cryptoTxHash'),
-      paymentExpiresAt: strField(order, 'paymentExpiresAt'),
-      shipping: order.shipping ?? '',
+      shippingAddress,
       trackingNumber: order.trackingNumber ?? '',
-      numberOfIds: ids.length || order.numberOfIds || 0,
-      customerNotice: strField(order, 'customerNotice'),
       orderNote,
       exportNote,
-      resellerId: strField(order, 'resellerId'),
-      source: strField(order, 'source'),
-      batchId: strField(order, 'batchId'),
-      batchStatus: strField(order, 'batchStatus'),
-      subtotal: priceField(price, 'subtotal'),
-      idSubtotal: priceField(price, 'idSubtotal'),
-      handling: priceField(price, 'handling'),
-      shippingCost: priceField(price, 'shipping'),
-      discountAmount: priceField(price, 'discountAmount'),
-      orderTotal: priceField(price, 'total'),
-      pricingMode: priceField(price, 'pricingMode') || (typeof price?.pricingMode === 'string' ? price.pricingMode : ''),
     };
 
     if (ids.length === 0) {
@@ -339,13 +331,14 @@ export async function exportOrdersAsSpreadsheet(
         weight: idRow.weight ?? '',
         eyeColor: idRow.eyeColor ?? '',
         hairColor: idRow.hairColor ?? '',
-        photoKey: String(idRow.photoKey ?? ''),
-        signatureKey: String(idRow.signatureKey ?? ''),
         photoUrl,
         signatureUrl,
       });
     }
   }
+
+  // Freeze the header row so it stays visible when scrolling large exports
+  sheet.views = [{ state: 'frozen', ySplit: 1 }];
 
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
