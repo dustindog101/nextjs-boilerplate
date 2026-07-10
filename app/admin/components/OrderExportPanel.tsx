@@ -69,6 +69,19 @@ export function OrderExportPanel({
 
   const idRowCount = useMemo(() => countExportIdRows(selectedOrders), [selectedOrders]);
 
+  // Detect whether multiple distinct shipping addresses exist among the selected
+  // orders. The shipping override UI only appears when there's more than one
+  // unique address — otherwise asking would be pointless.
+  const distinctAddresses = useMemo(() => {
+    const addrs = new Set(
+      selectedOrders
+        .map((o) => (typeof o.shipping === 'string' ? o.shipping.trim() : ''))
+        .filter((a) => a.length > 0)
+    );
+    return Array.from(addrs);
+  }, [selectedOrders]);
+  const hasMultipleAddresses = distinctAddresses.length > 1;
+
   useEffect(() => {
     if (!menuOpen) return;
     const handleClick = (event: MouseEvent) => {
@@ -97,8 +110,6 @@ export function OrderExportPanel({
   const handlePickFormat = (format: AdminOrderExportFormat) => {
     setMenuOpen(false);
     setError(null);
-    // All formats open the modal so the admin sees progress, can set the link
-    // expiry / shipping override, and sees errors inline.
     setModalFormat(format);
   };
 
@@ -111,9 +122,6 @@ export function OrderExportPanel({
       shipOverride: string
     ) => {
       if (selectedOrders.length === 0) return;
-      if (format === 'vendor') {
-        // Vendor template ignores shipping override — it has its own row format.
-      }
       setExporting(true);
       setError(null);
       try {
@@ -147,12 +155,15 @@ export function OrderExportPanel({
           : 'Export orders';
 
   // Shipping override UI only applies to JSON + spreadsheet (not vendor template)
-  const showShippingOverride = modalFormat === 'json' || modalFormat === 'xlsx';
+  // AND only when multiple distinct shipping addresses are detected.
+  const showShippingOverride =
+    (modalFormat === 'json' || modalFormat === 'xlsx') && hasMultipleAddresses;
 
   return (
     <>
+      {/* relative + z-30 keeps the dropdown menu above the customer-notice bar below */}
       <div
-        className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl animate-fade-up"
+        className="relative z-30 flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl animate-fade-up"
         style={{
           background: 'rgba(99,102,241,0.08)',
           border: '1px solid rgba(99,102,241,0.22)',
@@ -191,7 +202,7 @@ export function OrderExportPanel({
 
             {menuOpen && (
               <div
-                className="absolute right-0 mt-2 w-72 rounded-xl shadow-xl z-20 overflow-hidden animate-fade-in"
+                className="absolute right-0 mt-2 w-72 rounded-xl shadow-xl z-40 overflow-hidden animate-fade-in"
                 style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
               >
                 {formatOptions.map((option) => {
@@ -237,7 +248,7 @@ export function OrderExportPanel({
             <button
               type="button"
               onClick={closeModal}
-              className="absolute top-4 right-4 transition-colors"
+              className="absolute top-4 right-4 transition-colors z-10"
               style={{ color: 'var(--text-tertiary)' }}
               disabled={exporting}
             >
@@ -273,7 +284,12 @@ export function OrderExportPanel({
 
               {showShippingOverride && (
                 <div>
-                  <label className="text-label mb-2 block">Shipping address</label>
+                  <label className="text-label mb-1 block">
+                    Shipping address{' '}
+                    <span className="font-normal text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      ({distinctAddresses.length} different addresses detected)
+                    </span>
+                  </label>
                   <div className="flex flex-col gap-2 mb-2">
                     <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-primary)' }}>
                       <input
