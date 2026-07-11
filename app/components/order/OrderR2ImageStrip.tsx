@@ -46,10 +46,16 @@ export function OrderR2ImageStrip({ slots, resolveUrl, className = '' }: OrderR2
 
     (async () => {
       try {
+        // Parallel fetch — previously sequential `for...of await` was O(N)
+        // for N images per row. Now O(1) latency for the slowest fetch.
+        const entries = await Promise.all(
+          withKeys.map(async (s) => {
+            const url = await getBlobDisplayUrlForKey(s.objectKey!, resolveUrl);
+            return [s.objectKey!, url] as const;
+          })
+        );
         const next: Record<string, string> = {};
-        for (const s of withKeys) {
-          next[s.objectKey!] = await getBlobDisplayUrlForKey(s.objectKey!, resolveUrl);
-        }
+        for (const [k, v] of entries) next[k] = v;
         if (!cancelled) setUrls(next);
       } catch {
         if (!cancelled) {

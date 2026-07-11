@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getStorageItem, setStorageItem } from '@/lib/storage';
-import { ALL_REGION_COUNT, lowestPriceForRegion, US_REGION_NAMES } from '@/lib/productCatalog';
+import { ALL_REGION_COUNT, US_STATE_REGION_COUNT, lowestPriceForRegion, US_REGION_NAMES } from '@/lib/productCatalog';
 
 // ================================
 // DATA
@@ -281,7 +281,7 @@ export default function HomePage() {
                                 </div>
                                 <div className="w-px h-10 bg-[var(--border)]" />
                                 <div className="text-center">
-                                    <div className="text-2xl font-bold text-[var(--text-primary)] font-display">{ALL_REGION_COUNT}+</div>
+                                    <div className="text-2xl font-bold text-[var(--text-primary)] font-display">{US_STATE_REGION_COUNT}+</div>
                                     <div className="text-xs text-[var(--text-tertiary)] mt-0.5">States Available</div>
                                 </div>
                                 <div className="w-px h-10 bg-[var(--border)]" />
@@ -432,7 +432,7 @@ export default function HomePage() {
                     </div>
                     <div className="text-center mt-10 animate-fade-up delay-6">
                         <Link href="/order" className="btn btn-outline text-sm px-6">
-                            View All {ALL_REGION_COUNT} States →
+                            View All {US_STATE_REGION_COUNT} States →
                         </Link>
                     </div>
                 </div>
