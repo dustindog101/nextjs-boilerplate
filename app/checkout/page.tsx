@@ -6,6 +6,7 @@ import { withAuth } from '../components/withAuth';
 import { useAuth } from '../hooks/useAuth';
 import { getStorageItem, removeStorageItem } from '../../lib/storage';
 import { submitOrder, validateDiscount, DiscountValidation } from '../../lib/apiClient';
+import { getStoredReferralCode, clearReferralCode } from '@/lib/referral';
 import { shippingFee as SHIPPING_BASE } from '../../lib/constants';
 import { reviveIdForm } from '@/lib/resellerPortalStorage';
 import {
@@ -100,6 +101,16 @@ function CheckoutPage() {
             } catch (error) { console.error('Failed to parse order forms:', error); }
         }
     }, []);
+
+    // Auto-apply referral code if one is stored (from ?ref=CODE URL param)
+    useEffect(() => {
+        if (discountResult || discountCode || orderItems.length === 0) return;
+        const refCode = getStoredReferralCode();
+        if (refCode) {
+            setDiscountCode(refCode);
+            setShowDiscountInput(true);
+        }
+    }, [orderItems.length, discountResult, discountCode]);
 
     const uploadsIncomplete =
         orderItems.length > 0 &&
@@ -200,6 +211,9 @@ function CheckoutPage() {
         try {
             const data = await submitOrder(orderPayload);
             removeStorageItem('idPirateOrderForms');
+            // Clear the referral code after successful order submission
+            // (so it doesn't auto-apply to the next order)
+            clearReferralCode();
 
             if (willUseCrypto && selectedCryptoAsset) {
                 try {

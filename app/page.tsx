@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getStorageItem, setStorageItem } from '@/lib/storage';
 import { ALL_REGION_COUNT, US_STATE_REGION_COUNT, lowestPriceForRegion, US_REGION_NAMES } from '@/lib/productCatalog';
+import { ReferralBanner } from './components/ReferralBanner';
 
 // ================================
 // DATA
@@ -237,6 +238,7 @@ function FloatingSupport() {
 export default function HomePage() {
     return (
         <div className="flex flex-col min-h-screen">
+            <ReferralBanner />
             <StatusBanner />
             <FloatingSupport />
 
