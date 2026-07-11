@@ -81,7 +81,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
             </select>
           </div>
           <div className="flex items-center pt-1">
-            <input type="checkbox" id="isReseller" name="isReseller" checked={!!editedUser.isReseller} onChange={handleChange} className="h-4 w-4 rounded" style={{ accentColor: 'var(--accent)' }} />
+            <input type="checkbox" id="isReseller" name="isReseller" checked={!!editedUser.isReseller} onChange={handleChange} className="h-4 w-4 rounded bg-white/[0.04] border border-[var(--border)]" style={{ accentColor: 'var(--accent)' }} />
             <label htmlFor="isReseller" className="ml-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Is Reseller?</label>
           </div>
 

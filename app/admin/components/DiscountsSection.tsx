@@ -319,7 +319,7 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                                                             type="checkbox"
                                                             checked={productIds.includes(opt.id)}
                                                             onChange={() => toggleProduct(opt.id)}
-                                                            className="rounded border-white/20 bg-white/[0.04] text-[var(--accent)] focus:ring-[var(--accent)]/40"
+                                                            className="rounded border-white/20 bg-white/[0.04] focus:ring-[var(--accent)]/40"
                                                         />
                                                         <span className="text-sm text-[var(--text-secondary)] font-mono">{opt.id}</span>
                                                         <span className="text-xs text-[var(--text-tertiary)]">— {opt.label}</span>
@@ -417,7 +417,7 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                                 type="checkbox"
                                 checked={isAffiliateCode}
                                 onChange={(e) => setIsAffiliateCode(e.target.checked)}
-                                className="rounded border-white/20 bg-white/[0.04] text-[var(--accent)] focus:ring-[var(--accent)]/40"
+                                className="rounded border-white/20 bg-white/[0.04] focus:ring-[var(--accent)]/40"
                             />
                             <span className="text-sm text-[var(--text-secondary)]">This code is owned by an affiliate (earns commission per redemption)</span>
                         </label>

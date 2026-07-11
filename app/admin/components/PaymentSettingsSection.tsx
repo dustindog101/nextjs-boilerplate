@@ -150,7 +150,7 @@ export const PaymentSettingsSection = () => {
                     type="checkbox"
                     checked={g.enabled}
                     onChange={(e) => updateGateway(asset.id, { enabled: e.target.checked })}
-                    className="rounded border-[var(--border)] bg-white/[0.04] text-indigo-500 focus:ring-indigo-500/40"
+                    className="rounded border-[var(--border)] bg-white/[0.04] focus:ring-indigo-500/40"
                   />
                 </label>
               </div>

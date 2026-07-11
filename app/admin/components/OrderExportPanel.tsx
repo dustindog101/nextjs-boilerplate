@@ -311,6 +311,7 @@ export function OrderExportPanel({
                         checked={shippingMode === 'per-order'}
                         onChange={() => setShippingMode('per-order')}
                         disabled={exporting}
+                        className="bg-white/[0.04] border border-[var(--border)]"
                         style={{ accentColor: 'var(--accent)' }}
                       />
                       Use each order&apos;s own shipping address
@@ -322,6 +323,7 @@ export function OrderExportPanel({
                         checked={shippingMode === 'override'}
                         onChange={() => setShippingMode('override')}
                         disabled={exporting}
+                        className="bg-white/[0.04] border border-[var(--border)]"
                         style={{ accentColor: 'var(--accent)' }}
                       />
                       Use one address for all selected orders

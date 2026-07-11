@@ -108,7 +108,7 @@ const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
                         </div>
                         <div className="flex items-center justify-start md:justify-end md:pt-4">
                             <div className="flex items-center gap-3">
-                                <input type="checkbox" id="crypto-discount" className="h-4 w-4 rounded bg-white/[0.04] border-white/20 text-[var(--accent)] focus:ring-[var(--accent)]" />
+                                <input type="checkbox" id="crypto-discount" className="h-4 w-4 rounded bg-white/[0.04] border-white/20 focus:ring-[var(--accent)]" />
                                 <label htmlFor="crypto-discount" className="text-sm font-semibold text-[var(--text-primary)]">Crypto Discount</label>
                             </div>
                         </div>
@@ -117,7 +117,7 @@ const Invoice: React.FC<{ data: InvoiceData | null }> = ({ data }) => {
 
                 <section className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
-                        <input type="checkbox" id="paid-status" className="h-4 w-4 rounded bg-white/[0.04] border-white/20 text-[var(--accent)] focus:ring-[var(--accent)]" />
+                        <input type="checkbox" id="paid-status" className="h-4 w-4 rounded bg-white/[0.04] border-white/20 focus:ring-[var(--accent)]" />
                         <label htmlFor="paid-status" className="text-sm font-semibold text-[var(--text-primary)]">Paid?</label>
                     </div>
                     <div className="text-right">
