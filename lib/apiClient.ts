@@ -212,23 +212,57 @@ export const fetchOrderById = async (orderId: string): Promise<any> => {
 
 /**
  * Validates a discount code against the current order total.
+ *
+ * For line_item-scope codes, pass `items` so the backend can compute per-line
+ * discounts. The `username` is required if the code is restricted to specific
+ * users via `allowedUsernames`.
  */
+export interface DiscountAppliedLine {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  perUnitDiscount: number;
+  lineDiscount: number;
+}
+
 export interface DiscountValidation {
   code: string;
   discountType: 'percentage' | 'fixed';
   value: number;
+  /** 'cart' (whole order) or 'line_item' (specific products). Absent for old backend => 'cart'. */
+  scope?: 'cart' | 'line_item';
+  /** Product IDs the code applies to. Only present when scope='line_item'. */
+  productIds?: string[];
   discountAmount: number;
   newTotal: number;
+  /** Per-line breakdown. Only present when scope='line_item'. */
+  appliedTo?: DiscountAppliedLine[];
+}
+
+export interface ValidateDiscountOptions {
+  /** Cart line items — required for line_item scope codes to compute per-line discount. */
+  items?: { productId: string; quantity: number; unitPrice: number }[];
+  /** Current user's username — required when code is restricted via allowedUsernames. */
+  username?: string;
 }
 
 export const validateDiscount = async (
   code: string,
-  orderTotal: number
+  orderTotal: number,
+  opts?: ValidateDiscountOptions,
 ): Promise<DiscountValidation> => {
+  const body: Record<string, unknown> = {
+    requestType: 'validate_discount',
+    code,
+    orderTotal,
+  };
+  if (opts?.items) body.items = opts.items;
+  if (opts?.username) body.username = opts.username;
+
   return apiFetch<DiscountValidation>('/api/orders/track', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requestType: 'validate_discount', code, orderTotal }),
+    body: JSON.stringify(body),
   });
 };
 
@@ -418,6 +452,8 @@ export const adminUpdateOrder = async (
 
 // ── Discount Management ─────────────────────────────────────────────
 
+export type DiscountScope = 'cart' | 'line_item';
+
 export interface Discount {
   code: string;
   discountType: 'percentage' | 'fixed';
@@ -426,18 +462,31 @@ export interface Discount {
   maxUses?: number;
   usedCount: number;
   isActive: boolean;
+  /** Whole-cart ('cart', default) or per-line-item ('line_item') scope. */
+  scope?: DiscountScope;
+  /** Product IDs the code applies to. Only set when scope='line_item'. */
+  productIds?: string[];
   startsAt?: string;
   expiresAt?: string;
+  /** Usernames allowed to redeem. Empty/undefined = anyone. */
   allowedUsernames?: string[];
   createdAt: string;
 }
+
+/** Shape sent to adminCreateDiscount (omits server-managed fields). */
+export type DiscountInput = Omit<Discount, 'usedCount' | 'isActive' | 'createdAt'>;
+
+/** Update payload — `null` means "remove this attribute" (e.g. clearing productIds). */
+export type DiscountUpdate = {
+    [K in keyof Discount]?: Discount[K] | null;
+} & Record<string, unknown>;
 
 export const adminListDiscounts = async (): Promise<Discount[]> => {
   return adminApiFetch<Discount[]>({ requestType: 'list_discounts' });
 };
 
 export const adminCreateDiscount = async (
-  data: Omit<Discount, 'usedCount' | 'isActive' | 'createdAt'>
+  data: DiscountInput,
 ): Promise<{ message: string }> => {
   return adminApiFetch<{ message: string }>({
     requestType: 'create_discount',
@@ -447,7 +496,7 @@ export const adminCreateDiscount = async (
 
 export const adminUpdateDiscount = async (
   code: string,
-  updateData: Partial<Discount>
+  updateData: DiscountUpdate,
 ): Promise<{ message: string }> => {
   return adminApiFetch<{ message: string }>({
     requestType: 'update_discount',
@@ -457,7 +506,7 @@ export const adminUpdateDiscount = async (
 };
 
 export const adminDeleteDiscount = async (
-  code: string
+  code: string,
 ): Promise<{ message: string }> => {
   return adminApiFetch<{ message: string }>({
     requestType: 'delete_discount',
