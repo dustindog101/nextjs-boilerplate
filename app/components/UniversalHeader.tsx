@@ -16,6 +16,26 @@ import {
   NewsIcon,
 } from './icons';
 
+// Affiliate megaphone icon — inline so we don't expand the shared icons barrel
+// (Phase 2 affiliate program; can be promoted to icons/index.tsx later if reused).
+function AffiliateIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m3 11 18-5v12L3 14v-3z" />
+      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+    </svg>
+  );
+}
+
 type UniversalHeaderProps = {
   /** Set by middleware + root layout (no flash); true on reseller subdomains that rewrite to /r/[id]. */
   hideHeaderForResellerHost?: boolean;
@@ -149,6 +169,15 @@ export const UniversalHeader = ({
                   >
                     <NewsIcon className="h-4 w-4" /> News
                   </Link>
+                  <Link
+                    href="/affiliates"
+                    className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-all ${pathname === '/affiliates'
+                      ? 'text-[var(--accent)] bg-[var(--accent-subtle)]'
+                      : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06]'
+                      }`}
+                  >
+                    <AffiliateIcon className="h-4 w-4" /> Affiliates
+                  </Link>
                 </>
               )}
             </nav>
@@ -266,6 +295,9 @@ export const UniversalHeader = ({
               </Link>
               <Link href="/news" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
                 <NewsIcon className="h-5 w-5" /> News
+              </Link>
+              <Link href="/affiliates" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
+                <AffiliateIcon className="h-5 w-5" /> Affiliates
               </Link>
               {user && (
                 <>
