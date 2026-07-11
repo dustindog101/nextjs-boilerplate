@@ -9,12 +9,16 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:unit": "vitest run --project unit",
+    "test:components": "vitest run --project components",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:lambda": "python3 -m pytest integration/discounts/tests/ -v"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1027.0",
     "@aws-sdk/s3-request-presigner": "^3.1027.0",
-    "@vitest/ui": "^4.1.10",
     "exceljs": "^4.4.0",
     "heic2any": "^0.0.4",
     "lucide-react": "^0.412.0",
@@ -22,16 +26,22 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "recharts": "^2.12.7",
-    "vitest": "^4.1.10"
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/ui": "^4.1.10",
     "dotenv": "^17.2.3",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }
