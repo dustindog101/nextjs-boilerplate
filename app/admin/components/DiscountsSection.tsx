@@ -8,7 +8,7 @@ import { sortRows } from '@/lib/tableSort';
 import { useTableSortState } from '@/app/hooks/useTableSort';
 import { productSelectGroups, getProductShortLabel } from '@/lib/productCatalog';
 
-const inputCls = "w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none transition-all";
+const inputCls = "w-full bg-white/[0.04] border border-[var(--border)] rounded-lg px-4 py-2.5 text-sm [color-scheme:dark] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-[var(--accent)]/60 focus:outline-none transition-all";
 
 /* ── Discount Form Modal (shared for create + edit) ── */
 interface DiscountFormProps {
@@ -115,9 +115,9 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 w-full max-w-lg relative animate-fade-up max-h-[90vh] overflow-y-auto">
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 transition-colors"><X size={20} /></button>
-                <h3 className="text-lg font-bold text-slate-900 mb-5">{isEdit ? 'Edit Discount' : 'Create Discount Code'}</h3>
+            <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-xl p-6 w-full max-w-lg relative animate-fade-up max-h-[90vh] overflow-y-auto">
+                <button onClick={onClose} className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"><X size={20} /></button>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-5">{isEdit ? 'Edit Discount' : 'Create Discount Code'}</h3>
                 <div className="space-y-4">
                     {/* Code */}
                     <div>
@@ -141,37 +141,37 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                     </div>
 
                     {/* NEW: Scope selector */}
-                    <div className="border-t border-slate-100 pt-4">
+                    <div className="border-t border-[var(--border)] pt-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <Package size={14} className="text-slate-400" />
+                            <Package size={14} className="text-[var(--text-tertiary)]" />
                             <label className="text-label">Applies To</label>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 type="button"
                                 onClick={() => setScope('cart')}
-                                className={`flex items-start gap-2 p-3 rounded-lg border text-left transition-all ${scope === 'cart' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}
+                                className={`flex items-start gap-2 p-3 rounded-lg border text-left transition-all ${scope === 'cart' ? 'border-[var(--accent)] bg-[var(--accent-subtle)]' : 'border-[var(--border)] hover:border-[var(--border-hover)]'}`}
                             >
-                                <ShoppingCart size={16} className={scope === 'cart' ? 'text-blue-600 mt-0.5' : 'text-slate-400 mt-0.5'} />
+                                <ShoppingCart size={16} className={scope === 'cart' ? 'text-[var(--accent)] mt-0.5' : 'text-[var(--text-tertiary)] mt-0.5'} />
                                 <div>
-                                    <div className="text-sm font-semibold text-slate-900">Whole cart</div>
-                                    <div className="text-xs text-slate-500">Discount applies to the entire order total.</div>
+                                    <div className="text-sm font-semibold text-[var(--text-primary)]">Whole cart</div>
+                                    <div className="text-xs text-[var(--text-tertiary)]">Discount applies to the entire order total.</div>
                                 </div>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setScope('line_item')}
-                                className={`flex items-start gap-2 p-3 rounded-lg border text-left transition-all ${scope === 'line_item' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}
+                                className={`flex items-start gap-2 p-3 rounded-lg border text-left transition-all ${scope === 'line_item' ? 'border-[var(--accent)] bg-[var(--accent-subtle)]' : 'border-[var(--border)] hover:border-[var(--border-hover)]'}`}
                             >
-                                <Package size={16} className={scope === 'line_item' ? 'text-blue-600 mt-0.5' : 'text-slate-400 mt-0.5'} />
+                                <Package size={16} className={scope === 'line_item' ? 'text-[var(--accent)] mt-0.5' : 'text-[var(--text-tertiary)] mt-0.5'} />
                                 <div>
-                                    <div className="text-sm font-semibold text-slate-900">Specific products</div>
-                                    <div className="text-xs text-slate-500">Per-ID discount on selected products in cart.</div>
+                                    <div className="text-sm font-semibold text-[var(--text-primary)]">Specific products</div>
+                                    <div className="text-xs text-[var(--text-tertiary)]">Per-ID discount on selected products in cart.</div>
                                 </div>
                             </button>
                         </div>
                         {scope === 'line_item' && (
-                            <p className="text-xs text-slate-500 mt-2 bg-amber-50 border border-amber-200 rounded-md p-2">
+                            <p className="text-xs text-[var(--text-secondary)] mt-2 bg-amber-500/10 border border-amber-500/20 rounded-md p-2">
                                 <strong>Per-ID:</strong> Value applies to <em>each matching unit</em> in the cart. E.g. 10% on `PA:STANDARD` × 2 = 10% off each ID, twice.
                             </p>
                         )}
@@ -179,43 +179,43 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
 
                     {/* NEW: Product picker (only for line_item scope) */}
                     {scope === 'line_item' && (
-                        <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                        <div className="border border-[var(--border)] rounded-lg p-3 bg-white/[0.02]">
                             <div className="flex items-center justify-between mb-2">
                                 <label className="text-label">Eligible Products</label>
-                                <span className="text-xs text-slate-500">{productIds.length} selected</span>
+                                <span className="text-xs text-[var(--text-tertiary)]">{productIds.length} selected</span>
                             </div>
                             <div className="relative mb-2">
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
                                 <input
                                     type="text"
                                     placeholder="Search products..."
                                     value={productSearch}
                                     onChange={(e) => setProductSearch(e.target.value)}
-                                    className="w-full bg-white border border-slate-200 rounded-md pl-9 pr-3 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none"
+                                    className="w-full bg-white/[0.04] border border-[var(--border)] rounded-md pl-9 pr-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-[var(--accent)]/60 focus:outline-none"
                                 />
                             </div>
-                            <div className="max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-md">
+                            <div className="max-h-48 overflow-y-auto bg-white/[0.02] border border-[var(--border)] rounded-md">
                                 {filteredGroups.length === 0 ? (
-                                    <div className="p-3 text-sm text-slate-400 text-center">No products match.</div>
+                                    <div className="p-3 text-sm text-[var(--text-tertiary)] text-center">No products match.</div>
                                 ) : (
                                     filteredGroups.map(group => (
                                         <div key={group.label}>
-                                            <div className="sticky top-0 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                            <div className="sticky top-0 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                                                 {group.label}
                                             </div>
                                             {group.options.map(opt => (
                                                 <label
                                                     key={opt.id}
-                                                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                                                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--accent-subtle)] cursor-pointer transition-colors"
                                                 >
                                                     <input
                                                         type="checkbox"
                                                         checked={productIds.includes(opt.id)}
                                                         onChange={() => toggleProduct(opt.id)}
-                                                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                                                        className="rounded border-white/20 bg-white/[0.04] text-[var(--accent)] focus:ring-[var(--accent)]/40"
                                                     />
-                                                    <span className="text-sm text-slate-700 font-mono">{opt.id}</span>
-                                                    <span className="text-xs text-slate-400">— {opt.label}</span>
+                                                    <span className="text-sm text-[var(--text-secondary)] font-mono">{opt.id}</span>
+                                                    <span className="text-xs text-[var(--text-tertiary)]">— {opt.label}</span>
                                                 </label>
                                             ))}
                                         </div>
@@ -225,13 +225,13 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                             {productIds.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-2">
                                     {productIds.slice(0, 6).map(pid => (
-                                        <span key={pid} className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                                        <span key={pid} className="inline-flex items-center gap-1 text-xs bg-[var(--accent-subtle)] text-[var(--accent-hover)] px-2 py-0.5 rounded-full">
                                             {pid}
-                                            <button onClick={() => toggleProduct(pid)} className="hover:text-red-500"><X size={10} /></button>
+                                            <button onClick={() => toggleProduct(pid)} className="hover:text-red-400"><X size={10} /></button>
                                         </span>
                                     ))}
                                     {productIds.length > 6 && (
-                                        <span className="text-xs text-slate-500">+{productIds.length - 6} more</span>
+                                        <span className="text-xs text-[var(--text-tertiary)]">+{productIds.length - 6} more</span>
                                     )}
                                 </div>
                             )}
@@ -245,36 +245,36 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                             <input type="number" value={minOrder} onChange={(e) => setMinOrder(parseFloat(e.target.value) || 0)} className={inputCls} min={0} step={0.01} />
                         </div>
                         <div>
-                            <label className="text-label mb-1 block">Max Uses <span className="text-slate-400">(blank=∞)</span></label>
+                            <label className="text-label mb-1 block">Max Uses <span className="text-[var(--text-tertiary)]">(blank=∞)</span></label>
                             <input type="number" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} className={inputCls} min={1} placeholder="Unlimited" />
                         </div>
                     </div>
 
                     {/* Validity Period */}
-                    <div className="border-t border-slate-100 pt-4">
+                    <div className="border-t border-[var(--border)] pt-4">
                         <div className="flex items-center gap-2 mb-3">
-                            <Calendar size={14} className="text-slate-400" />
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Validity Period</span>
+                            <Calendar size={14} className="text-[var(--text-tertiary)]" />
+                            <span className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Validity Period</span>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-label mb-1 block">Starts <span className="text-slate-400">(optional)</span></label>
+                                <label className="text-label mb-1 block">Starts <span className="text-[var(--text-tertiary)]">(optional)</span></label>
                                 <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} className={inputCls} />
                             </div>
                             <div>
-                                <label className="text-label mb-1 block">Expires <span className="text-slate-400">(optional)</span></label>
+                                <label className="text-label mb-1 block">Expires <span className="text-[var(--text-tertiary)]">(optional)</span></label>
                                 <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className={inputCls} />
                             </div>
                         </div>
                     </div>
 
                     {/* Allowed Usernames */}
-                    <div className="border-t border-slate-100 pt-4">
+                    <div className="border-t border-[var(--border)] pt-4">
                         <div className="flex items-center gap-2 mb-1">
-                            <Users size={14} className="text-slate-400" />
-                            <label className="text-label">Restrict to Users <span className="text-slate-400">(optional)</span></label>
+                            <Users size={14} className="text-[var(--text-tertiary)]" />
+                            <label className="text-label">Restrict to Users <span className="text-[var(--text-tertiary)]">(optional)</span></label>
                         </div>
-                        <p className="text-xs text-slate-400 mb-2">Comma-separated usernames. Leave blank for anyone.</p>
+                        <p className="text-xs text-[var(--text-tertiary)] mb-2">Comma-separated usernames. Leave blank for anyone.</p>
                         <input
                             type="text"
                             value={allowedUsernames}
@@ -285,13 +285,13 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                         {allowedUsernames.trim() && (
                             <div className="flex flex-wrap gap-1 mt-2">
                                 {allowedUsernames.split(',').map(u => u.trim()).filter(Boolean).map(u => (
-                                    <span key={u} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{u}</span>
+                                    <span key={u} className="text-xs bg-[var(--accent-subtle)] text-[var(--accent-hover)] px-2 py-0.5 rounded-full">{u}</span>
                                 ))}
                             </div>
                         )}
                     </div>
 
-                    {error && <p className="text-red-500 text-sm bg-red-50 p-2 rounded-lg">{error}</p>}
+                    {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 p-2 rounded-lg">{error}</p>}
                     <div className="flex justify-end gap-3 pt-2">
                         <button onClick={onClose} className="btn btn-outline px-4 py-2 text-sm" disabled={saving}>Cancel</button>
                         <button onClick={handleSubmit} className="btn btn-primary px-4 py-2 text-sm" disabled={saving}>
@@ -367,40 +367,40 @@ export const DiscountsSection = () => {
     const getTimeStatus = (d: Discount): { label: string; color: string } | null => {
         const now = new Date();
         if (d.startsAt && new Date(d.startsAt) > now) {
-            return { label: 'Scheduled', color: 'bg-amber-50 text-amber-600' };
+            return { label: 'Scheduled', color: 'bg-amber-500/10 text-amber-400' };
         }
         if (d.expiresAt && new Date(d.expiresAt) < now) {
-            return { label: 'Expired', color: 'bg-red-50 text-red-500' };
+            return { label: 'Expired', color: 'bg-red-500/10 text-red-400' };
         }
         return null;
     };
 
     if (discounts.isLoading) return <div className="p-12 flex items-center justify-center"><Spinner size="lg" /></div>;
-    if (discounts.error) return <div className="p-6 text-center text-red-500">Error: {discounts.error}</div>;
+    if (discounts.error) return <div className="p-6 text-center text-red-400">Error: {discounts.error}</div>;
 
     return (
         <div className="p-4 sm:p-6">
             {showForm && <DiscountFormModal existing={editingDiscount} onClose={closeForm} onDone={refreshDiscounts} />}
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-                <h2 className="text-lg font-bold text-slate-900">
-                    Discount Codes <span className="text-slate-400 font-normal text-sm">({sorted.length})</span>
+                <h2 className="text-lg font-bold text-[var(--text-primary)]">
+                    Discount Codes <span className="text-[var(--text-tertiary)] font-normal text-sm">({sorted.length})</span>
                 </h2>
                 <div className="flex gap-2">
                     <div className="relative flex-1 sm:flex-initial">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
                         <input
                             type="text"
                             placeholder="Search codes..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full sm:w-44 bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none transition-all"
+                            className="w-full sm:w-44 bg-white/[0.04] border border-[var(--border)] rounded-lg pl-9 pr-4 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-[var(--accent)]/60 focus:outline-none transition-all"
                         />
                     </div>
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all"
+                        className="bg-white/[0.04] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent)]/40 focus:outline-none transition-all"
                     >
                         <option value="all">All</option>
                         <option value="active">Active</option>
@@ -414,22 +414,22 @@ export const DiscountsSection = () => {
 
             {sorted.length === 0 ? (
                 <div className="glass p-8 text-center">
-                    <Tag size={32} className="mx-auto text-slate-300 mb-3" />
-                    <p className="text-slate-500 mb-1">No discount codes found.</p>
-                    <p className="text-slate-400 text-sm">Create one to offer promotions.</p>
+                    <Tag size={32} className="mx-auto text-zinc-600 mb-3" />
+                    <p className="text-[var(--text-secondary)] mb-1">No discount codes found.</p>
+                    <p className="text-[var(--text-tertiary)] text-sm">Create one to offer promotions.</p>
                 </div>
             ) : (
                 <div className="glass overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-slate-200">
+                        <table className="min-w-full divide-y divide-[var(--border)]">
                             <thead>
-                                <tr className="bg-slate-50">
+                                <tr className="bg-white/[0.02]">
                                     <SortableTh
                                         columnKey="code"
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Code
                                     </SortableTh>
@@ -438,7 +438,7 @@ export const DiscountsSection = () => {
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Type
                                     </SortableTh>
@@ -448,7 +448,7 @@ export const DiscountsSection = () => {
                                         direction={direction}
                                         onSort={toggleSort}
                                         align="right"
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Value
                                     </SortableTh>
@@ -457,7 +457,7 @@ export const DiscountsSection = () => {
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Scope
                                     </SortableTh>
@@ -467,7 +467,7 @@ export const DiscountsSection = () => {
                                         direction={direction}
                                         onSort={toggleSort}
                                         align="right"
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Uses
                                     </SortableTh>
@@ -476,7 +476,7 @@ export const DiscountsSection = () => {
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Status
                                     </SortableTh>
@@ -485,7 +485,7 @@ export const DiscountsSection = () => {
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Window
                                     </SortableTh>
@@ -494,33 +494,33 @@ export const DiscountsSection = () => {
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Users
                                     </SortableTh>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider" scope="col">
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-[var(--border)]">
                                 {sorted.map(d => {
                                     const timeStatus = getTimeStatus(d);
                                     return (
-                                        <tr key={d.code} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-slate-900 font-mono">{d.code}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 capitalize">{d.discountType}</td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-slate-900 font-medium">
+                                        <tr key={d.code} className="hover:bg-white/[0.03] transition-colors">
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-[var(--text-primary)] font-mono">{d.code}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-[var(--text-tertiary)] capitalize">{d.discountType}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-[var(--text-primary)] font-medium">
                                                 {d.discountType === 'percentage' ? `${d.value}%` : `$${d.value.toFixed(2)}`}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-xs">
                                                 {(d.scope ?? 'cart') === 'cart' ? (
-                                                    <span className="inline-flex items-center gap-1 text-slate-500">
+                                                    <span className="inline-flex items-center gap-1 text-[var(--text-tertiary)]">
                                                         <ShoppingCart size={11} /> Cart
                                                     </span>
                                                 ) : (
                                                     <span
-                                                        className="inline-flex items-center gap-1 text-blue-600"
+                                                        className="inline-flex items-center gap-1 text-[var(--accent)]"
                                                         title={(d.productIds ?? []).join(', ')}
                                                     >
                                                         <Package size={11} />
@@ -528,14 +528,14 @@ export const DiscountsSection = () => {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-slate-500">
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-[var(--text-tertiary)]">
                                                 {d.usedCount}{d.maxUses !== undefined ? `/${d.maxUses}` : '/∞'}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <div className="flex items-center gap-1.5">
                                                     <button
                                                         onClick={() => toggleActive(d.code, d.isActive)}
-                                                        className={`text-xs font-semibold px-2 py-0.5 rounded-full cursor-pointer transition-colors ${d.isActive ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                                                        className={`text-xs font-semibold px-2 py-0.5 rounded-full cursor-pointer transition-colors ${d.isActive ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-white/[0.06] text-zinc-400 hover:bg-white/[0.1]'}`}
                                                     >
                                                         {d.isActive ? 'Active' : 'Off'}
                                                     </button>
@@ -546,7 +546,7 @@ export const DiscountsSection = () => {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-400">
+                                            <td className="px-4 py-3 whitespace-nowrap text-xs text-[var(--text-tertiary)]">
                                                 {d.startsAt || d.expiresAt ? (
                                                     <div className="flex items-center gap-1">
                                                         <Clock size={10} />
@@ -555,27 +555,27 @@ export const DiscountsSection = () => {
                                                         {d.expiresAt ? new Date(d.expiresAt).toLocaleDateString() : '∞'}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-slate-300">Always</span>
+                                                    <span className="text-zinc-600">Always</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-xs">
                                                 {d.allowedUsernames && d.allowedUsernames.length > 0 ? (
                                                     <div className="flex flex-wrap gap-0.5 max-w-[120px]">
                                                         {d.allowedUsernames.slice(0, 2).map(u => (
-                                                            <span key={u} className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full text-xs">{u}</span>
+                                                            <span key={u} className="bg-[var(--accent-subtle)] text-[var(--accent-hover)] px-1.5 py-0.5 rounded-full text-xs">{u}</span>
                                                         ))}
                                                         {d.allowedUsernames.length > 2 && (
-                                                            <span className="text-slate-400 text-xs">+{d.allowedUsernames.length - 2}</span>
+                                                            <span className="text-[var(--text-tertiary)] text-xs">+{d.allowedUsernames.length - 2}</span>
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-slate-300">Anyone</span>
+                                                    <span className="text-zinc-600">Anyone</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-right">
                                                 <div className="flex items-center justify-end gap-1">
-                                                    <button onClick={() => openEdit(d)} className="text-blue-400 hover:text-blue-600 p-1 transition-colors"><Edit size={14} /></button>
-                                                    <button onClick={() => handleDelete(d.code)} className="text-red-300 hover:text-red-500 p-1 transition-colors"><Trash2 size={14} /></button>
+                                                    <button onClick={() => openEdit(d)} className="text-[var(--accent)] hover:text-[var(--accent-hover)] p-1 transition-colors"><Edit size={14} /></button>
+                                                    <button onClick={() => handleDelete(d.code)} className="text-red-400 hover:text-red-300 p-1 transition-colors"><Trash2 size={14} /></button>
                                                 </div>
                                             </td>
                                         </tr>

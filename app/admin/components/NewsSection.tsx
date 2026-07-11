@@ -4,9 +4,9 @@ import { newsItems } from '../../../lib/news';
 import { Newspaper, ExternalLink, Eye, EyeOff } from 'lucide-react';
 
 const tagColors: Record<string, string> = {
-    Product: 'bg-blue-50 text-blue-600 border-blue-200',
-    Update: 'bg-emerald-50 text-emerald-600 border-emerald-200',
-    Promo: 'bg-amber-50 text-amber-600 border-amber-200',
+    Product: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    Update: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    Promo: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
 };
 
 export const NewsSection = () => {
@@ -16,14 +16,14 @@ export const NewsSection = () => {
         <div className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900">
+                    <h2 className="text-lg font-bold text-[var(--text-primary)]">
                         News & Updates{' '}
-                        <span className="text-slate-400 font-normal text-sm">
+                        <span className="text-[var(--text-tertiary)] font-normal text-sm">
                             ({published} published · {newsItems.length} total)
                         </span>
                     </h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Managed in <code className="text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded text-xs">lib/news.ts</code> — edit the file to add/update articles
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                        Managed in <code className="text-[var(--text-secondary)] bg-white/[0.04] px-1.5 py-0.5 rounded text-xs">lib/news.ts</code> — edit the file to add/update articles
                     </p>
                 </div>
                 <a
@@ -38,9 +38,9 @@ export const NewsSection = () => {
 
             {newsItems.length === 0 ? (
                 <div className="glass p-8 text-center">
-                    <Newspaper size={32} className="mx-auto text-slate-300 mb-3" />
-                    <p className="text-slate-500 mb-1">No news items yet.</p>
-                    <p className="text-slate-400 text-sm">Add items in <code>lib/news.ts</code>.</p>
+                    <Newspaper size={32} className="mx-auto text-zinc-600 mb-3" />
+                    <p className="text-[var(--text-secondary)] mb-1">No news items yet.</p>
+                    <p className="text-[var(--text-tertiary)] text-sm">Add items in <code>lib/news.ts</code>.</p>
                 </div>
             ) : (
                 <div className="space-y-3">
@@ -57,19 +57,19 @@ export const NewsSection = () => {
                                             <span className={`text-xs font-medium px-2.5 py-1 rounded-lg border ${tag}`}>
                                                 {item.tag}
                                             </span>
-                                            <span className="text-xs text-slate-400">{item.date}</span>
+                                            <span className="text-xs text-[var(--text-tertiary)]">{item.date}</span>
                                             {item.published ? (
-                                                <span className="flex items-center gap-1 text-xs text-emerald-600">
+                                                <span className="flex items-center gap-1 text-xs text-emerald-400">
                                                     <Eye size={12} /> Published
                                                 </span>
                                             ) : (
-                                                <span className="flex items-center gap-1 text-xs text-slate-400">
+                                                <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
                                                     <EyeOff size={12} /> Draft
                                                 </span>
                                             )}
                                         </div>
-                                        <h3 className="font-bold text-slate-900 text-sm mb-1">{item.title}</h3>
-                                        <p className="text-sm text-slate-500 leading-relaxed">{item.body}</p>
+                                        <h3 className="font-bold text-[var(--text-primary)] text-sm mb-1">{item.title}</h3>
+                                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item.body}</p>
                                     </div>
                                 </div>
                             </div>
@@ -80,11 +80,11 @@ export const NewsSection = () => {
 
             {/* Edit guide */}
             <div className="glass p-4 mt-6 border-dashed">
-                <h4 className="text-sm font-bold text-slate-700 mb-2">How to edit news</h4>
-                <ol className="text-xs text-slate-500 space-y-1.5 list-decimal list-inside">
-                    <li>Open <code className="text-slate-600 bg-slate-100 px-1 py-0.5 rounded">lib/news.ts</code></li>
-                    <li>Add, edit, or remove entries in the <code className="text-slate-600 bg-slate-100 px-1 py-0.5 rounded">newsItems</code> array</li>
-                    <li>Set <code className="text-slate-600 bg-slate-100 px-1 py-0.5 rounded">published: false</code> to hide an item</li>
+                <h4 className="text-sm font-bold text-[var(--text-secondary)] mb-2">How to edit news</h4>
+                <ol className="text-xs text-[var(--text-tertiary)] space-y-1.5 list-decimal list-inside">
+                    <li>Open <code className="text-[var(--text-secondary)] bg-white/[0.04] px-1 py-0.5 rounded">lib/news.ts</code></li>
+                    <li>Add, edit, or remove entries in the <code className="text-[var(--text-secondary)] bg-white/[0.04] px-1 py-0.5 rounded">newsItems</code> array</li>
+                    <li>Set <code className="text-[var(--text-secondary)] bg-white/[0.04] px-1 py-0.5 rounded">published: false</code> to hide an item</li>
                     <li>Deploy — changes go live instantly</li>
                 </ol>
             </div>
