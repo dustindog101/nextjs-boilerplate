@@ -2,31 +2,57 @@
   "deployments": [
     {
       "lambda": "admin_handler",
-      "zip": "admin_handler-20260711-153714.zip",
-      "timestamp": "2026-07-11T15:37:14.154989+00:00",
-      "size_bytes": 25700,
-      "purpose": "See git log for change details."
+      "zip": "admin_handler-20260711-162702-dev.zip",
+      "label": "dev",
+      "timestamp": "2026-07-11T16:40:03.173787+00:00",
+      "size_bytes": 26704,
+      "encrypted": true,
+      "encryption": "AES-256",
+      "note": "dev branch deployment"
     },
     {
       "lambda": "idPirateOrderLookup",
-      "zip": "idPirateOrderLookup-20260711-153714.zip",
-      "timestamp": "2026-07-11T15:37:14.155002+00:00",
-      "size_bytes": 23908,
-      "purpose": "See git log for change details."
+      "zip": "idPirateOrderLookup-20260711-162702-dev.zip",
+      "label": "dev",
+      "timestamp": "2026-07-11T16:40:03.173804+00:00",
+      "size_bytes": 24770,
+      "encrypted": true,
+      "encryption": "AES-256",
+      "note": "dev branch deployment"
     },
     {
-      "lambda": "admin_handler",
-      "zip": "admin_handler-20260711-162702.zip",
-      "timestamp": "2026-07-11T16:27:02.579716+00:00",
-      "size_bytes": 25976,
-      "purpose": "See git log for change details."
+      "lambda": "idPirateOrderLookup",
+      "zip": "idPirateOrderLookup-20260711-153714-rollback.zip",
+      "label": "rollback",
+      "timestamp": "2026-07-11T16:40:03.173807+00:00",
+      "size_bytes": 24770,
+      "encrypted": true,
+      "encryption": "AES-256",
+      "note": "pre-dev rollback snapshot \u2014 remove once dev \u2192 main merged"
     },
     {
       "lambda": "ID-Pirate-CreateOrder-Function",
-      "zip": "ID-Pirate-CreateOrder-Function-20260711-162702.zip",
-      "timestamp": "2026-07-11T16:27:02.579729+00:00",
-      "size_bytes": 9548,
-      "purpose": "See git log for change details."
+      "zip": "ID-Pirate-CreateOrder-Function-20260711-162702-dev.zip",
+      "label": "dev",
+      "timestamp": "2026-07-11T16:40:03.173809+00:00",
+      "size_bytes": 9559,
+      "encrypted": true,
+      "encryption": "AES-256",
+      "note": "dev branch deployment"
+    },
+    {
+      "lambda": "admin_handler",
+      "zip": "admin_handler-20260711-153714-rollback.zip",
+      "label": "rollback",
+      "timestamp": "2026-07-11T16:40:03.173811+00:00",
+      "size_bytes": 26452,
+      "encrypted": true,
+      "encryption": "AES-256",
+      "note": "pre-dev rollback snapshot \u2014 remove once dev \u2192 main merged"
     }
-  ]
+  ],
+  "notes": {
+    "missing_rollback": "ID-Pirate-CreateOrder-Function has no rollback zip because its v2 code (per-ID discount, on main) was never zipped separately. If rollback is needed, extract the v3 dev zip and remove the affiliate commission lines (search for commissionEarned, affiliateOwner, affiliatePaid).",
+    "rollback_removal": "All rollback zips can be deleted once dev \u2192 main is merged and verified in production."
+  }
 }
