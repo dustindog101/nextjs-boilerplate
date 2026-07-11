@@ -112,6 +112,7 @@ function TrackPageContent() {
             <div className="flex flex-col gap-3">
               <input
                 type="text"
+                aria-label="Order number"
                 value={orderNumber}
                 onChange={(e) => setOrderNumber(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleTrackOrder()}

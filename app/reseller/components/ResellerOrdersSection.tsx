@@ -28,19 +28,19 @@ const STATUS_OPTIONS = ['pending', 'in-progress', 'completed', 'cancelled'];
 const PAYMENT_OPTIONS = ['Unpaid', 'Paid', 'Partial'];
 
 const STATUS_COLORS: Record<string, string> = {
-    pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    'in-progress': 'bg-blue-50 text-blue-700 border-blue-200',
-    completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    cancelled: 'bg-red-50 text-red-700 border-red-200',
+    pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    'in-progress': 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    completed: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
 };
 const PAYMENT_COLORS: Record<string, string> = {
-    Unpaid: 'bg-red-50 text-red-600 border-red-200',
-    Paid: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    Partial: 'bg-amber-50 text-amber-700 border-amber-200',
+    Unpaid: 'bg-red-500/10 text-red-400 border-red-500/20',
+    Paid: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    Partial: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
 };
 
 const pill = (val: string, map: Record<string, string>) =>
-    `inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium ${map[val] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`;
+    `inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium ${map[val] ?? 'bg-white/[0.06] text-zinc-400 border-[var(--border)]'}`;
 
 // ─── Inline select ─────────────────────────────────────────────────────────────
 
@@ -57,7 +57,7 @@ const EditSelect: React.FC<EditSelectProps> = ({ value, options, colorMap, onCha
         value={value}
         onChange={e => onChange(e.target.value)}
         disabled={saving}
-        className={`text-xs font-medium rounded-full border px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0 cursor-pointer disabled:opacity-50 transition-all ${colorMap[value] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}
+        className={`text-xs font-medium rounded-full border px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/35 focus:ring-offset-0 cursor-pointer disabled:opacity-50 transition-all ${colorMap[value] ?? 'bg-white/[0.06] text-zinc-400 border-[var(--border)]'}`}
     >
         {options.map(o => <option key={o} value={o}>{o}</option>)}
     </select>
@@ -208,65 +208,65 @@ function ResellerOrdersSectionInner() {
 
     if (orders.isLoading) return (
         <div className="p-12 flex justify-center">
-            <Loader2 size={24} className="animate-spin text-slate-400" />
+            <Loader2 size={24} className="animate-spin text-[var(--text-tertiary)]" />
         </div>
     );
     if (orders.error) return (
-        <div className="p-6 text-center text-red-500">Error: {orders.error}</div>
+        <div className="p-6 text-center text-red-400">Error: {orders.error}</div>
     );
 
     return (
         <div className="p-4 sm:p-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-                <h2 className="text-lg font-bold text-slate-900">
-                    My Orders <span className="text-slate-400 font-normal text-sm">({sorted.length})</span>
+                <h2 className="text-lg font-bold text-[var(--text-primary)]">
+                    My Orders <span className="text-[var(--text-tertiary)] font-normal text-sm">({sorted.length})</span>
                 </h2>
                 <div className="flex flex-wrap items-center gap-2">
                     <select
                         value={batchFilter}
                         onChange={(e) => setBatchFilter(e.target.value as typeof batchFilter)}
-                        className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
+                        className="bg-white/[0.04] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent)]/40 focus:outline-none"
                     >
                         <option value="all">All orders</option>
                         <option value="unbatched">Unbatched</option>
                         <option value="in_batch">In batch</option>
                     </select>
                     <div className="relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
                     <input
                         type="text"
                         placeholder="Search orders..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full sm:w-52 bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all"
+                        className="w-full sm:w-52 bg-white/[0.04] border border-[var(--border)] rounded-lg pl-9 pr-4 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/40 focus:outline-none transition-all"
                     />
                 </div>
                 </div>
             </div>
 
             {batchMsg && (
-                <p className="mb-3 text-sm text-slate-600 bg-slate-100 border border-slate-200 rounded-lg px-3 py-2">{batchMsg}</p>
+                <p className="mb-3 text-sm text-[var(--text-secondary)] bg-white/[0.04] border border-[var(--border)] rounded-lg px-3 py-2">{batchMsg}</p>
             )}
 
             {sorted.length === 0 ? (
                 <div className="glass p-10 text-center">
-                    <p className="text-slate-500 mb-1">No orders yet.</p>
-                    <p className="text-slate-400 text-sm">Orders placed through your link will appear here.</p>
+                    <p className="text-[var(--text-secondary)] mb-1">No orders yet.</p>
+                    <p className="text-[var(--text-tertiary)] text-sm">Orders placed through your link will appear here.</p>
                 </div>
             ) : (
                 <div className="glass overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="min-w-full reseller-orders-table">
                             <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200">
+                                <tr className="bg-white/[0.02] border-b border-[var(--border)]">
                                     <th className="px-3 py-3 w-10" scope="col" aria-label="Select" />
                                     <SortableTh
                                         columnKey="orderId"
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Order
                                     </SortableTh>
@@ -275,7 +275,7 @@ function ResellerOrdersSectionInner() {
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Date
                                     </SortableTh>
@@ -284,7 +284,7 @@ function ResellerOrdersSectionInner() {
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Status
                                     </SortableTh>
@@ -293,20 +293,20 @@ function ResellerOrdersSectionInner() {
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         IDs
                                     </SortableTh>
-                                    <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                    <th className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider" scope="col">
                                         Customer
                                     </th>
-                                    <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                    <th className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider" scope="col">
                                         Wholesale
                                     </th>
-                                    <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                    <th className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider" scope="col">
                                         Profit
                                     </th>
-                                    <th className="px-4 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                    <th className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider" scope="col">
                                         Batch
                                     </th>
                                     <SortableTh
@@ -314,11 +314,11 @@ function ResellerOrdersSectionInner() {
                                         sortKey={sortKey}
                                         direction={direction}
                                         onSort={toggleSort}
-                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                        className="px-4 py-3 text-xs font-semibold text-[var(--text-tertiary)]"
                                     >
                                         Payment
                                     </SortableTh>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider" scope="col">
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider" scope="col">
                                         Save
                                     </th>
                                     <th className="px-4 py-3 w-12" scope="col" aria-label="Actions" />
@@ -334,25 +334,25 @@ function ResellerOrdersSectionInner() {
 
                                     return (
                                         <React.Fragment key={o.orderId}>
-                                            <tr className="hover:bg-slate-50 transition-colors">
+                                            <tr className="hover:bg-white/[0.03] transition-colors">
                                                 <td className="px-3 py-3">
                                                     {canSelectForBatch(o) ? (
                                                         <input
                                                             type="checkbox"
                                                             checked={selectedIds.has(o.orderId)}
                                                             onChange={() => toggleSelect(o.orderId)}
-                                                            className="rounded border-slate-300"
+                                                            className="rounded border-white/20 bg-white/[0.04] accent-indigo-500"
                                                             aria-label={`Select order ${o.orderId.slice(0, 8)}`}
                                                         />
                                                     ) : null}
                                                 </td>
                                                 {/* Order ID */}
                                                 <td className="px-4 py-3 whitespace-nowrap">
-                                                    <p className="text-sm font-mono text-slate-700">{o.orderId.substring(0, 8)}…</p>
+                                                    <p className="text-sm font-mono text-[var(--text-primary)]">{o.orderId.substring(0, 8)}…</p>
                                                 </td>
 
                                                 {/* Date */}
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-[var(--text-tertiary)]">
                                                     {o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}
                                                 </td>
 
@@ -368,20 +368,20 @@ function ResellerOrdersSectionInner() {
                                                 </td>
 
                                                 {/* ID count */}
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-[var(--text-secondary)]">
                                                     {o.ids?.length ?? o.numberOfIds ?? '—'}
                                                 </td>
 
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-amber-700 font-medium">
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-amber-400 font-medium">
                                                     {formatMoney(customerTotalFromOrder(o))}
                                                 </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-[var(--text-secondary)]">
                                                     {formatMoney(wholesaleFromOrder(o))}
                                                 </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-emerald-700">
+                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-emerald-400">
                                                     {formatMoney(profitFromOrder(o))}
                                                 </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500 max-w-[100px] truncate" title={o.batchId}>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs text-[var(--text-tertiary)] max-w-[100px] truncate" title={o.batchId}>
                                                     {o.batchStatus && o.batchStatus !== 'unbatched'
                                                         ? o.batchStatus
                                                         : '—'}
@@ -401,14 +401,14 @@ function ResellerOrdersSectionInner() {
                                                 {/* Save button */}
                                                 <td className="px-4 py-3 whitespace-nowrap text-right">
                                                     {isSaved ? (
-                                                        <span className="flex items-center justify-end gap-1 text-xs text-emerald-600 font-medium">
+                                                        <span className="flex items-center justify-end gap-1 text-xs text-emerald-400 font-medium">
                                                             <Check size={13} /> Saved
                                                         </span>
                                                     ) : (
                                                         <button
                                                             onClick={() => handleSave(o)}
                                                             disabled={isSaving || !dirty}
-                                                            className="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5 ml-auto"
+                                                            className="btn btn-primary text-xs px-3 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5 ml-auto"
                                                         >
                                                             {isSaving ? <Loader2 size={11} className="animate-spin" /> : null}
                                                             {isSaving ? 'Saving…' : 'Save'}
@@ -427,7 +427,7 @@ function ResellerOrdersSectionInner() {
                                                             onClick={() =>
                                                                 setMenuOpenId(menuOpenId === o.orderId ? null : o.orderId)
                                                             }
-                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-white/[0.06] hover:text-[var(--text-primary)] transition-colors"
                                                             aria-expanded={menuOpenId === o.orderId}
                                                             aria-haspopup="menu"
                                                             aria-label={`Actions for order ${o.orderId.slice(0, 8)}`}
@@ -436,14 +436,14 @@ function ResellerOrdersSectionInner() {
                                                         </button>
                                                         {menuOpenId === o.orderId && (
                                                             <div
-                                                                className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+                                                                className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] py-1 shadow-lg"
                                                                 role="menu"
                                                             >
                                                                 {isOrderUnpaid(o) && isCryptoOrder(o) && (
                                                                     <button
                                                                         type="button"
                                                                         role="menuitem"
-                                                                        className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-900 hover:bg-slate-50"
+                                                                        className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-white/[0.06]"
                                                                         onClick={() => {
                                                                             void openPayModal(
                                                                                 o.orderId,
@@ -453,29 +453,29 @@ function ResellerOrdersSectionInner() {
                                                                             setMenuOpenId(null);
                                                                         }}
                                                                     >
-                                                                        <Wallet size={16} className="text-slate-400" />
+                                                                        <Wallet size={16} className="text-[var(--text-tertiary)]" />
                                                                         View payment
                                                                     </button>
                                                                 )}
                                                                 <Link
                                                                     href={`/order/view?orderId=${encodeURIComponent(o.orderId)}&from=reseller&section=orders`}
-                                                                    className="flex items-center gap-2 px-3 py-2.5 text-sm text-slate-900 hover:bg-slate-50"
+                                                                    className="flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--text-primary)] hover:bg-white/[0.06]"
                                                                     role="menuitem"
                                                                     onClick={() => setMenuOpenId(null)}
                                                                 >
-                                                                    <Eye size={16} className="text-slate-400" />
+                                                                    <Eye size={16} className="text-[var(--text-tertiary)]" />
                                                                     View full order
                                                                 </Link>
                                                                 <button
                                                                     type="button"
                                                                     role="menuitem"
-                                                                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-900 hover:bg-slate-50"
+                                                                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-white/[0.06]"
                                                                     onClick={() => {
                                                                         setExpanded(isExpanded ? null : o.orderId);
                                                                         setMenuOpenId(null);
                                                                     }}
                                                                 >
-                                                                    <PanelBottom size={16} className="text-slate-400" />
+                                                                    <PanelBottom size={16} className="text-[var(--text-tertiary)]" />
                                                                     {isExpanded ? 'Hide quick summary' : 'Show quick summary'}
                                                                 </button>
                                                             </div>
@@ -486,35 +486,35 @@ function ResellerOrdersSectionInner() {
 
                                             {/* Expanded detail row */}
                                             {isExpanded && (
-                                                <tr className="bg-slate-50">
+                                                <tr className="bg-white/[0.02]">
                                                     <td colSpan={12} className="px-4 py-4">
                                                         {errMsg && (
-                                                            <p className="text-red-500 text-xs mb-2 bg-red-50 px-3 py-1.5 rounded-lg">{errMsg}</p>
+                                                            <p className="text-red-400 text-xs mb-2 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg">{errMsg}</p>
                                                         )}
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs text-slate-600">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs text-[var(--text-secondary)]">
                                                             <div>
-                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Full Order ID</p>
+                                                                <p className="text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Full Order ID</p>
                                                                 <p className="font-mono break-all">{o.orderId}</p>
                                                             </div>
                                                             <div>
-                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Shipping</p>
+                                                                <p className="text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Shipping</p>
                                                                 <p>{o.shipping ?? '—'}</p>
                                                             </div>
                                                             <div>
-                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Source</p>
+                                                                <p className="text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Source</p>
                                                                 <p>{o.source ?? 'direct'}</p>
                                                             </div>
                                                             <div>
-                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Notes</p>
+                                                                <p className="text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Notes</p>
                                                                 <p>{o.notes || '—'}</p>
                                                             </div>
                                                             <div>
-                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Payment Method</p>
+                                                                <p className="text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Payment Method</p>
                                                                 <PaymentMethodBadge method={o.paymentMethod} size="xs" showLabel="auto" fallback="—" />
                                                             </div>
                                                             {o.cryptoAsset && (
                                                                 <div>
-                                                                    <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Crypto asset</p>
+                                                                    <p className="text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Crypto asset</p>
                                                                     <p>{o.cryptoAsset}</p>
                                                                 </div>
                                                             )}
@@ -529,14 +529,14 @@ function ResellerOrdersSectionInner() {
                                                                                 o as OrderDetails
                                                                             );
                                                                         }}
-                                                                        className="text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
+                                                                        className="btn btn-primary text-xs px-3 py-1.5 rounded-lg transition-all"
                                                                     >
                                                                         View payment
                                                                     </button>
                                                                 </div>
                                                             )}
                                                             <div>
-                                                                <p className="text-slate-400 font-semibold uppercase tracking-wide mb-0.5">Last Updated</p>
+                                                                <p className="text-[var(--text-tertiary)] font-semibold uppercase tracking-wide mb-0.5">Last Updated</p>
                                                                 <p>{o.updatedAt ? new Date(o.updatedAt).toLocaleString() : '—'}</p>
                                                             </div>
                                                         </div>
@@ -586,7 +586,7 @@ function ResellerOrdersSectionInner() {
 export const ResellerOrdersSection: React.FC = () => (
     <Suspense fallback={
         <div className="p-12 flex justify-center">
-            <Loader2 size={24} className="animate-spin text-slate-400" />
+            <Loader2 size={24} className="animate-spin text-[var(--text-tertiary)]" />
         </div>
     }>
         <ResellerOrdersSectionInner />

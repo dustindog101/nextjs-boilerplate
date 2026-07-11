@@ -57,13 +57,21 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
     setEditedUser(prev => ({ ...prev, [name]: finalValue }));
   };
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSaving) onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose, isSaving]);
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="rounded-2xl shadow-xl p-6 w-full max-w-md relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-        <button onClick={onClose} className="absolute top-4 right-4 transition-colors" style={{ color: 'var(--text-tertiary)' }}>
+      <div className="rounded-2xl shadow-xl p-6 w-full max-w-md relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }} role="dialog" aria-modal="true" aria-labelledby="edit-user-modal-title">
+        <button onClick={onClose} aria-label="Close dialog" className="absolute top-4 right-4 transition-colors" style={{ color: 'var(--text-tertiary)' }}>
           <X size={20} />
         </button>
-        <h3 className="text-lg font-bold mb-5" style={{ color: 'var(--text-primary)' }}>Edit User: {user.username}</h3>
+        <h3 id="edit-user-modal-title" className="text-lg font-bold mb-5" style={{ color: 'var(--text-primary)' }}>Edit User: {user.username}</h3>
         <div className="space-y-4">
           <div>
             <label className="text-label mb-1 block">Role</label>
@@ -73,7 +81,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
             </select>
           </div>
           <div className="flex items-center pt-1">
-            <input type="checkbox" id="isReseller" name="isReseller" checked={!!editedUser.isReseller} onChange={handleChange} className="h-4 w-4 rounded" style={{ accentColor: 'var(--accent)' }} />
+            <input type="checkbox" id="isReseller" name="isReseller" checked={!!editedUser.isReseller} onChange={handleChange} className="h-4 w-4 rounded bg-white/[0.04] border border-[var(--border)]" style={{ accentColor: 'var(--accent)' }} />
             <label htmlFor="isReseller" className="ml-2 text-sm" style={{ color: 'var(--text-secondary)' }}>Is Reseller?</label>
           </div>
 
@@ -186,6 +194,7 @@ export const UsersSection = () => {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
           <input
             type="text"
+            aria-label="Search users"
             placeholder="Search users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -299,7 +308,7 @@ export const UsersSection = () => {
                     {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-right">
-                    <button onClick={() => setEditingUser(user)} className="p-1 transition-colors" style={{ color: 'var(--accent)' }}>
+                    <button onClick={() => setEditingUser(user)} aria-label={`Edit user ${user.username}`} className="inline-flex items-center justify-center min-h-[36px] min-w-[36px] p-2 transition-colors" style={{ color: 'var(--accent)' }}>
                       <Edit size={15} />
                     </button>
                   </td>

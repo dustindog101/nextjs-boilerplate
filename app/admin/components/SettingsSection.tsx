@@ -16,10 +16,10 @@ import { Settings, Shield, Bell, Database, RefreshCw, AlertTriangle, CheckCircle
  */
 
 const SettingRow = ({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) => (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-4 border-b border-slate-100 last:border-b-0">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-4 border-b border-[var(--border)] last:border-b-0">
         <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900">{label}</p>
-            {description && <p className="text-xs text-slate-400 mt-0.5">{description}</p>}
+            <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
+            {description && <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{description}</p>}
         </div>
         <div className="flex-shrink-0">{children}</div>
     </div>
@@ -27,8 +27,10 @@ const SettingRow = ({ label, description, children }: { label: string; descripti
 
 const Toggle = ({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) => (
     <button
+        role="switch"
+        aria-checked={checked}
         onClick={() => !disabled && onChange(!checked)}
-        className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${checked ? 'bg-blue-600' : 'bg-slate-200'}`}
+        className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${checked ? 'bg-[var(--accent)]' : 'bg-white/[0.06]'}`}
         style={{ height: '22px' }}
     >
         <span className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${checked ? 'translate-x-[18px]' : 'translate-x-0'}`} />
@@ -82,19 +84,19 @@ export const SettingsSection = () => {
         <div className="p-4 sm:p-6 space-y-6">
             {/* Toast notification */}
             {toast && (
-                <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium animate-fade-in-out ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
+                <div role="status" aria-live="polite" className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium animate-fade-in-out ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
                     {toast.type === 'success' ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
                     {toast.message}
                 </div>
             )}
 
-            <h2 className="text-lg font-bold text-slate-900">Settings</h2>
+            <h2 className="text-lg font-bold text-[var(--text-primary)]">Settings</h2>
 
             {/* General Settings */}
             <div className="glass p-4 sm:p-5">
                 <div className="flex items-center gap-2 mb-3">
-                    <Settings size={16} className="text-slate-400" />
-                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">General</h3>
+                    <Settings size={16} className="text-[var(--text-tertiary)]" />
+                    <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">General</h3>
                 </div>
 
                 <SettingRow label="Maintenance Mode" description="Show a 'Down for maintenance' page to all visitors">
@@ -113,8 +115,8 @@ export const SettingsSection = () => {
             {/* Data & Cache */}
             <div className="glass p-4 sm:p-5">
                 <div className="flex items-center gap-2 mb-3">
-                    <Database size={16} className="text-slate-400" />
-                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Data & Cache</h3>
+                    <Database size={16} className="text-[var(--text-tertiary)]" />
+                    <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Data & Cache</h3>
                 </div>
 
                 <SettingRow label="Clear Application Cache" description="Force-refresh cached data (users, orders, metrics)">
@@ -138,18 +140,18 @@ export const SettingsSection = () => {
             {/* Security */}
             <div className="glass p-4 sm:p-5">
                 <div className="flex items-center gap-2 mb-3">
-                    <Shield size={16} className="text-slate-400" />
-                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Security</h3>
+                    <Shield size={16} className="text-[var(--text-tertiary)]" />
+                    <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Security</h3>
                 </div>
 
                 <SettingRow label="Force Password Reset" description="Require all users to reset their password on next login">
-                    <button className="btn btn-outline px-3 py-1.5 text-xs text-amber-600 border-amber-200 hover:bg-amber-50" disabled>
+                    <button className="btn btn-outline px-3 py-1.5 text-xs text-amber-400 border-amber-500/30 hover:bg-amber-500/10" disabled>
                         Coming Soon
                     </button>
                 </SettingRow>
 
                 <SettingRow label="Revoke All Sessions" description="Sign out every user across all devices">
-                    <button className="btn btn-outline px-3 py-1.5 text-xs text-red-500 border-red-200 hover:bg-red-50" disabled>
+                    <button className="btn btn-outline px-3 py-1.5 text-xs text-red-400 border-red-500/30 hover:bg-red-500/10" disabled>
                         Coming Soon
                     </button>
                 </SettingRow>
@@ -158,38 +160,38 @@ export const SettingsSection = () => {
             {/* Environment Info */}
             <div className="glass p-4 sm:p-5">
                 <div className="flex items-center gap-2 mb-3">
-                    <Bell size={16} className="text-slate-400" />
-                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Environment</h3>
+                    <Bell size={16} className="text-[var(--text-tertiary)]" />
+                    <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Environment</h3>
                 </div>
 
                 <div className="space-y-2">
                     {envVars.map(v => (
                         <div key={v.key} className="flex items-center justify-between text-sm py-1.5">
-                            <code className="text-slate-600 bg-slate-50 px-2 py-0.5 rounded text-xs">{v.key}</code>
-                            <span className="text-emerald-600 text-xs font-medium flex items-center gap-1">
+                            <code className="text-[var(--text-secondary)] bg-white/[0.04] px-2 py-0.5 rounded text-xs">{v.key}</code>
+                            <span className="text-emerald-400 text-xs font-medium flex items-center gap-1">
                                 <CheckCircle size={12} /> Configured
                             </span>
                         </div>
                     ))}
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Node.js Version</span>
-                    <code className="text-slate-600 bg-slate-50 px-2 py-0.5 rounded text-xs">v25.x</code>
+                <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between text-sm">
+                    <span className="text-[var(--text-tertiary)]">Node.js Version</span>
+                    <code className="text-[var(--text-secondary)] bg-white/[0.04] px-2 py-0.5 rounded text-xs">v25.x</code>
                 </div>
                 <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-slate-500">Next.js</span>
-                    <code className="text-slate-600 bg-slate-50 px-2 py-0.5 rounded text-xs">15.x</code>
+                    <span className="text-[var(--text-tertiary)]">Next.js</span>
+                    <code className="text-[var(--text-secondary)] bg-white/[0.04] px-2 py-0.5 rounded text-xs">15.x</code>
                 </div>
             </div>
 
             {/* Lambda implementation guide */}
             <div className="glass p-4 border-dashed">
-                <h4 className="text-sm font-bold text-slate-700 mb-2">💡 Adding Backend Support</h4>
-                <p className="text-xs text-slate-500 leading-relaxed mb-2">
+                <h4 className="text-sm font-bold text-[var(--text-secondary)] mb-2">💡 Adding Backend Support</h4>
+                <p className="text-xs text-[var(--text-tertiary)] leading-relaxed mb-2">
                     To make these settings persistent, add these actions to your admin Lambda:
                 </p>
-                <div className="bg-slate-50 rounded-lg p-3 text-xs font-mono text-slate-600 space-y-1 overflow-x-auto">
+                <div className="bg-white/[0.04] rounded-lg p-3 text-xs font-mono text-[var(--text-secondary)] space-y-1 overflow-x-auto">
                     <p>POST /api/admin {'{'} action: &apos;clearCache&apos; {'}'}</p>
                     <p>POST /api/admin {'{'} action: &apos;toggleMaintenance&apos;, enabled: true {'}'}</p>
                     <p>POST /api/admin {'{'} action: &apos;updateSettings&apos;, settings: {'{ ... }'} {'}'}</p>

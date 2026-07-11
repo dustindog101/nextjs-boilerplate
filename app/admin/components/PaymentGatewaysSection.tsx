@@ -146,7 +146,7 @@ export const PaymentGatewaysSection = () => {
                       type="checkbox"
                       checked={g.enabled}
                       onChange={(e) => updateGateway(asset.id, { enabled: e.target.checked })}
-                      className="rounded border-[var(--border)] bg-white/[0.04] text-indigo-500 focus:ring-indigo-500/40"
+                      className="rounded border-[var(--border)] bg-white/[0.04] focus:ring-indigo-500/40"
                     />
                   </label>
                 </div>
@@ -209,6 +209,8 @@ export const PaymentGatewaysSection = () => {
 
       {toast && (
         <div
+          role="status"
+          aria-live="polite"
           className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-lg animate-fade-in ${
             toast.type === 'error'
               ? 'bg-red-500/10 border border-red-500/20 text-red-400'

@@ -1,0 +1,20 @@
+Lambda Deployment Index
+=======================
+
+All zips are AES-256 encrypted. Password: ask repo owner (dustindog101).
+
+DEV BRANCH (current — live on AWS v3):
+  admin_handler-20260711-162702-dev.zip              — affiliate program fields
+  idPirateOrderLookup-20260711-162702-dev.zip        — DecimalEncoder set fix (same as v2)
+  ID-Pirate-CreateOrder-Function-20260711-162702-dev.zip — affiliate commission tracking
+
+ROLLBACK SNAPSHOTS (pre-dev, main branch v2 — REMOVE after dev → main merge):
+  admin_handler-20260711-153714-rollback.zip         — DecimalEncoder fix only (no affiliate)
+  idPirateOrderLookup-20260711-153714-rollback.zip   — DecimalEncoder fix only (no affiliate)
+
+NOTE: ID-Pirate-CreateOrder-Function has no rollback zip. Its v2 code (per-ID
+discount, on main) was never zipped separately. If rollback is needed, extract
+the dev zip and remove the affiliate commission lines (search for:
+commissionEarned, affiliateOwner, affiliatePaid).
+
+See README.md for extraction + rollback instructions.

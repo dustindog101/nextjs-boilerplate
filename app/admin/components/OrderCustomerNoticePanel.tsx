@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Megaphone, X } from 'lucide-react';
 import { adminUpdateOrder } from '@/lib/apiClient';
 import { Spinner } from '../../components/ui';
@@ -49,6 +49,15 @@ export function OrderCustomerNoticePanel({
     setModalOpen(false);
     setError(null);
   };
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !saving) closeModal();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [modalOpen, saving]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -126,10 +135,14 @@ export function OrderCustomerNoticePanel({
           <div
             className="rounded-2xl shadow-xl p-6 w-full max-w-lg relative animate-fade-up"
             style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="order-customer-notice-modal-title"
           >
             <button
               type="button"
               onClick={closeModal}
+              aria-label="Close dialog"
               className="absolute top-4 right-4 transition-colors"
               style={{ color: 'var(--text-tertiary)' }}
               disabled={saving}
@@ -137,7 +150,7 @@ export function OrderCustomerNoticePanel({
               <X size={20} />
             </button>
 
-            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            <h3 id="order-customer-notice-modal-title" className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
               Customer message
             </h3>
             <p className="text-sm mb-5" style={{ color: 'var(--text-tertiary)' }}>

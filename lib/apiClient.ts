@@ -470,6 +470,12 @@ export interface Discount {
   expiresAt?: string;
   /** Usernames allowed to redeem. Empty/undefined = anyone. */
   allowedUsernames?: string[];
+  /** AFFILIATE PROGRAM: username of the affiliate who owns this code. */
+  ownerUsername?: string;
+  /** AFFILIATE PROGRAM: true if this is an affiliate-owned code. */
+  isAffiliateCode?: boolean;
+  /** AFFILIATE PROGRAM: commission % earned by the affiliate per redemption. */
+  commissionPercent?: number;
   createdAt: string;
 }
 
@@ -724,6 +730,57 @@ export const submitResellerBatch = async (
   if (!token) throw new Error('Authentication required.');
   const enc = encodeURIComponent(batchId);
   return apiFetch(`/api/reseller/batches/${enc}/submit`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+};
+
+
+// ====================================================================
+// AFFILIATE PROGRAM
+// ====================================================================
+
+// ── Affiliate Program ──────────────────────────────────────────────
+
+export interface AffiliateApplication {
+  username: string;
+  email: string;
+  socialHandle?: string;
+  audienceSize?: '<1k' | '1k-10k' | '10k-100k' | '100k+';
+  audienceDescription?: string;
+}
+
+export const applyForAffiliate = async (data: AffiliateApplication): Promise<{ message: string }> => {
+  return apiFetch<{ message: string }>('/api/affiliates/apply', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+};
+
+export interface AffiliateStats {
+  codes: { code: string; commissionPercent: number; isActive: boolean; usedCount: number }[];
+  totalEarnings: number;
+  pendingPayout: number;
+  conversionCount: number;
+  recentOrders: {
+    orderId: string;
+    createdAt: string;
+    orderTotal: number;
+    commissionEarned: number;
+    affiliatePaid: boolean;
+  }[];
+}
+
+export const getAffiliateStats = async (): Promise<AffiliateStats> => {
+  return apiFetch<AffiliateStats>('/api/affiliates/stats', {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+};
+
+export const requestAffiliatePayout = async (): Promise<{ message: string }> => {
+  return apiFetch<{ message: string }>('/api/affiliates/payout', {
     method: 'POST',
     headers: authHeaders(),
   });

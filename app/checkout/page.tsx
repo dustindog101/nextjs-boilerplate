@@ -6,6 +6,7 @@ import { withAuth } from '../components/withAuth';
 import { useAuth } from '../hooks/useAuth';
 import { getStorageItem, removeStorageItem } from '../../lib/storage';
 import { submitOrder, validateDiscount, DiscountValidation } from '../../lib/apiClient';
+import { getStoredReferralCode, clearReferralCode } from '@/lib/referral';
 import { shippingFee as SHIPPING_BASE } from '../../lib/constants';
 import { reviveIdForm } from '@/lib/resellerPortalStorage';
 import {
@@ -55,6 +56,15 @@ function CheckoutPage() {
     const [discountError, setDiscountError] = useState<string | null>(null);
     const [showDiscountInput, setShowDiscountInput] = useState(false);
 
+    useEffect(() => {
+        if (!showModal) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !loading) setShowModal(false);
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [showModal, loading]);
+
     const SHIPPING_FEE = deliveryMethod === 'shipping' ? SHIPPING_BASE : 0;
     const pricingMode = resolvePricingMode(user?.isReseller ?? false);
 
@@ -91,6 +101,16 @@ function CheckoutPage() {
             } catch (error) { console.error('Failed to parse order forms:', error); }
         }
     }, []);
+
+    // Auto-apply referral code if one is stored (from ?ref=CODE URL param)
+    useEffect(() => {
+        if (discountResult || discountCode || orderItems.length === 0) return;
+        const refCode = getStoredReferralCode();
+        if (refCode) {
+            setDiscountCode(refCode);
+            setShowDiscountInput(true);
+        }
+    }, [orderItems.length, discountResult, discountCode]);
 
     const uploadsIncomplete =
         orderItems.length > 0 &&
@@ -191,6 +211,9 @@ function CheckoutPage() {
         try {
             const data = await submitOrder(orderPayload);
             removeStorageItem('idPirateOrderForms');
+            // Clear the referral code after successful order submission
+            // (so it doesn't auto-apply to the next order)
+            clearReferralCode();
 
             if (willUseCrypto && selectedCryptoAsset) {
                 try {
@@ -306,12 +329,12 @@ function CheckoutPage() {
                             {deliveryMethod === 'shipping' && (
                                 <div className="mt-5 border-t border-[var(--border)] pt-5 space-y-3">
                                     <h3 className="text-label mb-2">Shipping Address</h3>
-                                    <input type="text" placeholder="Full Name" className={inputClasses} value={shippingFullName} onChange={(e) => setShippingFullName(e.target.value)} />
-                                    <input type="text" placeholder="Street Address" className={inputClasses} value={shippingStreetAddress} onChange={(e) => setShippingStreetAddress(e.target.value)} />
+                                    <input type="text" aria-label="Full name" placeholder="Full Name" className={inputClasses} value={shippingFullName} onChange={(e) => setShippingFullName(e.target.value)} />
+                                    <input type="text" aria-label="Street address" placeholder="Street Address" className={inputClasses} value={shippingStreetAddress} onChange={(e) => setShippingStreetAddress(e.target.value)} />
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <input type="text" placeholder="City" className={inputClasses} value={shippingCity} onChange={(e) => setShippingCity(e.target.value)} />
-                                        <input type="text" placeholder="State" className={inputClasses} value={shippingStateProvince} onChange={(e) => setShippingStateProvince(e.target.value)} />
-                                        <input type="text" placeholder="ZIP Code" className={inputClasses} value={shippingZipCode} onChange={(e) => setShippingZipCode(e.target.value)} />
+                                        <input type="text" aria-label="City" placeholder="City" className={inputClasses} value={shippingCity} onChange={(e) => setShippingCity(e.target.value)} />
+                                        <input type="text" aria-label="State" placeholder="State" className={inputClasses} value={shippingStateProvince} onChange={(e) => setShippingStateProvince(e.target.value)} />
+                                        <input type="text" aria-label="ZIP code" placeholder="ZIP Code" className={inputClasses} value={shippingZipCode} onChange={(e) => setShippingZipCode(e.target.value)} />
                                     </div>
                                 </div>
                             )}
@@ -426,6 +449,7 @@ function CheckoutPage() {
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
+                                                aria-label="Discount code"
                                                 placeholder="Enter code..."
                                                 className={inputClasses}
                                                 value={discountCode}
@@ -524,12 +548,20 @@ function CheckoutPage() {
             {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className={`glass rounded-2xl border shadow-xl p-8 max-w-sm w-full ${orderStatus === 'success' ? 'border-emerald-500/30' :
-                        orderStatus === 'error' ? 'border-red-500/30' : 'border-[var(--accent)]/30'
-                        } animate-fade-up`}>
-                        <h3 className={`text-xl font-bold mb-3 text-center ${orderStatus === 'success' ? 'text-emerald-400' :
+                    <div
+                        className={`glass rounded-2xl border shadow-xl p-8 max-w-sm w-full ${orderStatus === 'success' ? 'border-emerald-500/30' :
+                            orderStatus === 'error' ? 'border-red-500/30' : 'border-[var(--accent)]/30'
+                            } animate-fade-up`}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="checkout-processing-modal-title"
+                    >
+                        <h3
+                            id="checkout-processing-modal-title"
+                            className={`text-xl font-bold mb-3 text-center ${orderStatus === 'success' ? 'text-emerald-400' :
                             orderStatus === 'error' ? 'text-red-400' : 'text-[var(--accent)]'
-                            }`}>
+                            }`}
+                        >
                             {orderStatus === 'processing' ? 'Processing...' : orderStatus === 'success' ? 'Order Placed!' : 'Error'}
                         </h3>
                         <p className="text-sm text-[var(--text-secondary)] text-center mb-6">{orderMessage}</p>

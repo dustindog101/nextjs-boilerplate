@@ -1,79 +1,132 @@
 # Lambda Deployments
 
-This directory contains **zip archives of every Lambda deployment** made to
-AWS, committed to git history so changes are traceable and recoverable.
+This directory contains **AES-256-encrypted zip archives** of every Lambda
+deployment made to AWS, committed to git history so changes are traceable
+and recoverable.
 
-## Why this exists
+## Password
 
-Per the owner's rule: "each time lambda is changed it should be zipped and
-committed." This provides:
-- **Audit trail** — every Lambda change is a git commit with the exact code deployed
-- **Recovery** — if a deployment breaks production, the previous zip is one
-  `git checkout` away
-- **Reproducibility** — any zip can be re-deployed via `scripts/deploy_lambdas.py`
+All zips are encrypted with **AES-256** (via `pyzipper`, NOT the weak
+ZipCrypto used by `zip -e`). Password is held by the repo owner — ask
+`dustindog101`. Set it as env var `LAMBDA_ZIP_PASSWORD` when working with
+the encryption scripts.
 
 ## Naming convention
 
 ```
-<lambda_function_name>-<UTC_timestamp>.zip
+<lambda_function_name>-<UTC_timestamp>-<label>.zip
 ```
 
-Example: `admin_handler-20260711-153714.zip`
+| Label | Meaning | When to remove |
+|---|---|---|
+| `dev` | Current dev branch deployment (live on AWS) | Replace with next deployment's zip |
+| `rollback` | Pre-dev snapshot (main branch version) | **Remove once dev → main is merged and verified** |
 
-## What's inside each zip
+### Current zips
 
-The full source tree of that Lambda function at deploy time:
-- `lambda_function.py` (entry point)
-- `shared/` (if present — product catalog, order pricing)
-- `payment_shared/` (if present — crypto gateway)
-- `payment_admin.py` / `payment_routes.py` / `adapters/` (if present)
-- `batches.py` (if present — reseller batches)
+| Zip | Label | What |
+|---|---|---|
+| `admin_handler-20260711-162702-dev.zip` | dev | Affiliate program (v3) — live on AWS |
+| `idPirateOrderLookup-20260711-162702-dev.zip` | dev | DecimalEncoder fix (v3, same code as v2) — live on AWS |
+| `ID-Pirate-CreateOrder-Function-20260711-162702-dev.zip` | dev | Affiliate commission tracking (v3) — live on AWS |
+| `admin_handler-20260711-153714-rollback.zip` | rollback | Pre-affiliate (v2, main branch) — **remove after dev → main merge** |
+| `idPirateOrderLookup-20260711-153714-rollback.zip` | rollback | Pre-affiliate (v2, main branch) — **remove after dev → main merge** |
 
-Excludes: `__pycache__/`, `*.pyc`, `_lambda_meta.json`.
+## How to extract
 
-## manifest.json
+```bash
+# Set the password
+export LAMBDA_ZIP_PASSWORD='<password>'
 
-A JSON index of all deployments with:
-- Lambda name
-- Zip filename
-- UTC timestamp
-- Size in bytes
+# Option 1: 7-Zip
+7z x admin_handler-20260711-162702-dev.zip
+
+# Option 2: Python pyzipper
+python3 -c "
+import pyzipper, os
+pw = os.environ['LAMBDA_ZIP_PASSWORD'].encode()
+with pyzipper.AESZipFile('admin_handler-20260711-162702-dev.zip') as zf:
+    zf.setpassword(pw)
+    zf.extractall('extracted/')
+"
+```
+
+## How to roll back to a previous version
+
+If the dev branch Lambda changes need to be reverted:
+
+```bash
+# 1. Extract the rollback zip
+export LAMBDA_ZIP_PASSWORD='<password>'
+python3 -c "
+import pyzipper
+with pyzipper.AESZipFile('lambda-deployments/admin_handler-20260711-153714-rollback.zip') as zf:
+    zf.setpassword(__import__('os').environ['LAMBDA_ZIP_PASSWORD'].encode())
+    zf.extractall('/tmp/rollback-admin_handler/')
+"
+
+# 2. Deploy the rollback source to AWS
+AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... python3 -c "
+import boto3, sys
+sys.path.insert(0, '/home/z/my-project/scripts')
+from deploy_lambdas import zip_directory
+from pathlib import Path
+zip_bytes = zip_directory(Path('/tmp/rollback-admin_handler'))
+lam = boto3.client('lambda', region_name='us-east-1')
+lam.update_function_code(FunctionName='admin_handler', ZipFile=zip_bytes, Publish=True)
+print('Rolled back admin_handler to pre-dev version')
+"
+```
 
 ## How to create a new deployment zip
 
 After editing Lambda source in `/home/z/my-project/repos/idpirate-lambdas/`:
 
 ```bash
-# Zip one or more Lambdas for commit
-python3 /home/z/my-project/scripts/zip_lambda_for_commit.py admin_handler idPirateOrderLookup
+# 1. Zip the changed Lambda(s) — creates unencrypted zip
+python3 /home/z/my-project/scripts/zip_lambda_for_commit.py admin_handler ID-Pirate-CreateOrder-Function
 
-# Then commit the zip(s) + manifest
+# 2. Deploy to AWS
+AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... python3 /home/z/my-project/scripts/deploy_lambdas.py
+
+# 3. Encrypt the zips with AES-256
+LAMBDA_ZIP_PASSWORD='<password>' python3 /home/z/my-project/scripts/encrypt_lambda_zips.py
+
+# 4. Commit the encrypted zips + manifest
 git add lambda-deployments/
 git commit -m "lambda: <description of change>"
 ```
 
-## How to deploy a specific zip to AWS
+## manifest.json
 
-```bash
-# Deploy all 3 Lambdas from current source (scripts/deploy_lambdas.py)
-AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
-  python3 /home/z/my-project/scripts/deploy_lambdas.py
-
-# To deploy a SPECIFIC historical zip:
-# 1. Extract it to a temp dir
-# 2. Use boto3 lambda.update_function_code with the zip bytes
-# (See scripts/deploy_lambdas.py for the pattern)
-```
+A JSON index of all deployments with:
+- Lambda name
+- Zip filename
+- Label (`dev` or `rollback`)
+- UTC timestamp
+- Size in bytes
+- Encryption status (always `true` + `AES-256`)
+- Note explaining when to remove
 
 ## Security
 
 These zips contain **no secrets** — all sensitive values are read from Lambda
 environment variables (`os.environ.get(...)`). Verified by scanning every
 source file for hardcoded keys/tokens/passwords before the first commit.
+The AES-256 password is an additional layer — treat it as you would any
+operational secret.
+
+## Cleanup policy
+
+- **`dev` zips**: Keep the latest one per Lambda. When a new deployment
+  is made, the previous `dev` zip can be deleted (it's superseded).
+- **`rollback` zips**: Keep until the dev branch is merged to main and
+  verified in production. Once approved, delete all `rollback` zips —
+  they're no longer needed (the `dev` zip becomes the new baseline).
 
 ## Relationship to `lambda-backups/`
 
 - `lambda-backups/` — one-time AES-256 encrypted snapshot of all 6 Lambdas
-  at a point in time (the pristine pre-feature state)
-- `lambda-deployments/` — ongoing unencrypted zips of each deployment,
-  committed per-change
+  at a point in time (the pristine pre-feature state, before per-ID discounts)
+- `lambda-deployments/` — ongoing AES-256 encrypted zips of each deployment,
+  committed per-change, with `dev` and `rollback` labels

@@ -105,6 +105,14 @@ const EditOrderModal: React.FC<EditModalProps> = ({
 
     const fieldStyle = { background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' };
 
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !saving) onClose();
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose, saving]);
+
     const tabBtn = (id: EditTab, label: string, Icon: typeof Package) => (
         <button
             type="button"
@@ -123,9 +131,9 @@ const EditOrderModal: React.FC<EditModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="rounded-2xl shadow-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-                <button onClick={onClose} className="absolute top-4 right-4 transition-colors" style={{ color: 'var(--text-tertiary)' }}><X size={20} /></button>
-                <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            <div className="rounded-2xl shadow-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }} role="dialog" aria-modal="true" aria-labelledby="edit-order-modal-title">
+                <button onClick={onClose} aria-label="Close dialog" className="absolute top-4 right-4 transition-colors" style={{ color: 'var(--text-tertiary)' }}><X size={20} /></button>
+                <h3 id="edit-order-modal-title" className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
                     Edit order <span className="font-mono text-sm" style={{ color: 'var(--text-tertiary)' }}>#{order.orderId.substring(0, 8)}</span>
                 </h3>
                 <p className="text-xs mb-5" style={{ color: 'var(--text-tertiary)' }}>
@@ -320,6 +328,7 @@ export const OrdersSection = () => {
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
                         <input
                             type="text"
+                            aria-label="Search orders"
                             placeholder="Search orders..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -328,6 +337,7 @@ export const OrdersSection = () => {
                         />
                     </div>
                     <select
+                        aria-label="Filter by status"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="rounded-lg px-3 py-2 text-sm outline-none"

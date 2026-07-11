@@ -14,11 +14,11 @@ export const ProductsSection = () => {
         <div className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900">
-                        Products <span className="text-slate-400 font-normal text-sm">({products.length} variants)</span>
+                    <h2 className="text-lg font-bold text-[var(--text-primary)]">
+                        Products <span className="text-[var(--text-tertiary)] font-normal text-sm">({products.length} variants)</span>
                     </h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Catalog managed in <code className="text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded text-xs">lib/productCatalog.ts</code>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                        Catalog managed in <code className="text-[var(--text-secondary)] bg-white/[0.04] px-1.5 py-0.5 rounded text-xs">lib/productCatalog.ts</code>
                     </p>
                 </div>
             </div>
@@ -31,11 +31,11 @@ export const ProductsSection = () => {
                     >
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex items-start gap-2 min-w-0">
-                                <Package size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                                <Package size={16} className="text-indigo-400 flex-shrink-0 mt-0.5" />
                                 <div className="min-w-0">
-                                    <h3 className="font-bold text-slate-900 text-sm truncate">{product.region}</h3>
-                                    <p className="text-xs text-slate-500 truncate">{product.label}</p>
-                                    <p className="text-[10px] text-slate-400 font-mono mt-1">{product.id}</p>
+                                    <h3 className="font-bold text-[var(--text-primary)] text-sm truncate">{product.region}</h3>
+                                    <p className="text-xs text-[var(--text-tertiary)] truncate">{product.label}</p>
+                                    <p className="text-[10px] text-[var(--text-tertiary)] font-mono mt-1">{product.id}</p>
                                 </div>
                             </div>
                             <span className="text-price font-bold flex-shrink-0">

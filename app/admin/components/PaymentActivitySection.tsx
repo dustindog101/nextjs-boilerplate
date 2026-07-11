@@ -24,9 +24,12 @@ import type {
 } from '@/lib/paymentTypes';
 import { Spinner } from '../../components/ui/Spinner';
 
-/** Background refresh while Activity tab is open — slower when idle. */
+/** Background refresh while Activity tab is open — slower when idle.
+ *  After 2 consecutive idle ticks (active === 0), polling pauses entirely
+ *  to save Lambda invocations. User can manually refresh to restart. */
 const POLL_MS_ACTIVE = 60_000;
 const POLL_MS_IDLE = 120_000;
+const IDLE_TICKS_BEFORE_PAUSE = 2;
 export const ADMIN_HIGHLIGHT_ORDER_KEY = 'adminHighlightOrderId';
 
 type StatusFilter = 'all' | 'active' | PaymentIntentStatus;
@@ -126,13 +129,26 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
 
   useEffect(() => {
     if (!isVisible) return;
+    let idleTickCount = 0;
     const poll = () => {
       if (typeof document !== 'undefined' && document.hidden) return;
+      // If we've been idle for too long, pause polling entirely.
+      // The user can click Refresh to restart (which resets the counter via re-mount).
+      if (idleTickCount >= IDLE_TICKS_BEFORE_PAUSE) {
+        return;
+      }
       load(true);
     };
     const intervalMs =
       summary && summary.active > 0 ? POLL_MS_ACTIVE : POLL_MS_IDLE;
-    const id = setInterval(poll, intervalMs);
+    const id = setInterval(() => {
+      if (summary && summary.active === 0) {
+        idleTickCount++;
+      } else {
+        idleTickCount = 0;
+      }
+      poll();
+    }, intervalMs);
     return () => clearInterval(id);
   }, [isVisible, load, summary?.active]);
 
@@ -155,6 +171,15 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
       /* ignore */
     }
   };
+
+  useEffect(() => {
+    if (!selected) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelected(null);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [selected]);
 
   const fieldStyle = {
     background: 'var(--bg-elevated)',
@@ -205,6 +230,7 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
             <input
               type="text"
+              aria-label="Search invoices"
               placeholder="Order ID or tx hash…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -213,6 +239,7 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
             />
           </div>
           <select
+            aria-label="Filter by status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             className="rounded-lg px-3 py-2 text-sm outline-none"
@@ -223,6 +250,7 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
             ))}
           </select>
           <select
+            aria-label="Filter by crypto asset"
             value={assetFilter}
             onChange={(e) => setAssetFilter(e.target.value)}
             className="rounded-lg px-3 py-2 text-sm outline-none"
@@ -237,7 +265,7 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
             type="button"
             onClick={() => load(true)}
             disabled={refreshing}
-            className="btn btn-outline py-2 px-3"
+            className="btn btn-outline inline-flex items-center justify-center min-h-[44px] min-w-[44px] p-2.5"
             aria-label="Refresh"
           >
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
@@ -357,11 +385,12 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
             style={{ background: 'var(--bg-elevated)', borderLeft: '1px solid var(--border)' }}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
-            aria-label="Payment intent details"
+            aria-modal="true"
+            aria-labelledby="payment-intent-details-title"
           >
             <div className="sticky top-0 flex items-center justify-between px-5 py-4 border-b border-[var(--border)]" style={{ background: 'var(--bg-elevated)' }}>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Invoice details</h3>
-              <button type="button" onClick={() => setSelected(null)} className="text-[var(--text-tertiary)] hover:text-white">
+              <h3 id="payment-intent-details-title" className="text-lg font-semibold text-[var(--text-primary)]">Invoice details</h3>
+              <button type="button" onClick={() => setSelected(null)} aria-label="Close dialog" className="inline-flex items-center justify-center min-h-[36px] min-w-[36px] p-2 text-[var(--text-tertiary)] hover:text-white">
                 <X size={20} />
               </button>
             </div>

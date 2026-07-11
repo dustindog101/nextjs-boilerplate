@@ -58,7 +58,7 @@ export function ProductVariantPicker({
                             value={product.id}
                             checked={checked}
                             onChange={() => onChange(product.id)}
-                            className="mt-0.5 accent-indigo-500"
+                            className="mt-0.5 bg-white/[0.04] border border-[var(--border)]" style={{ accentColor: 'var(--accent)' }}
                         />
                         <span className="flex-1 min-w-0">
                             <span className={`block text-sm font-medium ${checked ? 'text-white' : 'text-zinc-300'}`}>
