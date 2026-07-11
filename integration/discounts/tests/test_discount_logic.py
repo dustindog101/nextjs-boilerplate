@@ -770,3 +770,148 @@ def test_validate_discount_serializes_string_sets_in_response():
     # productIds in response must be a list (the Lambda explicitly sorts)
     assert isinstance(body["productIds"], list)
     assert body["productIds"] == ["CA:DMV_POLY", "PA:STANDARD"]  # sorted
+
+
+# ─── AFFILIATE PROGRAM tests ──────────────────────────────────────────────
+
+@mock_aws
+def test_admin_create_affiliate_discount():
+    """Admin can create a discount with affiliate ownership fields."""
+    _setup_tables()
+    admin = _import_fresh(os.path.join(LAMBDA_ROOT, "admin_handler"))
+
+    event = {
+        "body": json.dumps({
+            "requestType": "create_discount",
+            "code": "JOHN15",
+            "discountType": "percentage",
+            "value": 15,
+            "scope": "cart",
+            "isAffiliateCode": True,
+            "ownerUsername": "John_Influencer",  # test lowercasing
+            "commissionPercent": 12.5,
+        }),
+        "headers": {"Authorization": _make_admin_jwt()},
+    }
+    response = admin.lambda_handler(event, None)
+    body = json.loads(response["body"])
+    assert response["statusCode"] == 200, body
+
+    table = boto3.resource("dynamodb", region_name="us-east-1").Table("idPirate_discounts")
+    item = table.get_item(Key={"code": "JOHN15"}).get("Item")
+    assert item is not None
+    assert item["isAffiliateCode"] is True
+    assert item["ownerUsername"] == "john_influencer"  # lowercased
+    assert float(item["commissionPercent"]) == 12.5
+
+
+@mock_aws
+def test_admin_create_affiliate_requires_owner_username():
+    """Affiliate code without ownerUsername is rejected."""
+    _setup_tables()
+    admin = _import_fresh(os.path.join(LAMBDA_ROOT, "admin_handler"))
+
+    event = {
+        "body": json.dumps({
+            "requestType": "create_discount",
+            "code": "NOOWNER",
+            "value": 10,
+            "isAffiliateCode": True,
+            # no ownerUsername
+            "commissionPercent": 10,
+        }),
+        "headers": {"Authorization": _make_admin_jwt()},
+    }
+    response = admin.lambda_handler(event, None)
+    body = json.loads(response["body"])
+    assert response["statusCode"] == 400
+    assert "ownerUsername" in body["error"]
+
+
+@mock_aws
+def test_validate_affiliate_code_returns_commission():
+    """validate_discount on an affiliate code doesn't expose commission (that's
+    server-side only at order creation). But the code itself validates normally."""
+    _setup_tables()
+    lookup = _import_fresh(os.path.join(LAMBDA_ROOT, "idPirateOrderLookup"))
+
+    table = boto3.resource("dynamodb", region_name="us-east-1").Table("idPirate_discounts")
+    _put_discount(table, code="AFF10", value=10, scope="cart")
+    # Add affiliate fields directly
+    table.update_item(
+        Key={"code": "AFF10"},
+        UpdateExpression="SET isAffiliateCode = :a, ownerUsername = :o, commissionPercent = :c",
+        ExpressionAttributeValues={
+            ":a": True,
+            ":o": "alice",
+            ":c": decimal.Decimal("12.0"),
+        },
+    )
+
+    event = {
+        "body": json.dumps({
+            "requestType": "validate_discount",
+            "code": "AFF10",
+            "orderTotal": 200.0,
+        })
+    }
+    response = lookup.lambda_handler(event, None)
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    assert body["discountAmount"] == 20.0  # 10% of 200
+    # validate_discount response doesn't include commission (server-side only)
+    assert "commissionEarned" not in body
+
+
+@mock_aws
+def test_order_pricing_computes_affiliate_commission():
+    """_validate_discount_amount returns commissionEarned for affiliate codes."""
+    _setup_tables()
+    if CREATE_ORDER_ROOT in sys.path:
+        sys.path.remove(CREATE_ORDER_ROOT)
+    sys.path.insert(0, CREATE_ORDER_ROOT)
+    for k in list(sys.modules.keys()):
+        if k.startswith("shared."):
+            del sys.modules[k]
+    from shared.order_pricing import _validate_discount_amount
+
+    table = boto3.resource("dynamodb", region_name="us-east-1").Table("idPirate_discounts")
+    _put_discount(table, code="AFF15", value=15, scope="cart")
+    # Make it an affiliate code
+    table.update_item(
+        Key={"code": "AFF15"},
+        UpdateExpression="SET isAffiliateCode = :a, ownerUsername = :o, commissionPercent = :c",
+        ExpressionAttributeValues={
+            ":a": True,
+            ":o": "bob",
+            ":c": decimal.Decimal("10.0"),
+        },
+    )
+
+    result = _validate_discount_amount("AFF15", 200.0, table, ids_list=[], id_subtotal=180.0)
+    # 15% discount on $200 = $30 discount
+    assert result["amount"] == 30.0
+    # 10% commission on $180 (id_subtotal, not order_total with fees)
+    assert result["commissionEarned"] == 18.0
+    assert result["affiliateOwner"] == "bob"
+
+
+@mock_aws
+def test_order_pricing_no_commission_for_non_affiliate():
+    """_validate_discount_amount returns None commission for non-affiliate codes."""
+    _setup_tables()
+    if CREATE_ORDER_ROOT in sys.path:
+        sys.path.remove(CREATE_ORDER_ROOT)
+    sys.path.insert(0, CREATE_ORDER_ROOT)
+    for k in list(sys.modules.keys()):
+        if k.startswith("shared."):
+            del sys.modules[k]
+    from shared.order_pricing import _validate_discount_amount
+
+    table = boto3.resource("dynamodb", region_name="us-east-1").Table("idPirate_discounts")
+    _put_discount(table, code="REGULAR10", value=10, scope="cart")
+
+    result = _validate_discount_amount("REGULAR10", 200.0, table, ids_list=[], id_subtotal=180.0)
+    assert result["amount"] == 20.0
+    assert result["commissionEarned"] is None
+    assert result["affiliateOwner"] is None

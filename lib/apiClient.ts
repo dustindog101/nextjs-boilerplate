@@ -470,6 +470,12 @@ export interface Discount {
   expiresAt?: string;
   /** Usernames allowed to redeem. Empty/undefined = anyone. */
   allowedUsernames?: string[];
+  /** AFFILIATE PROGRAM: username of the affiliate who owns this code. */
+  ownerUsername?: string;
+  /** AFFILIATE PROGRAM: true if this is an affiliate-owned code. */
+  isAffiliateCode?: boolean;
+  /** AFFILIATE PROGRAM: commission % earned by the affiliate per redemption. */
+  commissionPercent?: number;
   createdAt: string;
 }
 

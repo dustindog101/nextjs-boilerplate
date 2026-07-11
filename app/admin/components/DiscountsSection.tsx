@@ -27,6 +27,10 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
     const [startsAt, setStartsAt] = useState(existing?.startsAt || '');
     const [expiresAt, setExpiresAt] = useState(existing?.expiresAt || '');
     const [allowedUsernames, setAllowedUsernames] = useState(existing?.allowedUsernames?.join(', ') || '');
+    // AFFILIATE PROGRAM fields
+    const [isAffiliateCode, setIsAffiliateCode] = useState(existing?.isAffiliateCode || false);
+    const [ownerUsername, setOwnerUsername] = useState(existing?.ownerUsername || '');
+    const [commissionPercent, setCommissionPercent] = useState(existing?.commissionPercent || 10);
     // NEW: scope + productIds
     const [scope, setScope] = useState<DiscountScope>(existing?.scope || 'cart');
     const [productIds, setProductIds] = useState<string[]>(existing?.productIds || []);
@@ -126,6 +130,10 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                 allowedUsernames: parsedUsernames,
                 scope,
                 productIds: scope === 'line_item' ? productIds : undefined,
+                // AFFILIATE PROGRAM fields
+                isAffiliateCode,
+                ownerUsername: isAffiliateCode ? ownerUsername.trim().toLowerCase() || undefined : undefined,
+                commissionPercent: isAffiliateCode ? commissionPercent : undefined,
             };
 
             if (isEdit) {
@@ -138,6 +146,9 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                     startsAt: startsAt || null,
                     expiresAt: expiresAt || null,
                     maxUses: maxUses ? parseInt(maxUses) : null,
+                    // Affiliate fields: clear if affiliate toggle is off
+                    ownerUsername: isAffiliateCode ? (ownerUsername.trim().toLowerCase() || null) : null,
+                    commissionPercent: isAffiliateCode ? commissionPercent : null,
                 });
             } else {
                 await adminCreateDiscount({
@@ -392,6 +403,54 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                                     <span key={u} className="text-xs bg-[var(--accent-subtle)] text-[var(--accent-hover)] px-2 py-0.5 rounded-full">{u}</span>
                                 ))}
                             </div>
+                        )}
+                    </div>
+
+                    {/* AFFILIATE PROGRAM */}
+                    <div className="border-t border-[var(--border)] pt-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Users size={14} className="text-[var(--text-tertiary)]" />
+                            <label className="text-label">Affiliate Code <span className="text-[var(--text-tertiary)]">(optional)</span></label>
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer mb-3">
+                            <input
+                                type="checkbox"
+                                checked={isAffiliateCode}
+                                onChange={(e) => setIsAffiliateCode(e.target.checked)}
+                                className="rounded border-white/20 bg-white/[0.04] text-[var(--accent)] focus:ring-[var(--accent)]/40"
+                            />
+                            <span className="text-sm text-[var(--text-secondary)]">This code is owned by an affiliate (earns commission per redemption)</span>
+                        </label>
+                        {isAffiliateCode && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-label mb-1 block">Affiliate Username</label>
+                                    <input
+                                        type="text"
+                                        value={ownerUsername}
+                                        onChange={(e) => setOwnerUsername(e.target.value.toLowerCase())}
+                                        className={inputCls}
+                                        placeholder="e.g. john_influencer"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-label mb-1 block">Commission %</label>
+                                    <input
+                                        type="number"
+                                        value={commissionPercent}
+                                        onChange={(e) => setCommissionPercent(parseFloat(e.target.value) || 0)}
+                                        className={inputCls}
+                                        min={0}
+                                        max={50}
+                                        step={0.5}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        {isAffiliateCode && (
+                            <p className="text-xs text-[var(--text-tertiary)] mt-2 bg-[var(--accent-subtle)] border border-[var(--accent)]/20 rounded-md p-2">
+                                <strong>Affiliate:</strong> {commissionPercent}% of the order subtotal goes to <code className="text-[var(--accent-hover)]">{ownerUsername || '(set username)'}</code> when this code is redeemed. Tracked on the order for payout.
+                            </p>
                         )}
                     </div>
 
@@ -677,7 +736,16 @@ export const DiscountsSection = () => {
                                     const timeStatus = getTimeStatus(d);
                                     return (
                                         <tr key={d.code} className="hover:bg-white/[0.03] transition-colors">
-                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-[var(--text-primary)] font-mono">{d.code}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-sm font-bold text-[var(--text-primary)] font-mono">{d.code}</span>
+                                                    {d.isAffiliateCode && (
+                                                        <span className="text-[10px] font-semibold bg-[var(--accent-subtle)] text-[var(--accent-hover)] px-1.5 py-0.5 rounded-full uppercase tracking-wider" title={`Affiliate: ${d.ownerUsername} (${d.commissionPercent}%)`}>
+                                                            Aff
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-[var(--text-tertiary)] capitalize">{d.discountType}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-[var(--text-primary)] font-medium">
                                                 {d.discountType === 'percentage' ? `${d.value}%` : `$${d.value.toFixed(2)}`}

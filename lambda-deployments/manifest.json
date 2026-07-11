@@ -13,6 +13,20 @@
       "timestamp": "2026-07-11T15:37:14.155002+00:00",
       "size_bytes": 23908,
       "purpose": "See git log for change details."
+    },
+    {
+      "lambda": "admin_handler",
+      "zip": "admin_handler-20260711-162702.zip",
+      "timestamp": "2026-07-11T16:27:02.579716+00:00",
+      "size_bytes": 25976,
+      "purpose": "See git log for change details."
+    },
+    {
+      "lambda": "ID-Pirate-CreateOrder-Function",
+      "zip": "ID-Pirate-CreateOrder-Function-20260711-162702.zip",
+      "timestamp": "2026-07-11T16:27:02.579729+00:00",
+      "size_bytes": 9548,
+      "purpose": "See git log for change details."
     }
   ]
 }
