@@ -264,6 +264,14 @@ export const ALL_REGION_COUNT = new Set(
     VISIBLE_PRODUCTS.filter((p) => p.category !== 'cdl').map((p) => p.region),
 ).size;
 
+/**
+ * Count of US states + DC only (excludes UK, PR, international).
+ * Used for "View All N States" labels where including UK/PR would be misleading.
+ */
+export const US_STATE_REGION_COUNT = new Set(
+    VISIBLE_PRODUCTS.filter((p) => p.category === 'us_standard').map((p) => p.region),
+).size;
+
 /** Legacy flat labels — region names for US gallery sections */
 export const US_REGION_NAMES = US_REGIONS.map((r) => r.name);
 
