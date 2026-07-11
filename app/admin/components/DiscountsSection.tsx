@@ -57,6 +57,47 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
         );
     };
 
+    // Bulk selection helpers — owner-requested "Select All States" UX
+    const allVisibleProductIds = useMemo(() => {
+        return filteredGroups.flatMap(g => g.options.map(o => o.id));
+    }, [filteredGroups]);
+
+    const allVisibleSelected = allVisibleProductIds.length > 0 && allVisibleProductIds.every(id => productIds.includes(id));
+    const someVisibleSelected = allVisibleProductIds.some(id => productIds.includes(id)) && !allVisibleSelected;
+
+    const selectAllVisible = () => {
+        setProductIds(prev => {
+            const set = new Set(prev);
+            for (const id of allVisibleProductIds) set.add(id);
+            return Array.from(set);
+        });
+    };
+
+    const clearAllVisible = () => {
+        setProductIds(prev => {
+            const visibleSet = new Set(allVisibleProductIds);
+            return prev.filter(id => !visibleSet.has(id));
+        });
+    };
+
+    const clearAll = () => setProductIds([]);
+
+    const toggleGroup = (group: { label: string; options: { id: string }[] }) => {
+        const groupIds = group.options.map(o => o.id);
+        const allGroupSelected = groupIds.every(id => productIds.includes(id));
+        if (allGroupSelected) {
+            // Remove all in group
+            setProductIds(prev => prev.filter(id => !groupIds.includes(id)));
+        } else {
+            // Add all in group
+            setProductIds(prev => {
+                const set = new Set(prev);
+                for (const id of groupIds) set.add(id);
+                return Array.from(set);
+            });
+        }
+    };
+
     const handleSubmit = async () => {
         if (!code.trim()) { setError('Code is required.'); return; }
         if (value <= 0) { setError('Value must be greater than 0.'); return; }
@@ -184,54 +225,109 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                                 <label className="text-label">Eligible Products</label>
                                 <span className="text-xs text-[var(--text-tertiary)]">{productIds.length} selected</span>
                             </div>
+
+                            {/* Bulk action bar — owner-requested "Select All States" */}
+                            <div className="flex flex-wrap items-center gap-1.5 mb-2 pb-2 border-b border-slate-200">
+                                <button
+                                    type="button"
+                                    onClick={selectAllVisible}
+                                    disabled={allVisibleSelected}
+                                    className="text-xs font-semibold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    {allVisibleSelected ? '✓ All selected' : 'Select all visible'}
+                                </button>
+                                {someVisibleSelected && (
+                                    <button
+                                        type="button"
+                                        onClick={clearAllVisible}
+                                        className="text-xs font-medium px-2.5 py-1 rounded-md text-slate-600 hover:bg-slate-200 transition-colors"
+                                    >
+                                        Clear visible
+                                    </button>
+                                )}
+                                {productIds.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={clearAll}
+                                        className="text-xs font-medium px-2.5 py-1 rounded-md text-red-500 hover:bg-red-50 transition-colors ml-auto"
+                                    >
+                                        Clear all ({productIds.length})
+                                    </button>
+                                )}
+                            </div>
+
                             <div className="relative mb-2">
                                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
                                 <input
                                     type="text"
+                                    aria-label="Search products"
                                     placeholder="Search products..."
                                     value={productSearch}
                                     onChange={(e) => setProductSearch(e.target.value)}
                                     className="w-full bg-white/[0.04] border border-[var(--border)] rounded-md pl-9 pr-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/40 focus:border-[var(--accent)]/60 focus:outline-none"
                                 />
                             </div>
-                            <div className="max-h-48 overflow-y-auto bg-white/[0.02] border border-[var(--border)] rounded-md">
+                            <div className="max-h-56 overflow-y-auto bg-white/[0.02] border border-[var(--border)] rounded-md">
                                 {filteredGroups.length === 0 ? (
                                     <div className="p-3 text-sm text-[var(--text-tertiary)] text-center">No products match.</div>
                                 ) : (
-                                    filteredGroups.map(group => (
-                                        <div key={group.label}>
-                                            <div className="sticky top-0 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-                                                {group.label}
-                                            </div>
-                                            {group.options.map(opt => (
-                                                <label
-                                                    key={opt.id}
-                                                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--accent-subtle)] cursor-pointer transition-colors"
+                                    filteredGroups.map(group => {
+                                        const groupIds = group.options.map(o => o.id);
+                                        const allInGroupSelected = groupIds.every(id => productIds.includes(id));
+                                        const someInGroupSelected = groupIds.some(id => productIds.includes(id)) && !allInGroupSelected;
+                                        return (
+                                            <div key={group.label}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleGroup(group)}
+                                                    className="sticky top-0 z-10 w-full flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.1] px-3 py-1.5 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider transition-colors"
                                                 >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={productIds.includes(opt.id)}
-                                                        onChange={() => toggleProduct(opt.id)}
-                                                        className="rounded border-white/20 bg-white/[0.04] text-[var(--accent)] focus:ring-[var(--accent)]/40"
-                                                    />
-                                                    <span className="text-sm text-[var(--text-secondary)] font-mono">{opt.id}</span>
-                                                    <span className="text-xs text-[var(--text-tertiary)]">— {opt.label}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    ))
+                                                    <span className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${allInGroupSelected ? 'bg-[var(--accent)] border-[var(--accent)] text-white' : someInGroupSelected ? 'bg-[var(--accent-subtle)] border-[var(--accent-hover)] text-[var(--accent-hover)]' : 'border-white/20 bg-white/[0.04]'}`}>
+                                                        {allInGroupSelected && '✓'}
+                                                        {someInGroupSelected && '–'}
+                                                    </span>
+                                                    {group.label}
+                                                    <span className="ml-auto text-[var(--text-tertiary)] font-normal normal-case">
+                                                        {groupIds.filter(id => productIds.includes(id)).length}/{groupIds.length}
+                                                    </span>
+                                                </button>
+                                                {group.options.map(opt => (
+                                                    <label
+                                                        key={opt.id}
+                                                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-[var(--accent-subtle)] cursor-pointer transition-colors"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={productIds.includes(opt.id)}
+                                                            onChange={() => toggleProduct(opt.id)}
+                                                            className="rounded border-white/20 bg-white/[0.04] text-[var(--accent)] focus:ring-[var(--accent)]/40"
+                                                        />
+                                                        <span className="text-sm text-[var(--text-secondary)] font-mono">{opt.id}</span>
+                                                        <span className="text-xs text-[var(--text-tertiary)]">— {opt.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
                             {productIds.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-2">
-                                    {productIds.slice(0, 6).map(pid => (
+                                    {productIds.slice(0, 8).map(pid => (
                                         <span key={pid} className="inline-flex items-center gap-1 text-xs bg-[var(--accent-subtle)] text-[var(--accent-hover)] px-2 py-0.5 rounded-full">
                                             {pid}
-                                            <button onClick={() => toggleProduct(pid)} className="hover:text-red-400"><X size={10} /></button>
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleProduct(pid)}
+                                                aria-label={`Remove ${pid}`}
+                                                className="hover:text-red-400 transition-colors"
+                                            >
+                                                <X size={11} />
+                                            </button>
                                         </span>
                                     ))}
-                                    {productIds.length > 6 && (
-                                        <span className="text-xs text-[var(--text-tertiary)]">+{productIds.length - 6} more</span>
+                                    {productIds.length > 8 && (
+                                        <span className="text-xs text-[var(--text-tertiary)] self-center">+{productIds.length - 8} more</span>
                                     )}
                                 </div>
                             )}
