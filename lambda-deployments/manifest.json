@@ -1,0 +1,18 @@
+{
+  "deployments": [
+    {
+      "lambda": "admin_handler",
+      "zip": "admin_handler-20260711-153714.zip",
+      "timestamp": "2026-07-11T15:37:14.154989+00:00",
+      "size_bytes": 25700,
+      "purpose": "See git log for change details."
+    },
+    {
+      "lambda": "idPirateOrderLookup",
+      "zip": "idPirateOrderLookup-20260711-153714.zip",
+      "timestamp": "2026-07-11T15:37:14.155002+00:00",
+      "size_bytes": 23908,
+      "purpose": "See git log for change details."
+    }
+  ]
+}
