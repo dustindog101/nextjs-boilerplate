@@ -67,9 +67,15 @@ function CheckoutPage() {
                 })),
                 shippingIsDelivery: deliveryMethod === 'shipping',
                 pricingMode,
-                discountCodeAmount: discountResult?.discountAmount ?? 0,
+                discount: discountResult
+                    ? {
+                          amount: discountResult.discountAmount,
+                          scope: discountResult.scope,
+                          appliedTo: discountResult.appliedTo,
+                      }
+                    : undefined,
             }),
-        [orderItems, deliveryMethod, pricingMode, discountResult?.discountAmount],
+        [orderItems, deliveryMethod, pricingMode, discountResult],
     );
 
     const preDiscountTotal =
@@ -100,7 +106,26 @@ function CheckoutPage() {
         setDiscountError(null);
         setDiscountResult(null);
         try {
-            const result = await validateDiscount(discountCode.trim(), preDiscountTotal);
+            // Build line items for per-line-item discount validation.
+            // Aggregate by productId so the backend sees quantity × unitPrice.
+            const itemsByPid = new Map<string, { productId: string; quantity: number; unitPrice: number }>();
+            for (const item of orderItems) {
+                const pid = item.productId || '';
+                if (!pid) continue;
+                const unitPrice = effectivePerIdPrice(pid, orderItems.length, pricingMode);
+                const existing = itemsByPid.get(pid);
+                if (existing) {
+                    existing.quantity += 1;
+                } else {
+                    itemsByPid.set(pid, { productId: pid, quantity: 1, unitPrice });
+                }
+            }
+            const items = Array.from(itemsByPid.values());
+
+            const result = await validateDiscount(discountCode.trim(), preDiscountTotal, {
+                items,
+                username: user?.username,
+            });
             setDiscountResult(result);
         } catch (err: any) {
             setDiscountError(err.message || 'Invalid code.');
@@ -331,9 +356,33 @@ function CheckoutPage() {
                                         </div>
                                     )}
                                     {discountResult && (
-                                        <div className="flex justify-between text-emerald-400">
-                                            <span>Discount ({discountResult.code})</span>
-                                            <span>-${discountResult.discountAmount.toFixed(2)}</span>
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between text-emerald-400">
+                                                <span>
+                                                    Discount ({discountResult.code})
+                                                    {discountResult.scope === 'line_item' && (
+                                                        <span className="text-emerald-400/70 text-xs ml-1">
+                                                            · per-ID
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <span>−${discountResult.discountAmount.toFixed(2)}</span>
+                                            </div>
+                                            {discountResult.appliedTo && discountResult.appliedTo.length > 0 && (
+                                                <div className="pl-3 space-y-0.5 border-l border-emerald-500/30 ml-1">
+                                                    {discountResult.appliedTo.map((line, idx) => (
+                                                        <div key={idx} className="flex justify-between text-xs text-emerald-400/80">
+                                                            <span>
+                                                                {line.productId} ×{line.quantity}
+                                                                <span className="text-emerald-400/50 ml-1">
+                                                                    @{line.perUnitDiscount.toFixed(2)}/unit
+                                                                </span>
+                                                            </span>
+                                                            <span>−${line.lineDiscount.toFixed(2)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                     <div className="border-t border-[var(--border)] my-3" />
@@ -355,9 +404,11 @@ function CheckoutPage() {
                                                     ✅ {discountResult.code}
                                                 </p>
                                                 <p className="text-xs text-emerald-400/90 mt-0.5">
-                                                    {discountResult.discountType === 'percentage'
-                                                        ? `${discountResult.value}% off — saving $${discountResult.discountAmount.toFixed(2)}`
-                                                        : `$${discountResult.value.toFixed(2)} off applied`}
+                                                    {discountResult.scope === 'line_item'
+                                                        ? `${discountResult.value}${discountResult.discountType === 'percentage' ? '%' : '$'} off each matching ID — saving $${discountResult.discountAmount.toFixed(2)}`
+                                                        : discountResult.discountType === 'percentage'
+                                                            ? `${discountResult.value}% off — saving $${discountResult.discountAmount.toFixed(2)}`
+                                                            : `$${discountResult.value.toFixed(2)} off applied`}
                                                 </p>
                                             </div>
                                             <button

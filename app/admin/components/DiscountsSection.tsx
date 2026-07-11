@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
-import { adminCreateDiscount, adminUpdateDiscount, adminDeleteDiscount, Discount } from '../../../lib/apiClient';
-import { Plus, X, Tag, Trash2, Edit, Search, Users, Calendar, Clock } from 'lucide-react';
+import { adminCreateDiscount, adminUpdateDiscount, adminDeleteDiscount, Discount, DiscountScope } from '../../../lib/apiClient';
+import { Plus, X, Tag, Trash2, Edit, Search, Users, Calendar, Clock, ShoppingCart, Package } from 'lucide-react';
 import { Spinner, SortableTh } from '../../components/ui';
 import { useAdminData } from '../AdminDataContext';
 import { sortRows } from '@/lib/tableSort';
 import { useTableSortState } from '@/app/hooks/useTableSort';
+import { productSelectGroups, getProductShortLabel } from '@/lib/productCatalog';
 
 const inputCls = "w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none transition-all";
 
@@ -26,12 +27,43 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
     const [startsAt, setStartsAt] = useState(existing?.startsAt || '');
     const [expiresAt, setExpiresAt] = useState(existing?.expiresAt || '');
     const [allowedUsernames, setAllowedUsernames] = useState(existing?.allowedUsernames?.join(', ') || '');
+    // NEW: scope + productIds
+    const [scope, setScope] = useState<DiscountScope>(existing?.scope || 'cart');
+    const [productIds, setProductIds] = useState<string[]>(existing?.productIds || []);
+    const [productSearch, setProductSearch] = useState('');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Memoized product groups from catalog
+    const productGroups = useMemo(() => productSelectGroups(), []);
+
+    // Filtered groups based on search
+    const filteredGroups = useMemo(() => {
+        if (!productSearch.trim()) return productGroups;
+        const q = productSearch.toLowerCase();
+        return productGroups
+            .map(g => ({
+                label: g.label,
+                options: g.options.filter(o =>
+                    o.id.toLowerCase().includes(q) || o.label.toLowerCase().includes(q) || g.label.toLowerCase().includes(q)
+                ),
+            }))
+            .filter(g => g.options.length > 0);
+    }, [productGroups, productSearch]);
+
+    const toggleProduct = (pid: string) => {
+        setProductIds(prev =>
+            prev.includes(pid) ? prev.filter(p => p !== pid) : [...prev, pid]
+        );
+    };
 
     const handleSubmit = async () => {
         if (!code.trim()) { setError('Code is required.'); return; }
         if (value <= 0) { setError('Value must be greater than 0.'); return; }
+        if (discountType === 'percentage' && value > 100) { setError('Percentage cannot exceed 100.'); return; }
+        if (scope === 'line_item' && productIds.length === 0) {
+            setError('Select at least one product for line-item scope.'); return;
+        }
         if (startsAt && expiresAt && new Date(startsAt) >= new Date(expiresAt)) {
             setError('Start date must be before expiration date.'); return;
         }
@@ -43,26 +75,33 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
             : undefined;
 
         try {
+            const payload = {
+                discountType,
+                value,
+                minOrder,
+                maxUses: maxUses ? parseInt(maxUses) : undefined,
+                startsAt: startsAt || undefined,
+                expiresAt: expiresAt || undefined,
+                allowedUsernames: parsedUsernames,
+                scope,
+                productIds: scope === 'line_item' ? productIds : undefined,
+            };
+
             if (isEdit) {
+                // For edits, send undefined fields as null so the backend can REMOVE them
+                // (e.g. clearing productIds when switching back to cart scope)
                 await adminUpdateDiscount(existing!.code, {
-                    discountType,
-                    value,
-                    minOrder,
-                    maxUses: maxUses ? parseInt(maxUses) : undefined,
-                    startsAt: startsAt || undefined,
-                    expiresAt: expiresAt || undefined,
-                    allowedUsernames: parsedUsernames,
+                    ...payload,
+                    productIds: scope === 'line_item' ? productIds : null,
+                    allowedUsernames: parsedUsernames ?? null,
+                    startsAt: startsAt || null,
+                    expiresAt: expiresAt || null,
+                    maxUses: maxUses ? parseInt(maxUses) : null,
                 });
             } else {
                 await adminCreateDiscount({
                     code: code.trim().toUpperCase(),
-                    discountType,
-                    value,
-                    minOrder,
-                    maxUses: maxUses ? parseInt(maxUses) : undefined,
-                    startsAt: startsAt || undefined,
-                    expiresAt: expiresAt || undefined,
-                    allowedUsernames: parsedUsernames,
+                    ...payload,
                 });
             }
             onDone();
@@ -100,6 +139,104 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
                             <input type="number" value={value} onChange={(e) => setValue(parseFloat(e.target.value) || 0)} className={inputCls} min={0} step={discountType === 'percentage' ? 1 : 0.01} />
                         </div>
                     </div>
+
+                    {/* NEW: Scope selector */}
+                    <div className="border-t border-slate-100 pt-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Package size={14} className="text-slate-400" />
+                            <label className="text-label">Applies To</label>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setScope('cart')}
+                                className={`flex items-start gap-2 p-3 rounded-lg border text-left transition-all ${scope === 'cart' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}
+                            >
+                                <ShoppingCart size={16} className={scope === 'cart' ? 'text-blue-600 mt-0.5' : 'text-slate-400 mt-0.5'} />
+                                <div>
+                                    <div className="text-sm font-semibold text-slate-900">Whole cart</div>
+                                    <div className="text-xs text-slate-500">Discount applies to the entire order total.</div>
+                                </div>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setScope('line_item')}
+                                className={`flex items-start gap-2 p-3 rounded-lg border text-left transition-all ${scope === 'line_item' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}
+                            >
+                                <Package size={16} className={scope === 'line_item' ? 'text-blue-600 mt-0.5' : 'text-slate-400 mt-0.5'} />
+                                <div>
+                                    <div className="text-sm font-semibold text-slate-900">Specific products</div>
+                                    <div className="text-xs text-slate-500">Per-ID discount on selected products in cart.</div>
+                                </div>
+                            </button>
+                        </div>
+                        {scope === 'line_item' && (
+                            <p className="text-xs text-slate-500 mt-2 bg-amber-50 border border-amber-200 rounded-md p-2">
+                                <strong>Per-ID:</strong> Value applies to <em>each matching unit</em> in the cart. E.g. 10% on `PA:STANDARD` × 2 = 10% off each ID, twice.
+                            </p>
+                        )}
+                    </div>
+
+                    {/* NEW: Product picker (only for line_item scope) */}
+                    {scope === 'line_item' && (
+                        <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-label">Eligible Products</label>
+                                <span className="text-xs text-slate-500">{productIds.length} selected</span>
+                            </div>
+                            <div className="relative mb-2">
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search products..."
+                                    value={productSearch}
+                                    onChange={(e) => setProductSearch(e.target.value)}
+                                    className="w-full bg-white border border-slate-200 rounded-md pl-9 pr-3 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:outline-none"
+                                />
+                            </div>
+                            <div className="max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-md">
+                                {filteredGroups.length === 0 ? (
+                                    <div className="p-3 text-sm text-slate-400 text-center">No products match.</div>
+                                ) : (
+                                    filteredGroups.map(group => (
+                                        <div key={group.label}>
+                                            <div className="sticky top-0 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                                                {group.label}
+                                            </div>
+                                            {group.options.map(opt => (
+                                                <label
+                                                    key={opt.id}
+                                                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={productIds.includes(opt.id)}
+                                                        onChange={() => toggleProduct(opt.id)}
+                                                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                                                    />
+                                                    <span className="text-sm text-slate-700 font-mono">{opt.id}</span>
+                                                    <span className="text-xs text-slate-400">— {opt.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            {productIds.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                    {productIds.slice(0, 6).map(pid => (
+                                        <span key={pid} className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                                            {pid}
+                                            <button onClick={() => toggleProduct(pid)} className="hover:text-red-500"><X size={10} /></button>
+                                        </span>
+                                    ))}
+                                    {productIds.length > 6 && (
+                                        <span className="text-xs text-slate-500">+{productIds.length - 6} more</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Min Order + Max Uses */}
                     <div className="grid grid-cols-2 gap-4">
@@ -205,6 +342,7 @@ export const DiscountsSection = () => {
                 status: d => d.isActive,
                 window: d => (d.startsAt ? new Date(d.startsAt).getTime() : 0),
                 users: d => d.allowedUsernames?.length ?? 0,
+                scope: d => d.scope ?? 'cart',
             },
             tie
         );
@@ -315,6 +453,15 @@ export const DiscountsSection = () => {
                                         Value
                                     </SortableTh>
                                     <SortableTh
+                                        columnKey="scope"
+                                        sortKey={sortKey}
+                                        direction={direction}
+                                        onSort={toggleSort}
+                                        className="px-4 py-3 text-xs font-semibold text-slate-400"
+                                    >
+                                        Scope
+                                    </SortableTh>
+                                    <SortableTh
                                         columnKey="uses"
                                         sortKey={sortKey}
                                         direction={direction}
@@ -365,6 +512,21 @@ export const DiscountsSection = () => {
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 capitalize">{d.discountType}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-slate-900 font-medium">
                                                 {d.discountType === 'percentage' ? `${d.value}%` : `$${d.value.toFixed(2)}`}
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-xs">
+                                                {(d.scope ?? 'cart') === 'cart' ? (
+                                                    <span className="inline-flex items-center gap-1 text-slate-500">
+                                                        <ShoppingCart size={11} /> Cart
+                                                    </span>
+                                                ) : (
+                                                    <span
+                                                        className="inline-flex items-center gap-1 text-blue-600"
+                                                        title={(d.productIds ?? []).join(', ')}
+                                                    >
+                                                        <Package size={11} />
+                                                        {(d.productIds?.length ?? 0)} product{(d.productIds?.length ?? 0) === 1 ? '' : 's'}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-slate-500">
                                                 {d.usedCount}{d.maxUses !== undefined ? `/${d.maxUses}` : '/∞'}

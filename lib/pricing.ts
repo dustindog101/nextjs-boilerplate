@@ -21,6 +21,15 @@ export const RESELLER_WHOLESALE_TIERS = [
 
 export type PricingMode = 'retail' | 'reseller_wholesale';
 
+/** One discounted line, mirroring the backend's `appliedTo` entry. */
+export interface AppliedDiscountLine {
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+    perUnitDiscount: number;
+    lineDiscount: number;
+}
+
 export interface OrderPriceBreakdown {
     idCount: number;
     pricingMode: PricingMode;
@@ -30,6 +39,10 @@ export interface OrderPriceBreakdown {
     handling: number;
     shipping: number;
     discountAmount?: number;
+    /** 'cart' or 'line_item' — only set when a discount was applied. */
+    discountScope?: 'cart' | 'line_item';
+    /** Per-line breakdown — only set when discountScope='line_item'. */
+    discountAppliedTo?: AppliedDiscountLine[];
     total: number;
     perIdEffective: number;
     /** Legacy field — same as idSubtotal for new orders */
@@ -81,11 +94,23 @@ export function resolvePricingMode(isReseller: boolean): PricingMode {
     return isReseller ? 'reseller_wholesale' : 'retail';
 }
 
+export interface DiscountCodeInput {
+    /** Total discount amount in dollars (always required). */
+    amount: number;
+    /** Scope — when 'line_item', `appliedTo` should be provided for UI breakdown. */
+    scope?: 'cart' | 'line_item';
+    /** Per-line breakdown — only required when scope='line_item'. */
+    appliedTo?: AppliedDiscountLine[];
+}
+
 export function calcOrderPricing(input: {
     ids: { productId?: string; state?: string }[];
     shippingIsDelivery: boolean;
     pricingMode: PricingMode;
+    /** Old form: just the discount amount. Kept for backward compat. */
     discountCodeAmount?: number;
+    /** New form: structured discount with scope + per-line breakdown. */
+    discount?: DiscountCodeInput;
 }): OrderPriceBreakdown {
     const idCount = input.ids.length;
     const pricingMode = input.pricingMode;
@@ -121,12 +146,19 @@ export function calcOrderPricing(input: {
 
     const handling = handlingFee;
     const shipping = input.shippingIsDelivery ? shippingFee : 0;
-    const discountAmount = input.discountCodeAmount ?? 0;
+
+    // Resolve discount: new structured form takes precedence over legacy scalar
+    const discount = input.discount ?? (
+        input.discountCodeAmount !== undefined && input.discountCodeAmount > 0
+            ? { amount: input.discountCodeAmount, scope: 'cart' as const }
+            : undefined
+    );
+    const discountAmount = discount?.amount ?? 0;
     const preDiscount = idSubtotal + handling + shipping;
     const total = roundMoney(Math.max(preDiscount - discountAmount, 0));
     const perIdEffective = idCount > 0 ? roundMoney(idSubtotal / idCount) : 0;
 
-    return {
+    const result: OrderPriceBreakdown = {
         idCount,
         pricingMode,
         listSubtotal: roundMoney(listSubtotal),
@@ -139,6 +171,13 @@ export function calcOrderPricing(input: {
         perIdEffective,
         subtotal: idSubtotal,
     };
+    if (discount?.scope) {
+        result.discountScope = discount.scope;
+    }
+    if (discount?.appliedTo && discount.appliedTo.length > 0) {
+        result.discountAppliedTo = discount.appliedTo;
+    }
+    return result;
 }
 
 function roundMoney(n: number): number {
