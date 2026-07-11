@@ -110,6 +110,7 @@ def _import_fresh(module_path, name="lambda_function"):
     After import, we monkey-patch the module's *_table references to point
     at fresh moto-backed tables (because the module created them at import
     time, before mock_aws was active)."""
+    # Clear ALL cached lambda_function modules + shared modules
     for k in list(sys.modules.keys()):
         if k == name or k.startswith("shared.") or k.startswith("payment_admin") or k.startswith("payment_routes") or k.startswith("payment_shared"):
             del sys.modules[k]
@@ -122,8 +123,21 @@ def _import_fresh(module_path, name="lambda_function"):
         is_payment_request=lambda rt: False,
         dispatch_payment=lambda *a, **k: {},
     )
-    if module_path not in sys.path:
-        sys.path.insert(0, module_path)
+
+    # Remove any other Lambda folders from sys.path so we import the RIGHT one
+    # (both admin_handler and idPirateOrderLookup have lambda_function.py)
+    lambda_root_dirs = [
+        os.path.join(LAMBDA_ROOT, "admin_handler"),
+        os.path.join(LAMBDA_ROOT, "idPirateOrderLookup"),
+        os.path.join(LAMBDA_ROOT, "ID-Pirate-CreateOrder-Function"),
+        os.path.join(LAMBDA_ROOT, "reseller_handler"),
+    ]
+    for d in lambda_root_dirs:
+        while d in sys.path:
+            sys.path.remove(d)
+    # Now insert the target path at position 0
+    sys.path.insert(0, module_path)
+
     mod = __import__(name)
 
     # Rebind DynamoDB table refs to the moto-backed ones
@@ -672,3 +686,87 @@ def test_admin_update_discount_can_clear_productids():
     item = table.get_item(Key={"code": "CLEARME"}).get("Item")
     assert "productIds" not in item
     assert "allowedUsernames" not in item
+
+
+# ─── Regression: DecimalEncoder must handle set/frozenset ─────────────────
+# Bug: when a discount has productIds (DynamoDB String Set), list_discounts
+# returned 500 because json.dumps couldn't serialize frozenset. This test
+# ensures the encoder converts sets to sorted lists.
+
+@mock_aws
+def test_list_discounts_serializes_string_sets():
+    """list_discounts must not 500 when items have productIds/allowedUsernames."""
+    _setup_tables()
+    admin = _import_fresh(os.path.join(LAMBDA_ROOT, "admin_handler"))
+
+    table = boto3.resource("dynamodb", region_name="us-east-1").Table("idPirate_discounts")
+    # Insert an item with String Set attributes (what DynamoDB stores)
+    _put_discount(
+        table,
+        code="WITHSET",
+        value=15,
+        scope="line_item",
+        productIds=["PA:STANDARD", "CA:DMV_POLY", "FL:STANDARD"],
+        allowedUsernames=["alice", "bob"],
+    )
+    # Also insert a plain cart-scope item to verify mixed responses work
+    _put_discount(table, code="PLAIN", value=10, scope="cart")
+
+    event = {
+        "body": json.dumps({"requestType": "list_discounts"}),
+        "headers": {"Authorization": _make_admin_jwt()},
+    }
+    response = admin.lambda_handler(event, None)
+    assert response["statusCode"] == 200, response["body"]
+
+    items = json.loads(response["body"])
+    assert len(items) == 2
+
+    by_code = {it["code"]: it for it in items}
+    assert "WITHSET" in by_code
+    assert "PLAIN" in by_code
+
+    # The String Set must come back as a JSON array (list), not crash
+    pid_list = by_code["WITHSET"].get("productIds")
+    assert isinstance(pid_list, list), f"expected list, got {type(pid_list)}"
+    assert set(pid_list) == {"PA:STANDARD", "CA:DMV_POLY", "FL:STANDARD"}
+
+    usernames_list = by_code["WITHSET"].get("allowedUsernames")
+    assert isinstance(usernames_list, list)
+    assert set(usernames_list) == {"alice", "bob"}
+
+    # Plain item should not have productIds at all
+    assert "productIds" not in by_code["PLAIN"]
+
+
+@mock_aws
+def test_validate_discount_serializes_string_sets_in_response():
+    """validate_discount for a line_item code returns productIds as a list."""
+    _setup_tables()
+    lookup = _import_fresh(os.path.join(LAMBDA_ROOT, "idPirateOrderLookup"))
+
+    table = boto3.resource("dynamodb", region_name="us-east-1").Table("idPirate_discounts")
+    _put_discount(
+        table,
+        code="LINE20",
+        value=20,
+        scope="line_item",
+        productIds=["PA:STANDARD", "CA:DMV_POLY"],
+    )
+
+    event = {
+        "body": json.dumps({
+            "requestType": "validate_discount",
+            "code": "LINE20",
+            "orderTotal": 500.0,
+            "items": [
+                {"productId": "PA:STANDARD", "quantity": 2, "unitPrice": 90.0},
+            ],
+        })
+    }
+    response = lookup.lambda_handler(event, None)
+    assert response["statusCode"] == 200, response["body"]
+    body = json.loads(response["body"])
+    # productIds in response must be a list (the Lambda explicitly sorts)
+    assert isinstance(body["productIds"], list)
+    assert body["productIds"] == ["CA:DMV_POLY", "PA:STANDARD"]  # sorted
