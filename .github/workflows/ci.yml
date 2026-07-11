@@ -1,0 +1,44 @@
+# CI for the Next.js ID Pirate app (replaces legacy Deno workflow that was
+# inherited from the boilerplate template — Deno lint rules don't apply to a
+# Next.js + TypeScript project and were failing on every PR for no real reason).
+
+name: CI
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          # Skip env-var validation during CI build — the app builds without
+          # runtime secrets; runtime calls just fail gracefully if missing.
+          NEXT_TELEMETRY_DISABLED: "1"
