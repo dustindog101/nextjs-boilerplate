@@ -186,6 +186,15 @@ export function CryptoPayModal({
   }, [open]);
 
   useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
+  useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
     const update = () => setQrSize(mq.matches ? 156 : 180);
     update();

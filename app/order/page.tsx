@@ -279,6 +279,7 @@ export default function OrderGalleryPage() {
                     </svg>
                     <input
                         type="text"
+                        aria-label="Search states or ID types"
                         placeholder="Search states or ID types..."
                         className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)]"
                         value={searchTerm}
@@ -310,6 +311,7 @@ export default function OrderGalleryPage() {
 
                 <div className="w-full lg:w-48 relative">
                     <select
+                        aria-label="Sort order"
                         className="w-full appearance-none pl-4 pr-10 py-2.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] text-[var(--text-secondary)] text-sm font-medium"
                         value={sort}
                         onChange={(e) => setSort(e.target.value as typeof sort)}

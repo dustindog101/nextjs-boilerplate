@@ -35,11 +35,19 @@ const EditResellerModal: React.FC<EditModalProps> = ({ user, onClose, onSave }) 
 
     const fieldStyle = { background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' };
 
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !saving) onClose();
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose, saving]);
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="rounded-2xl shadow-xl p-6 w-full max-w-md relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-                <button onClick={onClose} className="absolute top-4 right-4 transition-colors" style={{ color: 'var(--text-tertiary)' }}><X size={20} /></button>
-                <h3 className="text-lg font-bold mb-5" style={{ color: 'var(--text-primary)' }}>
+            <div className="rounded-2xl shadow-xl p-6 w-full max-w-md relative animate-fade-up" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }} role="dialog" aria-modal="true" aria-labelledby="edit-reseller-modal-title">
+                <button onClick={onClose} aria-label="Close dialog" className="absolute top-4 right-4 transition-colors" style={{ color: 'var(--text-tertiary)' }}><X size={20} /></button>
+                <h3 id="edit-reseller-modal-title" className="text-lg font-bold mb-5" style={{ color: 'var(--text-primary)' }}>
                     Reseller Discount — <span style={{ color: 'var(--accent)' }}>{user.username}</span>
                 </h3>
                 <div className="space-y-4">
@@ -138,6 +146,7 @@ export const ResellersSection = () => {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
                     <input
                         type="text"
+                        aria-label="Search resellers"
                         placeholder="Search resellers..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -161,7 +170,7 @@ export const ResellersSection = () => {
                             <div key={r.userId} className="card card-hover p-4">
                                 <div className="flex items-center justify-between mb-2">
                                     <p className="font-bold" style={{ color: 'var(--text-primary)' }}>{r.username}</p>
-                                    <button onClick={() => setEditing(r)} className="transition-colors" style={{ color: 'var(--text-tertiary)' }}><Edit size={14} /></button>
+                                    <button onClick={() => setEditing(r)} aria-label={`Edit reseller discount for ${r.username}`} className="inline-flex items-center justify-center min-h-[36px] min-w-[36px] p-2 transition-colors" style={{ color: 'var(--text-tertiary)' }}><Edit size={14} /></button>
                                 </div>
 
                                 <div className="flex items-center gap-2 mb-3">

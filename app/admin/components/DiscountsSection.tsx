@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { adminCreateDiscount, adminUpdateDiscount, adminDeleteDiscount, Discount, DiscountScope } from '../../../lib/apiClient';
 import { Plus, X, Tag, Trash2, Edit, Search, Users, Calendar, Clock, ShoppingCart, Package } from 'lucide-react';
 import { Spinner, SortableTh } from '../../components/ui';
@@ -154,11 +154,19 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
         }
     };
 
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose]);
+
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-xl p-6 w-full max-w-lg relative animate-fade-up max-h-[90vh] overflow-y-auto">
-                <button onClick={onClose} className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"><X size={20} /></button>
-                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-5">{isEdit ? 'Edit Discount' : 'Create Discount Code'}</h3>
+            <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-xl p-6 w-full max-w-lg relative animate-fade-up max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="discount-form-modal-title">
+                <button onClick={onClose} aria-label="Close dialog" className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"><X size={20} /></button>
+                <h3 id="discount-form-modal-title" className="text-lg font-bold text-[var(--text-primary)] mb-5">{isEdit ? 'Edit Discount' : 'Create Discount Code'}</h3>
                 <div className="space-y-4">
                     {/* Code */}
                     <div>
@@ -400,11 +408,69 @@ const DiscountFormModal: React.FC<DiscountFormProps> = ({ existing, onClose, onD
     );
 };
 
+/* ── Delete Confirmation Modal ── */
+interface DeleteConfirmProps {
+    discount: Discount;
+    onClose: () => void;
+    onDone: () => void;
+}
+
+const DeleteConfirmModal: React.FC<DeleteConfirmProps> = ({ discount, onClose, onDone }) => {
+    const [deleting, setDeleting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const cancelRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        cancelRef.current?.focus();
+    }, []);
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !deleting) onClose();
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose, deleting]);
+
+    const handleConfirm = async () => {
+        setDeleting(true);
+        setError(null);
+        try {
+            await adminDeleteDiscount(discount.code);
+            onDone();
+            onClose();
+        } catch (err: any) {
+            setError(err.message || 'Failed to delete.');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-xl p-6 w-full max-w-md relative animate-fade-up" role="dialog" aria-modal="true" aria-labelledby="delete-discount-modal-title">
+                <h3 id="delete-discount-modal-title" className="text-lg font-bold text-[var(--text-primary)] mb-2">
+                    Delete discount code {discount.code}?
+                </h3>
+                <p className="text-sm text-[var(--text-secondary)] mb-5">This cannot be undone.</p>
+                {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 p-2 rounded-lg mb-3">{error}</p>}
+                <div className="flex justify-end gap-3">
+                    <button ref={cancelRef} onClick={onClose} className="btn btn-outline px-4 py-2 text-sm" disabled={deleting}>Cancel</button>
+                    <button onClick={handleConfirm} className="btn btn-primary px-4 py-2 text-sm" disabled={deleting}>
+                        {deleting ? 'Deleting…' : 'Delete'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 /* ── Main Section ── */
 export const DiscountsSection = () => {
     const { discounts, loadDiscounts, refreshDiscounts } = useAdminData();
     const [showForm, setShowForm] = useState(false);
     const [editingDiscount, setEditingDiscount] = useState<Discount | undefined>(undefined);
+    const [deleteTarget, setDeleteTarget] = useState<Discount | null>(null);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -449,10 +515,8 @@ export const DiscountsSection = () => {
         await refreshDiscounts();
     };
 
-    const handleDelete = async (code: string) => {
-        if (!confirm(`Delete discount code "${code}"?`)) return;
-        await adminDeleteDiscount(code);
-        await refreshDiscounts();
+    const handleDelete = (d: Discount) => {
+        setDeleteTarget(d);
     };
 
     const openEdit = (d: Discount) => { setEditingDiscount(d); setShowForm(true); };
@@ -477,6 +541,13 @@ export const DiscountsSection = () => {
     return (
         <div className="p-4 sm:p-6">
             {showForm && <DiscountFormModal existing={editingDiscount} onClose={closeForm} onDone={refreshDiscounts} />}
+            {deleteTarget && (
+                <DeleteConfirmModal
+                    discount={deleteTarget}
+                    onClose={() => setDeleteTarget(null)}
+                    onDone={refreshDiscounts}
+                />
+            )}
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                 <h2 className="text-lg font-bold text-[var(--text-primary)]">
@@ -487,6 +558,7 @@ export const DiscountsSection = () => {
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
                         <input
                             type="text"
+                            aria-label="Search discount codes"
                             placeholder="Search codes..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -494,6 +566,7 @@ export const DiscountsSection = () => {
                         />
                     </div>
                     <select
+                        aria-label="Filter by status"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="bg-white/[0.04] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent)]/40 focus:outline-none transition-all"
@@ -631,7 +704,8 @@ export const DiscountsSection = () => {
                                                 <div className="flex items-center gap-1.5">
                                                     <button
                                                         onClick={() => toggleActive(d.code, d.isActive)}
-                                                        className={`text-xs font-semibold px-2 py-0.5 rounded-full cursor-pointer transition-colors ${d.isActive ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-white/[0.06] text-zinc-400 hover:bg-white/[0.1]'}`}
+                                                        aria-label={`Toggle discount ${d.code} ${d.isActive ? 'off' : 'on'}`}
+                                                        className={`inline-flex items-center justify-center min-h-[36px] min-w-[36px] p-2 text-xs font-semibold rounded-full cursor-pointer transition-colors ${d.isActive ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-white/[0.06] text-zinc-400 hover:bg-white/[0.1]'}`}
                                                     >
                                                         {d.isActive ? 'Active' : 'Off'}
                                                     </button>
@@ -670,8 +744,8 @@ export const DiscountsSection = () => {
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-right">
                                                 <div className="flex items-center justify-end gap-1">
-                                                    <button onClick={() => openEdit(d)} className="text-[var(--accent)] hover:text-[var(--accent-hover)] p-1 transition-colors"><Edit size={14} /></button>
-                                                    <button onClick={() => handleDelete(d.code)} className="text-red-400 hover:text-red-300 p-1 transition-colors"><Trash2 size={14} /></button>
+                                                    <button onClick={() => openEdit(d)} aria-label={`Edit discount ${d.code}`} className="inline-flex items-center justify-center min-h-[36px] min-w-[36px] p-2 text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors"><Edit size={14} /></button>
+                                                    <button onClick={() => handleDelete(d)} aria-label={`Delete discount ${d.code}`} className="inline-flex items-center justify-center min-h-[36px] min-w-[36px] p-2 text-red-400 hover:text-red-300 transition-colors"><Trash2 size={14} /></button>
                                                 </div>
                                             </td>
                                         </tr>

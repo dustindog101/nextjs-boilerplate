@@ -107,6 +107,15 @@ export function OrderExportPanel({
     resetModal();
   };
 
+  useEffect(() => {
+    if (!modalFormat) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !exporting) closeModal();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [modalFormat, exporting]);
+
   const handlePickFormat = (format: AdminOrderExportFormat) => {
     setMenuOpen(false);
     setError(null);
@@ -244,10 +253,14 @@ export function OrderExportPanel({
           <div
             className="rounded-2xl shadow-xl p-6 w-full max-w-lg relative animate-fade-up max-h-[90vh] overflow-y-auto"
             style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="order-export-modal-title"
           >
             <button
               type="button"
               onClick={closeModal}
+              aria-label="Close dialog"
               className="absolute top-4 right-4 transition-colors z-10"
               style={{ color: 'var(--text-tertiary)' }}
               disabled={exporting}
@@ -255,7 +268,7 @@ export function OrderExportPanel({
               <X size={20} />
             </button>
 
-            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            <h3 id="order-export-modal-title" className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
               {modalTitle}
             </h3>
             <p className="text-sm mb-5" style={{ color: 'var(--text-tertiary)' }}>

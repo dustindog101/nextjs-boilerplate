@@ -61,11 +61,12 @@ export const Notification: React.FC<NotificationProps> = ({
     };
 
     return (
-        <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[calc(100%-2rem)] glass border ${colors[type]} rounded-xl px-4 py-3 flex items-center gap-3 animate-fade-up shadow-lg`}>
+        <div role="status" aria-live="polite" className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[calc(100%-2rem)] glass border ${colors[type]} rounded-xl px-4 py-3 flex items-center gap-3 animate-fade-up shadow-lg`}>
             {icons[type]}
             <p className="text-sm font-medium">{message}</p>
             <button
                 onClick={() => { setVisible(false); onDismiss?.(); }}
+                aria-label="Dismiss notification"
                 className="ml-auto text-current opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
             >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

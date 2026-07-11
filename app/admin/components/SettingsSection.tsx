@@ -27,6 +27,8 @@ const SettingRow = ({ label, description, children }: { label: string; descripti
 
 const Toggle = ({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) => (
     <button
+        role="switch"
+        aria-checked={checked}
         onClick={() => !disabled && onChange(!checked)}
         className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${checked ? 'bg-[var(--accent)]' : 'bg-white/[0.06]'}`}
         style={{ height: '22px' }}
@@ -82,7 +84,7 @@ export const SettingsSection = () => {
         <div className="p-4 sm:p-6 space-y-6">
             {/* Toast notification */}
             {toast && (
-                <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium animate-fade-in-out ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
+                <div role="status" aria-live="polite" className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium animate-fade-in-out ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
                     {toast.type === 'success' ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
                     {toast.message}
                 </div>
