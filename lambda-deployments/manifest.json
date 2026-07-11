@@ -49,6 +49,23 @@
       "encrypted": true,
       "encryption": "AES-256",
       "note": "pre-dev rollback snapshot \u2014 remove once dev \u2192 main merged"
+    },
+    {
+      "lambda": "idPirateOrderLookup",
+      "zip": "idPirateOrderLookup-20260711-172449.zip",
+      "timestamp": "2026-07-11T17:24:49.050570+00:00",
+      "size_bytes": 25512,
+      "purpose": "See git log for change details."
+    },
+    {
+      "lambda": "idPirateOrderLookup",
+      "zip": "idPirateOrderLookup-20260711-172449-dev.zip",
+      "label": "dev",
+      "timestamp": "2026-07-11T17:27:00Z",
+      "size_bytes": 26316,
+      "encrypted": true,
+      "encryption": "AES-256",
+      "note": "dev branch deployment \u2014 affiliate endpoints (apply, stats, payout)"
     }
   ],
   "notes": {
