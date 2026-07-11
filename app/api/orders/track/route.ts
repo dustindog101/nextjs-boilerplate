@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const LOOKUP_LAMBDA_URL = process.env.LOOKUP_LAMBDA_URL;
+const LAMBDA_TIMEOUT_MS = 8_000;
 
 /**
  * POST /api/orders/track — Proxies to lookup Lambda: track/summary, get_order (JWT),
@@ -29,11 +30,18 @@ export async function POST(request: NextRequest) {
             method: 'POST',
             headers,
             body: JSON.stringify(body),
+            signal: AbortSignal.timeout(LAMBDA_TIMEOUT_MS),
         });
 
         const data = await lambdaResponse.json();
         return NextResponse.json(data, { status: lambdaResponse.status });
     } catch (error: any) {
+        if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+            return NextResponse.json(
+                { error: 'Lookup service timed out. Please try again.' },
+                { status: 504 }
+            );
+        }
         console.error('[API /orders/track] Error:', error.message);
         return NextResponse.json(
             { error: 'An internal error occurred.' },

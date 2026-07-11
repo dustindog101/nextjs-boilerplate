@@ -253,7 +253,11 @@ export function CryptoPayModal({
     ) {
       return;
     }
-    const id = setInterval(loadIntent, 15000);
+    // Poll every 30s — matches the documented cadence in CRYPTO_PAYMENTS.md.
+    // The watcher Lambda polls blockchains every 2min, so 30s client polling
+    // only affects displayed latency, not detection latency. Halves Vercel +
+    // Lambda cost per open modal vs the previous 15s.
+    const id = setInterval(loadIntent, 30_000);
     return () => clearInterval(id);
   }, [open, intent, resolvedStatus, loadIntent]);
 

@@ -1,5 +1,6 @@
-import ExcelJS from 'exceljs';
-
+// ExcelJS is ~1.5MB — dynamically import only when actually exporting.
+// This keeps it out of the admin Orders chunk (which every admin page-load
+// fetches) and only loads it when the user clicks Export.
 export type AdminOrderExportFormat = 'json' | 'xlsx' | 'vendor';
 
 export interface AdminOrderRecord {
@@ -247,6 +248,7 @@ export async function exportOrdersAsSpreadsheet(
   options: VendorExportOptions = {},
   filenamePrefix = 'orders'
 ): Promise<void> {
+  const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Orders');
   // Vendor-safe: one row per ID. Order-level columns repeat per row so the
@@ -358,6 +360,7 @@ export async function exportOrdersAsVendorTemplate(
   }
 
   const templateBuffer = await response.arrayBuffer();
+  const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(templateBuffer);
   const sheet = workbook.worksheets[0];

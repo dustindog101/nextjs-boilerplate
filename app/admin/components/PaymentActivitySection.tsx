@@ -24,9 +24,12 @@ import type {
 } from '@/lib/paymentTypes';
 import { Spinner } from '../../components/ui/Spinner';
 
-/** Background refresh while Activity tab is open — slower when idle. */
+/** Background refresh while Activity tab is open — slower when idle.
+ *  After 2 consecutive idle ticks (active === 0), polling pauses entirely
+ *  to save Lambda invocations. User can manually refresh to restart. */
 const POLL_MS_ACTIVE = 60_000;
 const POLL_MS_IDLE = 120_000;
+const IDLE_TICKS_BEFORE_PAUSE = 2;
 export const ADMIN_HIGHLIGHT_ORDER_KEY = 'adminHighlightOrderId';
 
 type StatusFilter = 'all' | 'active' | PaymentIntentStatus;
@@ -126,13 +129,26 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
 
   useEffect(() => {
     if (!isVisible) return;
+    let idleTickCount = 0;
     const poll = () => {
       if (typeof document !== 'undefined' && document.hidden) return;
+      // If we've been idle for too long, pause polling entirely.
+      // The user can click Refresh to restart (which resets the counter via re-mount).
+      if (idleTickCount >= IDLE_TICKS_BEFORE_PAUSE) {
+        return;
+      }
       load(true);
     };
     const intervalMs =
       summary && summary.active > 0 ? POLL_MS_ACTIVE : POLL_MS_IDLE;
-    const id = setInterval(poll, intervalMs);
+    const id = setInterval(() => {
+      if (summary && summary.active === 0) {
+        idleTickCount++;
+      } else {
+        idleTickCount = 0;
+      }
+      poll();
+    }, intervalMs);
     return () => clearInterval(id);
   }, [isVisible, load, summary?.active]);
 

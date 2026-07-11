@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_LAMBDA_URL = process.env.ADMIN_LAMBDA_URL;
+const LAMBDA_TIMEOUT_MS = 8_000;
 
 /**
  * POST /api/admin — Admin-only operations (list users, update user, etc.).
@@ -33,11 +34,18 @@ export async function POST(request: NextRequest) {
                 'Authorization': authHeader,
             },
             body: JSON.stringify(body),
+            signal: AbortSignal.timeout(LAMBDA_TIMEOUT_MS),
         });
 
         const data = await lambdaResponse.json();
         return NextResponse.json(data, { status: lambdaResponse.status });
     } catch (error: any) {
+        if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+            return NextResponse.json(
+                { error: 'Admin service timed out. Please try again.' },
+                { status: 504 }
+            );
+        }
         console.error('[API /admin] Error:', error.message);
         return NextResponse.json(
             { error: 'An internal error occurred.' },
