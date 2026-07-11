@@ -57,6 +57,10 @@ export interface User {
     value: number;
   };
   referredBy?: string;
+  registrationIp?: string;
+  lastLoginIp?: string;
+  lastLoginAt?: string;
+  loginIpHistory?: { ip: string; at: string }[];
 }
 
 

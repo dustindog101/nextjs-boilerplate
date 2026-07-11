@@ -574,18 +574,33 @@ export function CryptoPayModal({
               )}
 
               {displayStatus !== 'confirmed' && !resellerView && (
-                <div className="pt-2 border-t border-[var(--border)] flex flex-col sm:flex-row gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedAsset(intent?.asset ?? currentAsset ?? methods[0]?.id ?? null);
-                      setView('change');
-                      setError(null);
-                    }}
-                    className="btn btn-outline flex-1 text-sm"
-                  >
-                    Change crypto asset
-                  </button>
+                <div className="pt-2 border-t border-[var(--border)] flex flex-col gap-2">
+                  {!needsNewInvoice && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedAsset(intent?.asset ?? currentAsset ?? methods[0]?.id ?? null);
+                        setView('change');
+                        setError(null);
+                      }}
+                      className="btn btn-outline flex-1 text-sm"
+                    >
+                      Change crypto asset
+                    </button>
+                  )}
+                  {isActivePaymentIntent(intent) && (
+                    <button
+                      type="button"
+                      onClick={handleCancelInvoice}
+                      disabled={cancelling}
+                      className="w-full text-center text-xs text-[var(--text-tertiary)] hover:text-red-400 transition-colors py-2 disabled:opacity-50"
+                    >
+                      {cancelling ? 'Cancelling…' : 'Cancel invoice'}
+                    </button>
+                  )}
+                  {error && (
+                    <p className="text-sm text-red-400 text-center">{error}</p>
+                  )}
                 </div>
               )}
             </div>

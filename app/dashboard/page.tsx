@@ -12,8 +12,6 @@ import {
 } from '../components/icons';
 import { Footer, Spinner } from '../components/ui';
 import { OrderListCard } from '../components/order/OrderListCard';
-import { OrderPayModalHost } from '../components/payments/OrderPayModalHost';
-import { useOrderPayModal } from '../hooks/useOrderPayModal';
 import type { OrderDetails } from '@/lib/types';
 
 function DashboardContent() {
@@ -21,15 +19,6 @@ function DashboardContent() {
   const [orders, setOrders] = useState<OrderDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
-  const {
-    payOrderId,
-    payAsset,
-    payOrder,
-    openPayModal,
-    closePayModal,
-    syncPayOrderFromList,
-  } = useOrderPayModal({ cleanUrlPath: '/dashboard', ready: !isLoading });
 
   const loadOrders = useCallback(async () => {
     try {
@@ -50,14 +39,9 @@ function DashboardContent() {
     loadOrders();
   }, [loadOrders]);
 
-  useEffect(() => {
-    syncPayOrderFromList(orders);
-  }, [orders, syncPayOrderFromList]);
-
   const totalSpent = orders.reduce((s, o) => s + (o.price?.total ?? 0), 0);
   const totalIds = orders.reduce((s, o) => s + (o.numberOfIds ?? 0), 0);
   const activeOrders = orders.filter(o => o.status !== 'delivered').length;
-  const modalOrder = payOrder ?? orders.find((o) => o.orderId === payOrderId) ?? null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -129,7 +113,6 @@ function DashboardContent() {
                   order={order}
                   index={i}
                   viewHref={`/order/view?orderId=${order.orderId}${user?.isReseller ? '&from=reseller' : ''}`}
-                  onPay={(orderId, asset) => openPayModal(orderId, asset, order)}
                 />
               ))}
             </div>
@@ -138,14 +121,6 @@ function DashboardContent() {
       </div>
 
       <Footer />
-
-      <OrderPayModalHost
-        payOrderId={payOrderId}
-        payAsset={payAsset}
-        payOrder={modalOrder}
-        onClose={closePayModal}
-        onPaid={loadOrders}
-      />
     </div>
   );
 }

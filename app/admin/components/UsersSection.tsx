@@ -6,6 +6,7 @@ import { Spinner, SortableTh } from '../../components/ui';
 import { useAdminData } from '../AdminDataContext';
 import { sortRows } from '@/lib/tableSort';
 import { useTableSortState } from '@/app/hooks/useTableSort';
+import { IpAuditBlock } from './IpAuditBlock';
 
 /* ── Shared input style (dark) ── */
 const inputCls = "w-full rounded-lg px-4 py-2 text-sm outline-none transition-all focus:ring-2";
@@ -86,6 +87,13 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               <input type="number" value={discountValue} onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)} className={inputCls} style={inputStyle} min={0} placeholder="0 = none" />
             </div>
           </div>
+
+          <IpAuditBlock
+            registrationIp={user.registrationIp}
+            loginHistory={user.loginIpHistory}
+            lastLoginIp={user.lastLoginIp}
+            lastLoginAt={user.lastLoginAt}
+          />
 
           {saveError && <p className="text-red-400 text-sm p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)' }}>{saveError}</p>}
           <div className="mt-6 flex justify-end gap-3">

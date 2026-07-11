@@ -4,14 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { CalendarIcon, DollarSignIcon, HashIcon } from '../icons';
 import type { OrderDetails } from '@/lib/types';
-import {
-  cryptoAssetFromOrder,
-  isCryptoOrder,
-  isOrderUnpaid,
-  normalizePaymentStatus,
-  showPayButton,
-  showPaymentAction,
-} from '@/lib/payments/orderHelpers';
+import { isCryptoOrder, normalizePaymentStatus } from '@/lib/payments/orderHelpers';
 import { PaymentMethodBadge } from '../payments/PaymentMethodBadge';
 import { OrderCustomerNoticeBanner } from './OrderCustomerNoticeBanner';
 
@@ -31,7 +24,6 @@ export interface OrderListCardProps {
   order: OrderDetails;
   index?: number;
   viewHref: string;
-  onPay: (orderId: string, asset: ReturnType<typeof cryptoAssetFromOrder>) => void;
 }
 
 function paymentSubtitle(order: OrderDetails): React.ReactNode | null {
@@ -51,15 +43,11 @@ function paymentSubtitle(order: OrderDetails): React.ReactNode | null {
   return 'Payment pending';
 }
 
-export function OrderListCard({ order, index = 0, viewHref, onPay }: OrderListCardProps) {
+export function OrderListCard({ order, index = 0, viewHref }: OrderListCardProps) {
   const cfg = statusConfig[order.status] || statusConfig.pending;
   const paymentKey = normalizePaymentStatus(order.paymentStatus);
   const payCfg = paymentStatusConfig[paymentKey];
-  const asset = cryptoAssetFromOrder(order);
-  const canOpenCryptoPay = showPayButton(order) || (isOrderUnpaid(order) && asset !== null);
-  const showPayment = showPaymentAction(order);
   const subtitle = paymentSubtitle(order);
-  const paymentViewHref = `${viewHref}${viewHref.includes('?') ? '&' : '?'}pay=1`;
   const customerNotice = order.customerNotice?.trim();
 
   return (
@@ -116,20 +104,6 @@ export function OrderListCard({ order, index = 0, viewHref, onPay }: OrderListCa
           ${order.price?.total ? order.price.total.toFixed(2) : 'N/A'}
         </span>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
-          {showPayment && canOpenCryptoPay && (
-            <button
-              type="button"
-              onClick={() => onPay(order.orderId, asset)}
-              className="btn btn-primary text-xs px-3 py-1.5 w-full sm:w-auto"
-            >
-              View payment
-            </button>
-          )}
-          {showPayment && !canOpenCryptoPay && (
-            <Link href={paymentViewHref} className="btn btn-primary text-xs px-3 py-1.5 w-full sm:w-auto">
-              View payment
-            </Link>
-          )}
           <Link href={viewHref} className="btn btn-outline text-xs px-3 py-1.5 w-full sm:w-auto">
             View order
           </Link>

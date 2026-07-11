@@ -146,7 +146,7 @@ Designed to stay within **AWS / Vercel / Cloudflare free tiers** at low volume:
 | Component | Cost control |
 |-----------|----------------|
 | **DynamoDB** | On-demand (`PAY_PER_REQUEST`); keyed access only |
-| **Watcher** | `rate(2 minutes)` — not per-request; groups by address |
+| **Watcher** | `rate(2 minutes)` for chain polling; expiry sweep **once/hour** on `StatusExpiresIndex` |
 | **LOOKUP** | No polling from server; client polls 30s only while modal open |
 | **Intent create** | Rare `Scan` for amount collision — OK at low volume |
 | **CoinGecko** | Optional API key; called only on invoice create |
@@ -374,7 +374,7 @@ Backend: `payment_shared/admin_activity.py` queries GSI `StatusExpiresIndex` (no
 ```
 pending → detected → confirmed → order Paid
    |          |
-   +-- expired (watcher clears order pointers)
+   +-- expired (watcher clears order pointers; sweep runs ~hourly)
    +-- cancelled (user/admin)
 ```
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getClientIp } from '@/lib/clientIp';
 
 const AUTH_LAMBDA_URL = process.env.AUTH_LAMBDA_URL;
 
@@ -12,11 +13,12 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
+        const clientIp = getClientIp(request);
 
         const lambdaResponse = await fetch(AUTH_LAMBDA_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
+            body: JSON.stringify(clientIp ? { ...body, clientIp } : body),
         });
 
         const data = await lambdaResponse.json();

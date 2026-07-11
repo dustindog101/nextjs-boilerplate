@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signPayToken, PAY_TOKEN_DEFAULT_TTL_SECONDS } from '@/lib/payToken';
 import { isCryptoOrder, isOrderUnpaid } from '@/lib/payments/orderHelpers';
+import { getClientIp } from '@/lib/clientIp';
 
 export const runtime = 'nodejs';
 
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'orderId is required.' }, { status: 400 });
   }
 
-  const clientKey = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const clientKey = getClientIp(request) || 'unknown';
   if (rateLimited(`${clientKey}:${orderId}`)) {
     return NextResponse.json({ error: 'Too many requests. Try again shortly.' }, { status: 429 });
   }

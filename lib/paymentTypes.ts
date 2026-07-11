@@ -75,6 +75,7 @@ export interface AdminPaymentIntentOrder {
   status?: string;
   orderTotal?: number;
   createdAt?: string;
+  clientIp?: string;
 }
 
 export interface AdminPaymentIntentRow extends PaymentIntent {

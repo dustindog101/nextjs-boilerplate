@@ -24,7 +24,9 @@ import type {
 } from '@/lib/paymentTypes';
 import { Spinner } from '../../components/ui/Spinner';
 
-const POLL_MS = 30_000;
+/** Background refresh while Activity tab is open — slower when idle. */
+const POLL_MS_ACTIVE = 60_000;
+const POLL_MS_IDLE = 120_000;
 export const ADMIN_HIGHLIGHT_ORDER_KEY = 'adminHighlightOrderId';
 
 type StatusFilter = 'all' | 'active' | PaymentIntentStatus;
@@ -124,9 +126,15 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
 
   useEffect(() => {
     if (!isVisible) return;
-    const id = setInterval(() => load(true), POLL_MS);
+    const poll = () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      load(true);
+    };
+    const intervalMs =
+      summary && summary.active > 0 ? POLL_MS_ACTIVE : POLL_MS_IDLE;
+    const id = setInterval(poll, intervalMs);
     return () => clearInterval(id);
-  }, [isVisible, load]);
+  }, [isVisible, load, summary?.active]);
 
   const summaryCards = useMemo(() => {
     if (!summary) return [];
@@ -405,6 +413,9 @@ export const PaymentActivitySection: React.FC<PaymentActivitySectionProps> = ({
                         <p className="text-label">Order</p>
                         <DetailRow label="Origin" value={orderOriginLabel(selected.order)} />
                         <DetailRow label="Customer" value={selected.order.userId || '—'} mono />
+                        {selected.order.clientIp ? (
+                          <DetailRow label="Client IP" value={selected.order.clientIp} mono />
+                        ) : null}
                         <DetailRow label="Fulfillment" value={selected.order.status || '—'} />
                         <DetailRow
                           label="Order total"

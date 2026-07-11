@@ -100,7 +100,6 @@ function MyOrdersContent() {
                   order={order}
                   index={i}
                   viewHref={`/order/view?orderId=${order.orderId}`}
-                  onPay={(orderId, asset) => openPayModal(orderId, asset, order)}
                 />
               ))}
             </div>

@@ -5,6 +5,7 @@ import { OrderR2ImageStrip } from '../../components/order/OrderR2ImageStrip';
 import { PaymentMethodBadge } from '@/app/components/payments/PaymentMethodBadge';
 import { adminPresignGetUrl } from '@/lib/apiClient';
 import { effectivePerIdPrice } from '@/lib/pricing';
+import { CopyableMonoField } from './IpAuditBlock';
 
 function DetailField({
   label,
@@ -132,6 +133,7 @@ export function AdminOrderDetailsPanel({ order }: AdminOrderDetailsPanelProps) {
         {order.source ? (
           <DetailField label="Source" value={String(order.source)} />
         ) : null}
+        <CopyableMonoField label="Client IP" value={order.clientIp as string | undefined} />
         {order.trackingNumber ? (
           <DetailField label="Tracking #" value={String(order.trackingNumber)} />
         ) : null}

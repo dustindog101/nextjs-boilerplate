@@ -90,6 +90,8 @@ export interface OrderDetails {
     resellerId?: string;
     batchId?: string;
     batchStatus?: string;
+    /** Set server-side at order creation — admin only */
+    clientIp?: string;
 }
 
 // --- Tracking Stages ---
