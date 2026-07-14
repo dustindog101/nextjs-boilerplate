@@ -352,7 +352,7 @@ export function CryptoPayModal({
         aria-modal="true"
         aria-labelledby="crypto-pay-modal-title"
       >
-        <div className="sticky top-0 z-10 flex justify-center pt-2 pb-0 sm:hidden bg-[var(--surface)]/95 backdrop-blur-sm rounded-t-2xl">
+        <div className="sticky top-0 z-10 flex justify-center pt-2 pb-0 sm:hidden bg-[var(--bg-elevated)]/95 backdrop-blur-sm rounded-t-2xl">
           <span className="h-1 w-10 rounded-full bg-white/20" aria-hidden />
         </div>
         <div className="p-4 sm:p-8 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:pb-8">

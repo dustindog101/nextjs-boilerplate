@@ -48,7 +48,7 @@ function DashboardContent() {
       <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow">
 
         <header className="mb-8 sm:mb-10 animate-fade-up">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] tracking-tight truncate">
             Welcome back{user?.username ? `, ${user.username}` : ''}
           </h1>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">

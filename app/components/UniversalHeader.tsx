@@ -87,6 +87,16 @@ export const UniversalHeader = ({
     return () => { document.body.style.overflow = ''; };
   }, [isMobileMenuOpen]);
 
+  // Close mobile menu on Escape
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMobileMenuOpen]);
+
   // --- Dynamic Navigation Logic ---
   const isOrderFlowPage = ['/order/new', '/checkout'].includes(pathname);
   const backButtonHref = pathname === '/checkout' ? '/order/new' : '/order';
@@ -228,14 +238,15 @@ export const UniversalHeader = ({
             {/* Mobile: Login + Hamburger */}
             <div className="flex md:hidden items-center gap-2">
               {!isLoading && !user && (
-                <Link href="/account" className="btn btn-primary text-xs py-1.5 px-3">
+                <Link href="/account" className="btn btn-primary text-xs min-h-11 px-4">
                   Login
                 </Link>
               )}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
+                className="flex items-center justify-center min-h-11 min-w-11 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
                 aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   {isMobileMenuOpen ? (
@@ -252,21 +263,32 @@ export const UniversalHeader = ({
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
+        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
           {/* Panel */}
           <div className="absolute right-0 top-0 h-full w-72 bg-[var(--bg-elevated)] border-l border-[var(--border)] shadow-xl animate-slide-in-right">
             <div className="p-6 pt-20 flex flex-col gap-1">
-              <Link href="/order" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
-                <PackageIcon className="h-5 w-5" /> Order
-              </Link>
-              <Link href="/track" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
-                <SearchIcon className="h-5 w-5" /> Track
-              </Link>
-              <Link href="/news" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
-                <NewsIcon className="h-5 w-5" /> News
-              </Link>
+              {isOrderFlowPage ? (
+                <Link
+                  href={backButtonHref}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all min-h-11"
+                >
+                  <BackArrowIcon className="h-5 w-5" /> {backButtonText}
+                </Link>
+              ) : (
+                <>
+                  <Link href="/order" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all min-h-11">
+                    <PackageIcon className="h-5 w-5" /> Order
+                  </Link>
+                  <Link href="/track" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all min-h-11">
+                    <SearchIcon className="h-5 w-5" /> Track
+                  </Link>
+                  <Link href="/news" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all min-h-11">
+                    <NewsIcon className="h-5 w-5" /> News
+                  </Link>
+                </>
+              )}
               {user && (
                 <>
                   <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">

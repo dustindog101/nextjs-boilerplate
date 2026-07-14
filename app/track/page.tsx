@@ -99,7 +99,7 @@ function TrackPageContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 py-12 sm:py-20">
+      <div className={`flex-grow flex flex-col items-center px-4 sm:px-6 py-12 sm:py-20 ${orderData && !isLoading ? 'justify-start' : 'justify-center'}`}>
         <main className="w-full max-w-md animate-fade-up">
           <h1 className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] text-center mb-2">
             Track Your Order
@@ -159,7 +159,7 @@ function TrackPageContent() {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <p className="text-label mb-1">Order ID</p>
-                <p className="text-sm text-[var(--text-primary)] font-mono">{orderData.orderId}</p>
+                <p className="text-sm text-[var(--text-primary)] font-mono break-all">{orderData.orderId}</p>
               </div>
               <div>
                 <p className="text-label mb-1">Date</p>
@@ -203,7 +203,7 @@ function TrackPageContent() {
                       orderData
                     );
                   }}
-                  className="btn btn-primary text-xs px-4 py-2"
+                  className="btn btn-primary text-xs px-4 min-h-11"
                 >
                   View payment
                 </button>
@@ -217,12 +217,12 @@ function TrackPageContent() {
               </div>
             )}
 
-            <div className="relative flex justify-between items-start pt-2 pb-4 px-2">
-              <div className="absolute top-6 left-6 right-6 h-0.5 bg-white/10" />
+            <div className="relative flex justify-between items-start pt-2 pb-4 px-1 sm:px-2 gap-1">
+              <div className="absolute top-6 left-4 right-4 sm:left-6 sm:right-6 h-0.5 bg-white/10" />
               <div
-                className="absolute top-6 left-6 h-0.5 bg-[var(--accent)] transition-all duration-500"
+                className="absolute top-6 left-4 sm:left-6 h-0.5 bg-[var(--accent)] transition-all duration-500"
                 style={{
-                  width: `${(TRACKING_STAGES.findIndex(s => s.key === orderData.status) / (TRACKING_STAGES.length - 1)) * (100 - 10)}%`
+                  width: `${(TRACKING_STAGES.findIndex(s => s.key === orderData.status) / (TRACKING_STAGES.length - 1)) * (100 - 12)}%`
                 }}
               />
 
@@ -230,10 +230,16 @@ function TrackPageContent() {
                 const currentStageIndex = TRACKING_STAGES.findIndex(s => s.key === orderData.status);
                 const isCompleted = index <= currentStageIndex;
                 const isCurrent = index === currentStageIndex;
+                const shortLabels: Record<string, string> = {
+                  pending: 'Created',
+                  processing: 'Processing',
+                  shipped: 'Shipped',
+                  delivered: 'Delivered',
+                };
 
                 return (
-                  <div key={stage.key} className="relative z-10 flex flex-col items-center flex-1">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
+                  <div key={stage.key} className="relative z-10 flex flex-col items-center flex-1 min-w-0">
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300
                       ${isCompleted ? 'bg-[var(--accent)] text-white' : 'bg-white/[0.06] border border-[var(--border)] text-[var(--text-tertiary)]'}
                       ${isCurrent ? 'ring-4 ring-[var(--accent)]/30' : ''}
                     `}>
@@ -247,8 +253,9 @@ function TrackPageContent() {
                         )
                       )}
                     </div>
-                    <p className={`mt-2 text-xs text-center font-medium ${isCompleted ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>
-                      {stage.label}
+                    <p className={`mt-2 text-[10px] sm:text-xs text-center font-medium leading-tight px-0.5 ${isCompleted ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>
+                      <span className="sm:hidden">{shortLabels[stage.key] ?? stage.label}</span>
+                      <span className="hidden sm:inline">{stage.label}</span>
                     </p>
                   </div>
                 );

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { Footer } from '../components/ui';
 import {
     buildRegionGallery,
     lowestPriceForRegion,
@@ -237,7 +238,8 @@ export default function OrderGalleryPage() {
     );
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="min-h-screen flex flex-col">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-grow w-full">
             <div className="text-center mb-10 max-w-3xl mx-auto animate-fade-up">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] mb-4 font-display">
                     Select Your ID
@@ -286,7 +288,7 @@ export default function OrderGalleryPage() {
                     />
                 </div>
 
-                <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto">
+                <div className="relative flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto scroll-fade-x">
                     {[
                         { id: 'all', label: 'All' },
                         { id: 'us', label: 'US States' },
@@ -383,6 +385,8 @@ export default function OrderGalleryPage() {
                     </a>
                 </div>
             </div>
+        </div>
+        <Footer />
         </div>
     );
 }
