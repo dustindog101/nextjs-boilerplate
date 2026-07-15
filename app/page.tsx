@@ -144,6 +144,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
             <button
                 onClick={() => setOpen(!open)}
                 className="w-full flex items-center justify-between py-4 text-left cursor-pointer group"
+                aria-expanded={open}
             >
                 <span className="text-sm sm:text-base font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors pr-4">{q}</span>
                 <svg
