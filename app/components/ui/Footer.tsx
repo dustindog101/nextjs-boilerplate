@@ -106,7 +106,7 @@ export function Footer({ className = '' }: FooterProps) {
 
             {/* Bottom bar */}
             <div className="border-t border-[var(--border)]">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] flex flex-col sm:flex-row items-center justify-between gap-2">
                     <p className="text-xs text-[var(--text-tertiary)]">
                         &copy; {new Date().getFullYear()} ID Pirate. All rights reserved.
                     </p>

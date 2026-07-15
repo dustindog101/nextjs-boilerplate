@@ -585,7 +585,7 @@ function OrderFormPageContent() {
                 {/* ══════════════════════════════════════════════
                     MOBILE NAV STRIP (< lg)
                    ══════════════════════════════════════════════ */}
-                <div className="lg:hidden sticky top-16 z-30 bg-[var(--bg)]/90 backdrop-blur-xl border-b border-white/[0.06]">
+                <div className="lg:hidden sticky top-16 z-30 bg-[var(--bg-primary)]/90 backdrop-blur-xl border-b border-white/[0.06]">
                     <div className="flex items-center gap-2 px-4 py-3">
                         {/* Prev */}
                         <button
@@ -694,7 +694,7 @@ function OrderFormPageContent() {
             {/* ══════════════════════════════════════════════
                 MOBILE BOTTOM BAR
                ══════════════════════════════════════════════ */}
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg)]/90 backdrop-blur-xl border-t border-white/[0.06]">
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-primary)]/90 backdrop-blur-xl border-t border-white/[0.06] pb-[env(safe-area-inset-bottom,0px)]">
                 <div className="flex items-center justify-between px-4 py-3">
                     <div>
                         <span className="text-xs text-zinc-500">{idForms.length} ID{idForms.length !== 1 ? 's' : ''}</span>
@@ -710,7 +710,7 @@ function OrderFormPageContent() {
             </div>
 
             {/* Bottom spacer so content isn't hidden behind fixed bar on mobile */}
-            <div className="lg:hidden h-16" />
+            <div className="lg:hidden h-[calc(4rem+env(safe-area-inset-bottom,0px))]" />
 
             {lightbox && (
                 <ImageLightbox url={lightbox.url} label={lightbox.label} onClose={() => setLightbox(null)} />

@@ -116,6 +116,7 @@ function TrackPageContent() {
                 onChange={(e) => setOrderNumber(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleTrackOrder()}
                 placeholder="Enter order number..."
+                aria-label="Order number"
                 className="w-full rounded-xl px-4 py-3 text-sm [color-scheme:dark] bg-white/[0.06] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/35 focus:border-[var(--accent)]/50 focus:outline-none transition"
               />
               <button
@@ -247,7 +248,7 @@ function TrackPageContent() {
                         )
                       )}
                     </div>
-                    <p className={`mt-2 text-xs text-center font-medium ${isCompleted ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>
+                    <p className={`mt-2 text-[10px] sm:text-xs text-center font-medium leading-tight ${isCompleted ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>
                       {stage.label}
                     </p>
                   </div>
