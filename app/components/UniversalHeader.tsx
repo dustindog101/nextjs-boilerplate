@@ -89,6 +89,7 @@ export const UniversalHeader = ({
 
   // --- Dynamic Navigation Logic ---
   const isOrderFlowPage = ['/order/new', '/checkout'].includes(pathname);
+  const isAccountPage = pathname === '/account';
   const backButtonHref = pathname === '/checkout' ? '/order/new' : '/order';
   const backButtonText = pathname === '/checkout' ? 'Back to Edit' : 'Back to Gallery';
 
@@ -105,7 +106,7 @@ export const UniversalHeader = ({
 
   return (
     <>
-      <header className="sticky top-0 z-50 overflow-visible bg-[var(--header-bg)] backdrop-blur-xl border-b border-[var(--border)]">
+      <header className="sticky top-0 z-50 overflow-visible bg-[var(--header-bg)] backdrop-blur-xl border-b border-[var(--border)] pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between overflow-visible">
           {/* Left: Logo + Desktop Nav */}
           <div className="flex items-center gap-6">
@@ -218,7 +219,7 @@ export const UniversalHeader = ({
                     document.body,
                   )}
                 </div>
-              ) : (
+              ) : isAccountPage ? null : (
                 <Link href="/account" className="btn btn-primary text-sm py-2 px-4">
                   Login
                 </Link>
@@ -226,16 +227,17 @@ export const UniversalHeader = ({
             </div>
 
             {/* Mobile: Login + Hamburger */}
-            <div className="flex md:hidden items-center gap-2">
-              {!isLoading && !user && (
-                <Link href="/account" className="btn btn-primary text-xs py-1.5 px-3">
+            <div className="flex md:hidden items-center gap-3">
+              {!isLoading && !user && !isAccountPage && (
+                <Link href="/account" className="btn btn-primary text-xs py-2 px-3 min-h-11 inline-flex items-center">
                   Login
                 </Link>
               )}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
+                className="min-h-11 min-w-11 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
                 aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   {isMobileMenuOpen ? (
@@ -252,21 +254,32 @@ export const UniversalHeader = ({
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
+        <div className="fixed inset-0 z-[60] md:hidden">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
           {/* Panel */}
-          <div className="absolute right-0 top-0 h-full w-72 bg-[var(--bg-elevated)] border-l border-[var(--border)] shadow-xl animate-slide-in-right">
+          <div className="absolute right-0 top-0 h-full w-72 max-w-[85vw] bg-[var(--bg-elevated)] border-l border-[var(--border)] shadow-xl animate-slide-in-right pt-[env(safe-area-inset-top,0px)]">
             <div className="p-6 pt-20 flex flex-col gap-1">
-              <Link href="/order" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
-                <PackageIcon className="h-5 w-5" /> Order
-              </Link>
-              <Link href="/track" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
-                <SearchIcon className="h-5 w-5" /> Track
-              </Link>
-              <Link href="/news" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
-                <NewsIcon className="h-5 w-5" /> News
-              </Link>
+              {isOrderFlowPage ? (
+                <Link
+                  href={backButtonHref}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all"
+                >
+                  <BackArrowIcon className="h-5 w-5" /> {backButtonText}
+                </Link>
+              ) : (
+                <>
+                  <Link href="/order" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
+                    <PackageIcon className="h-5 w-5" /> Order
+                  </Link>
+                  <Link href="/track" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
+                    <SearchIcon className="h-5 w-5" /> Track
+                  </Link>
+                  <Link href="/news" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
+                    <NewsIcon className="h-5 w-5" /> News
+                  </Link>
+                </>
+              )}
               {user && (
                 <>
                   <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all">
@@ -299,9 +312,11 @@ export const UniversalHeader = ({
                   </button>
                 </>
               ) : (
-                <Link href="/account" className="btn btn-primary w-full justify-center mt-2">
-                  Login / Register
-                </Link>
+                !isAccountPage && (
+                  <Link href="/account" className="btn btn-primary w-full justify-center mt-2">
+                    Login / Register
+                  </Link>
+                )
               )}
             </div>
           </div>

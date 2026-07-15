@@ -286,7 +286,7 @@ export default function OrderGalleryPage() {
                     />
                 </div>
 
-                <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto">
+                <div className="flex items-center gap-2 p-1.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)] rounded-xl w-full lg:w-auto overflow-x-auto no-scrollbar">
                     {[
                         { id: 'all', label: 'All' },
                         { id: 'us', label: 'US States' },

@@ -247,7 +247,7 @@ function TrackPageContent() {
                         )
                       )}
                     </div>
-                    <p className={`mt-2 text-xs text-center font-medium ${isCompleted ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>
+                    <p className={`mt-2 text-[10px] sm:text-xs text-center font-medium leading-tight ${isCompleted ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}>
                       {stage.label}
                     </p>
                   </div>

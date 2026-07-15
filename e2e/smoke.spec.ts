@@ -110,13 +110,18 @@ test.describe('Account page', () => {
         await expect(page.getByRole('button', { name: /register/i })).toBeVisible();
     });
 
+    test('does not show duplicate login button in header', async ({ page }) => {
+        await page.goto('/account');
+
+        await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+        await expect(page.getByRole('link', { name: /^login$/i })).toHaveCount(0);
+    });
+
     test('register form has required fields', async ({ page }) => {
         await page.goto('/account');
 
-        // Switch to register tab
         await page.getByRole('button', { name: /register/i }).click();
 
-        // Username + password fields should be visible
         await expect(page.getByLabel(/username/i)).toBeVisible();
         await expect(page.getByLabel(/password/i).first()).toBeVisible();
     });
