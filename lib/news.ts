@@ -21,6 +21,14 @@ export const newsItems: NewsItem[] = [
         published: true,
     },
     {
+        id: '9',
+        date: 'Jul 2026',
+        title: 'More 1:1 Polycarbonate States',
+        body: 'We just added multiple new 1:1 IDs — and about 80% of states now match as true polycarbonate. Same weight, same finish, same quiet confidence when you pull it out. When you want it to feel right, choose poly.',
+        tag: 'Product',
+        published: true,
+    },
+    {
         id: '6',
         date: 'Jun 2026',
         title: 'Premium, CDL & International IDs',
