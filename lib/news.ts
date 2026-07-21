@@ -24,7 +24,7 @@ export const newsItems: NewsItem[] = [
         id: '9',
         date: 'Jul 2026',
         title: 'More 1:1 Polycarbonate States',
-        body: 'We just added multiple new 1:1 IDs — and about 80% of states now match as true polycarbonate. Same weight, same finish, same quiet confidence when you pull it out. When you want it to feel right, choose poly.',
+        body: 'We just added multiple new 1:1 IDs — about 80% of states now offer polycarbonate options. Poly is our most accurate build: same materials as the real card, same weight and finish. All barcodes have been updated too — happy ID scans :)',
         tag: 'Product',
         published: true,
     },
