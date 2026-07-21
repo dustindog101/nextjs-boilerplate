@@ -13,18 +13,18 @@ export interface NewsItem {
 
 export const newsItems: NewsItem[] = [
     {
-        id: '5',
+        id: '8',
         date: 'Jul 2026',
-        title: 'Pay with Crypto at Checkout',
-        body: 'You can now pay with Bitcoin, Litecoin, Solana, or USDC directly at checkout. Pick your coin, get a QR code and exact amount on the invoice page, and we confirm payment automatically — no back-and-forth needed.',
-        tag: 'Product',
+        title: 'Warehouse Delays — Check Your Order',
+        body: 'Warehouse issues are causing delays for some orders — a few may take up to 3 weeks. Please track your order and check for a message on your order for the latest update. We appreciate your patience while we work through this.',
+        tag: 'Update',
         published: true,
     },
     {
         id: '6',
         date: 'Jun 2026',
         title: 'Premium, CDL & International IDs',
-        body: 'The catalog now goes beyond standard state licenses. Choose premium polycarbonate variants, commercial (CDL) options for select states, and UK provisional IDs — all from the same order flow.',
+        body: 'More choices are live: premium polycarbonate variants, commercial (CDL) options for select states, and UK provisional IDs — all in the same easy order flow.',
         tag: 'Product',
         published: true,
     },
@@ -32,7 +32,7 @@ export const newsItems: NewsItem[] = [
         id: '7',
         date: 'Apr 2026',
         title: 'Smarter Order Tracking',
-        body: 'The track page now shows live production status, payment method, and whether your order is paid or still pending. Unpaid crypto orders can be completed right from your tracking link.',
+        body: 'Track any order with a clearer status view — live production progress, payment status, and order details in one place so you always know where things stand.',
         tag: 'Update',
         published: true,
     },
