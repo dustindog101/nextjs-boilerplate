@@ -13,6 +13,30 @@ export interface NewsItem {
 
 export const newsItems: NewsItem[] = [
     {
+        id: '5',
+        date: 'Jul 2026',
+        title: 'Pay with Crypto at Checkout',
+        body: 'You can now pay with Bitcoin, Litecoin, Solana, or USDC directly at checkout. Pick your coin, get a QR code and exact amount on the invoice page, and we confirm payment automatically — no back-and-forth needed.',
+        tag: 'Product',
+        published: true,
+    },
+    {
+        id: '6',
+        date: 'Jun 2026',
+        title: 'Premium, CDL & International IDs',
+        body: 'The catalog now goes beyond standard state licenses. Choose premium polycarbonate variants, commercial (CDL) options for select states, and UK provisional IDs — all from the same order flow.',
+        tag: 'Product',
+        published: true,
+    },
+    {
+        id: '7',
+        date: 'Apr 2026',
+        title: 'Smarter Order Tracking',
+        body: 'The track page now shows live production status, payment method, and whether your order is paid or still pending. Unpaid crypto orders can be completed right from your tracking link.',
+        tag: 'Update',
+        published: true,
+    },
+    {
         id: '1',
         date: 'Feb 2026',
         title: 'New States Added',
