@@ -12,12 +12,12 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 const outDir = path.resolve(process.argv[2] || 'ui-audit-screenshots');
 const routes = ['/', '/order', '/track', '/account', '/news'];
 
-async function capture(browser, name, viewport, route) {
-    const context = await browser.newContext({ ...devices[name], viewport });
+async function capture(browser, deviceName, label, route) {
+    const context = await browser.newContext({ ...devices[deviceName] });
     const page = await context.newPage();
     await page.goto(`${baseURL}${route}`, { waitUntil: 'networkidle' });
     const slug = route === '/' ? 'home' : route.slice(1).replace(/\//g, '-');
-    const file = path.join(outDir, `${slug}-${viewport}.png`);
+    const file = path.join(outDir, `${slug}-${label}.png`);
     await page.screenshot({ path: file, fullPage: true });
     await context.close();
     console.log(`saved ${file}`);
@@ -31,8 +31,6 @@ async function main() {
         await capture(browser, 'Desktop Chrome', 'desktop', route);
         await capture(browser, 'Pixel 7', 'mobile', route);
     }
-
-    // Mobile menu open on homepage
     const ctx = await browser.newContext({ ...devices['Pixel 7'] });
     const page = await ctx.newPage();
     await page.goto(`${baseURL}/`, { waitUntil: 'networkidle' });

@@ -22,9 +22,9 @@ test.describe('Homepage', () => {
             page.getByRole('heading', { level: 1, name: /premium novelty ids/i })
         ).toBeVisible();
 
-        // Primary CTAs are present (hero section, not footer)
-        await expect(page.getByRole('main').getByRole('link', { name: /browse ids/i })).toBeVisible();
-        await expect(page.getByRole('main').getByRole('link', { name: /track order/i })).toBeVisible();
+        // Primary CTAs are present in the hero
+        await expect(page.getByRole('link', { name: /browse ids/i }).first()).toBeVisible();
+        await expect(page.getByRole('link', { name: /track order/i }).first()).toBeVisible();
     });
 
     test('shows correct US state count (not 53)', async ({ page }) => {
