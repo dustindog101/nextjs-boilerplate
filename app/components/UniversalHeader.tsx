@@ -89,6 +89,7 @@ export const UniversalHeader = ({
 
   // --- Dynamic Navigation Logic ---
   const isOrderFlowPage = ['/order/new', '/checkout'].includes(pathname);
+  const isAccountPage = pathname === '/account';
   const backButtonHref = pathname === '/checkout' ? '/order/new' : '/order';
   const backButtonText = pathname === '/checkout' ? 'Back to Edit' : 'Back to Gallery';
 
@@ -105,7 +106,7 @@ export const UniversalHeader = ({
 
   return (
     <>
-      <header className="sticky top-0 z-50 overflow-visible bg-[var(--header-bg)] backdrop-blur-xl border-b border-[var(--border)]">
+      <header className="sticky top-0 z-50 overflow-visible bg-[var(--header-bg)] backdrop-blur-xl border-b border-[var(--border)] pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between overflow-visible">
           {/* Left: Logo + Desktop Nav */}
           <div className="flex items-center gap-6">
@@ -218,16 +219,16 @@ export const UniversalHeader = ({
                     document.body,
                   )}
                 </div>
-              ) : (
+              ) : !isAccountPage ? (
                 <Link href="/account" className="btn btn-primary text-sm py-2 px-4">
                   Login
                 </Link>
-              )}
+              ) : null}
             </div>
 
             {/* Mobile: Login + Hamburger */}
             <div className="flex md:hidden items-center gap-2">
-              {!isLoading && !user && (
+              {!isLoading && !user && !isAccountPage && (
                 <Link href="/account" className="btn btn-primary text-xs py-1.5 px-3">
                   Login
                 </Link>
@@ -298,11 +299,11 @@ export const UniversalHeader = ({
                     Logout
                   </button>
                 </>
-              ) : (
+              ) : !isAccountPage ? (
                 <Link href="/account" className="btn btn-primary w-full justify-center mt-2">
                   Login / Register
                 </Link>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

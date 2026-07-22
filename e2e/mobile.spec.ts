@@ -21,6 +21,9 @@ test.describe('Mobile homepage', () => {
         // Mobile menu toggle should be visible on small screens
         const menuToggle = page.getByRole('button', { name: /toggle menu/i });
         await expect(menuToggle).toBeVisible();
+        await menuToggle.click();
+
+        await expect(page.getByRole('link', { name: /^order$/i })).toBeVisible();
     });
 });
 
@@ -30,7 +33,16 @@ test.describe('Mobile order gallery', () => {
 
         // Cards should be visible — on mobile they stack to 1 column
         await expect(
-            page.getByRole('link', { name: /order now/i }).first()
+            page.getByRole('link', { name: /customize & order/i }).first()
         ).toBeVisible({ timeout: 10_000 });
+    });
+});
+
+test.describe('Mobile account page', () => {
+    test('no duplicate login buttons in header', async ({ page }) => {
+        await page.goto('/account');
+
+        await expect(page.locator('header').getByRole('link', { name: /^login$/i })).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Sign In', exact: true }).first()).toBeVisible();
     });
 });
