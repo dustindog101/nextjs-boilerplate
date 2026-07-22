@@ -280,6 +280,7 @@ export default function OrderGalleryPage() {
                     <input
                         type="text"
                         placeholder="Search states or ID types..."
+                        aria-label="Search states or ID types"
                         className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-secondary)] sm:bg-[var(--bg-elevated)]"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}

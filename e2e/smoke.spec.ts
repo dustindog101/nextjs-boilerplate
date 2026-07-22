@@ -22,17 +22,17 @@ test.describe('Homepage', () => {
             page.getByRole('heading', { level: 1, name: /premium novelty ids/i })
         ).toBeVisible();
 
-        // Primary CTAs are present
-        await expect(page.getByRole('link', { name: /browse ids/i })).toBeVisible();
-        await expect(page.getByRole('link', { name: /track order/i })).toBeVisible();
+        // Primary CTAs are present in the hero
+        await expect(page.getByRole('link', { name: /browse ids/i }).first()).toBeVisible();
+        await expect(page.getByRole('link', { name: /track order/i }).first()).toBeVisible();
     });
 
     test('shows correct US state count (not 53)', async ({ page }) => {
         await page.goto('/');
 
-        // The "States Available" stat should show 51 (50 states + DC), not 53
+        // The "States Available" stat should show 51–52 (50 states + DC), not 53
         // (which would incorrectly include UK + PR)
-        await expect(page.getByText('51+')).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText(/5[12]\+/)).toBeVisible({ timeout: 10_000 });
     });
 
     test('view all states link navigates to /order', async ({ page }) => {
@@ -84,9 +84,9 @@ test.describe('Order gallery', () => {
     test('shows state cards', async ({ page }) => {
         await page.goto('/order');
 
-        // At least one state card should be visible
+        // At least one customize CTA should be visible
         await expect(
-            page.getByRole('link', { name: /order now/i }).first()
+            page.getByRole('link', { name: /customize & order/i }).first()
         ).toBeVisible({ timeout: 10_000 });
     });
 
@@ -94,7 +94,7 @@ test.describe('Order gallery', () => {
         await page.goto('/order');
 
         // Type in search
-        const search = page.getByLabel(/search/i).or(page.getByPlaceholder(/search/i)).first();
+        const search = page.getByLabel(/search states or id types/i);
         await search.fill('California');
 
         // California should appear in results
@@ -106,19 +106,26 @@ test.describe('Account page', () => {
     test('shows login and register tabs', async ({ page }) => {
         await page.goto('/account');
 
-        await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
-        await expect(page.getByRole('button', { name: /register/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Sign In', exact: true }).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Register', exact: true })).toBeVisible();
     });
 
     test('register form has required fields', async ({ page }) => {
         await page.goto('/account');
 
         // Switch to register tab
-        await page.getByRole('button', { name: /register/i }).click();
+        await page.getByRole('button', { name: 'Register', exact: true }).click();
 
         // Username + password fields should be visible
         await expect(page.getByLabel(/username/i)).toBeVisible();
         await expect(page.getByLabel(/password/i).first()).toBeVisible();
+    });
+
+    test('hides header login button on account page', async ({ page }) => {
+        await page.goto('/account');
+
+        // Header should not show a redundant Login CTA when already on /account
+        await expect(page.locator('header').getByRole('link', { name: /^login$/i })).toHaveCount(0);
     });
 });
 

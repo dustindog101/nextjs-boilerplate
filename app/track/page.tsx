@@ -110,12 +110,15 @@ function TrackPageContent() {
 
           <div className="glass p-5 sm:p-6">
             <div className="flex flex-col gap-3">
+              <label htmlFor="order-number" className="text-label">Order number</label>
               <input
+                id="order-number"
                 type="text"
                 value={orderNumber}
                 onChange={(e) => setOrderNumber(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleTrackOrder()}
                 placeholder="Enter order number..."
+                aria-label="Order number"
                 className="w-full rounded-xl px-4 py-3 text-sm [color-scheme:dark] bg-white/[0.06] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-[var(--accent)]/35 focus:border-[var(--accent)]/50 focus:outline-none transition"
               />
               <button

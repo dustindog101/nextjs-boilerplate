@@ -29,6 +29,12 @@ export const metadata: Metadata = {
   description: "The #1 source for premium novelty IDs. Scannable barcodes, UV holograms, microprint. Fast turnaround, discreet shipping, and all security features included.",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover' as const,
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
